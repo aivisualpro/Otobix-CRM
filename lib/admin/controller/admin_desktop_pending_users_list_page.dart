@@ -1,720 +1,247 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:otobix_crm/admin/controller/admin_kam_controller.dart';
+import 'package:otobix_crm/admin/controller/admin_pending_users_list_controller.dart';
 import 'package:otobix_crm/models/user_model.dart';
 import 'package:otobix_crm/utils/app_colors.dart';
-import 'package:otobix_crm/widgets/button_widget.dart';
+import 'package:otobix_crm/utils/hero_dialog_route.dart';
 import 'package:otobix_crm/widgets/empty_data_widget.dart';
+import 'package:otobix_crm/widgets/expanded_user_card_dialog.dart';
 import 'package:otobix_crm/widgets/shimmer_widget.dart';
-import 'package:otobix_crm/widgets/toast_widget.dart';
-import 'package:otobix_crm/admin/controller/admin_pending_users_list_controller.dart';
-import 'package:otobix_crm/admin/controller/admin_rejected_users_list_controller.dart';
+import 'dart:ui' as ui;
 
-class AdminDesktopPendingUsersListPage extends StatelessWidget {
+class AdminDesktopPendingUsersListPage extends StatefulWidget {
   final RxString searchQuery;
   final RxList<String> selectedRoles;
-  AdminDesktopPendingUsersListPage({
+  const AdminDesktopPendingUsersListPage({
     super.key,
     required this.searchQuery,
     required this.selectedRoles,
   });
 
+  @override
+  State<AdminDesktopPendingUsersListPage> createState() => _AdminDesktopPendingUsersListPageState();
+}
+
+class _AdminDesktopPendingUsersListPageState extends State<AdminDesktopPendingUsersListPage> {
   final getxController = Get.put(AdminPendingUsersListController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Obx(() {
         if (getxController.isLoading.value) {
-          return ListView.separated(
-            padding: const EdgeInsets.all(15),
-            itemCount: 3,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              mainAxisExtent: 180,
+            ),
+            itemCount: 6,
             itemBuilder: (_, __) => _buildShimmerCard(),
           );
         }
 
-        // search + role filter
-        final filteredUsers = getxController.filteredUsersList.where((user) {
-          final query = (searchQuery.value).toLowerCase().trim();
-
-          // Safe strings
-          final name = (user.userName).toLowerCase();
-          final email = (user.email).toLowerCase();
+        final filteredUsers = getxController.usersList.where((user) {
+          final query = widget.searchQuery.value.toLowerCase().trim();
+          final name = user.userName.toLowerCase();
+          final email = user.email.toLowerCase();
           final role = user.userRole;
-
-          // Role filter: if 'All' is selected, everything passes
-          final roles = selectedRoles; // RxList<String>
-          final matchesRole =
-              roles.contains('All') ? true : roles.contains(role);
-
-          // Text search (empty query passes)
-          final matchesSearch =
-              query.isEmpty || name.contains(query) || email.contains(query);
-
+          final roles = widget.selectedRoles;
+          final matchesRole = roles.contains('All') || roles.contains(role);
+          final matchesSearch = query.isEmpty || name.contains(query) || email.contains(query);
           return matchesRole && matchesSearch;
         }).toList();
 
         if (filteredUsers.isEmpty) {
-          return Center(
-            child: EmptyDataWidget(message: "No pending users found."),
-          );
+          return Center(child: EmptyDataWidget(message: "No pending users found."));
         }
 
-        return _buildPendingUsersList(filteredUsers);
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            mainAxisExtent: 180,
+          ),
+          itemCount: filteredUsers.length,
+          itemBuilder: (context, index) => _buildUserCard(filteredUsers[index], context),
+        );
       }),
     );
   }
 
-  // Pending Users List
-  Widget _buildPendingUsersList(List<UserModel> usersList) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(10),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3, // 3 items per row
-        crossAxisSpacing: 10, // Horizontal spacing between items
-        mainAxisSpacing: 10, // Vertical spacing between items
-        childAspectRatio: 1.9, // Adjust this ratio to control card proportions
-      ),
-      itemCount: usersList.length,
-      itemBuilder: (context, index) {
-        final user = usersList[index];
-        return _buildUserCard(user, context);
-      },
-    );
-  }
-
   Widget _buildUserCard(UserModel user, BuildContext context) {
-    return InkWell(
-      onTap: () => _buildUserDetailsBottomSheet(user),
-      borderRadius: BorderRadius.circular(15),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: AppColors.green.withValues(alpha: 0.5)),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.green.withValues(alpha: 0.05),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
+    final heroTag = 'user-card-${user.id}';
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          HeroDialogRoute(
+            builder: (context) => ExpandedUserCardDialog(
+              user: user,
+              heroTag: heroTag,
+              listType: 'pending',
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// Row → Avatar, name, location
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                /// Avatar
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.blue.shade50,
-                  child: Text(
-                    user.userName.substring(0, 1).toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                /// Name & email
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.userName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user.email,
-                        style: TextStyle(color: AppColors.grey, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.blue.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Text(
-                    user.userRole,
-                    style: TextStyle(
-                      color: AppColors.blue,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.green.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Text(
-                    // user.entityType!,
-                    'Individual',
-                    style: TextStyle(
-                      color: AppColors.green,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Icon(Icons.location_on, size: 15, color: AppColors.blue),
-                const SizedBox(width: 4),
-                Text(
-                  user.location,
-                  style: TextStyle(
-                    color: AppColors.blue,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            Divider(color: Colors.grey.shade200, thickness: 1),
-
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                Expanded(
-                  child: ButtonWidget(
-                    text: 'Approve',
-                    isLoading: false.obs,
-                    height: 35,
-                    fontSize: 12,
-                    elevation: 3,
-                    onTap: () async {
-                      getxController.approveUser(user.id);
-
-                      //Temp for now
-                      // await Get.find<AdminApprovedUsersListController>()
-                      //     .fetchApprovedUsersList();
-                      //////////////
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ButtonWidget(
-                    text: 'Reject',
-                    isLoading: false.obs,
-                    height: 35,
-                    fontSize: 12,
-                    backgroundColor: AppColors.red,
-                    textColor: AppColors.white,
-                    elevation: 3,
-                    onTap: () => showRejectDialog(context, user.id),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void showRejectDialog(BuildContext context, String userId) {
-    final TextEditingController commentController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
           ),
-          title: Text(
-            "Reject User",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "Please enter a comment or reason for rejecting this user.",
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: commentController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: "Type comment here...",
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.all(12),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text(
-                "Cancel",
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final comment = commentController.text.trim();
-
-                if (comment.isEmpty) {
-                  ToastWidget.show(
-                    context: Get.context!,
-                    title: "Validation",
-                    subtitle: "Comment cannot be empty.",
-                    type: ToastType.error,
-                  );
-                  return;
-                }
-
-                Navigator.pop(context);
-                getxController.updateUserStatus(
-                  userId: userId,
-                  approvalStatus: "Rejected",
-                  comment: comment,
-                );
-
-                //Temp for now
-                await Get.find<AdminRejectedUserListController>()
-                    .fetchRejectedUsersList();
-                //////////////
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade600,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
-                ),
-              ),
-              child: Text(
-                "Reject",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
         );
       },
+      child: Hero(
+        tag: heroTag,
+        createRectTween: (begin, end) => MaterialRectCenterArcTween(begin: begin, end: end),
+        child: Material(
+          color: Colors.transparent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white.withOpacity(0.08),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.15),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header: Avatar + Name + Email
+                    Row(
+                      children: [
+                        // Simple clean avatar
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.1),
+                            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+                          ),
+                          child: Center(
+                            child: Text(
+                              user.userName.substring(0, 1).toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Name + Email
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.userName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                  color: Colors.white,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                user.email,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.5),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const Spacer(),
+                    
+                    // Bottom row: Role & Location chips (minimal style)
+                    Row(
+                      children: [
+                        _miniChip(Icons.work_outline, user.userRole, AppColors.neonGreen),
+                        const SizedBox(width: 8),
+                        _miniChip(Icons.location_on_outlined, user.location, Colors.white54),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 10),
+                    
+                    // Timestamp
+                    Text(
+                      "Applied: ${user.createdAt != null ? DateFormat('dd MMM yyyy').format(user.createdAt!) : 'N/A'}",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.35),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Minimal clean chip style
+  Widget _miniChip(IconData icon, String text, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: color),
+            const SizedBox(width: 5),
+            Expanded(
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildShimmerCard() {
     return Container(
       padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.grey.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(15),
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// Row → Avatar, name, location
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const ShimmerWidget(width: 56, height: 56, borderRadius: 50),
-              const SizedBox(width: 12),
-
-              /// Name & email shimmer
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ShimmerWidget(width: 120, height: 14),
-                    SizedBox(height: 8),
-                    ShimmerWidget(width: 100, height: 12),
-                  ],
-                ),
-              ),
-
-              /// Location shimmer
-              const SizedBox(width: 8),
-              const ShimmerWidget(width: 80, height: 14),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          /// Role & Entity shimmer tags
-          Row(
-            children: const [
-              ShimmerWidget(width: 60, height: 20, borderRadius: 30),
-              SizedBox(width: 8),
-              ShimmerWidget(width: 70, height: 20, borderRadius: 30),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-          Divider(color: Colors.grey.shade200, thickness: 1),
-          const SizedBox(height: 16),
-
-          /// Approve & Reject buttons shimmer
-          Row(
-            children: const [
-              Expanded(child: ShimmerWidget(height: 42, borderRadius: 12)),
-              SizedBox(width: 12),
-              Expanded(child: ShimmerWidget(height: 42, borderRadius: 12)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _buildUserDetailsBottomSheet(UserModel user) {
-    showModalBottomSheet(
-      context: Get.context!,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      constraints: BoxConstraints(maxWidth: Get.width * 0.9),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          maxChildSize: 0.95,
-          minChildSize: 0.4,
-          initialChildSize: 0.8,
-          builder: (_, scrollController) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: CircleAvatar(
-                      radius: 40,
-                      backgroundImage:
-                          user.image != null && user.image!.isNotEmpty
-                              ? NetworkImage(user.image!)
-                              : null,
-                      child: user.image == null || user.image!.isEmpty
-                          ? Text(
-                              user.userName.substring(0, 1).toUpperCase(),
-                              style: const TextStyle(fontSize: 28),
-                            )
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Center(
-                    child: Text(
-                      user.userName,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Center(
-                    child: Text(
-                      user.email,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.grey,
-                      ),
-                    ),
-                  ),
-                  const Divider(height: 30),
-
-                  _infoTile("Role", user.userRole),
-                  _infoTile("User Name", user.userName),
-                  // _infoTile("Password", user.password),
-                  if (user.assignedKam.isNotEmpty)
-                    _infoTile("Key Account Manager", user.assignedKam),
-                  _infoTile("Phone", user.phoneNumber),
-                  _infoTile("Location", user.location),
-                  if (user.dealershipName != null &&
-                      user.dealershipName!.isNotEmpty)
-                    _infoTile("Dealership", user.dealershipName!),
-                  if (user.entityType != null && user.entityType!.isNotEmpty)
-                    _infoTile("Entity Type", user.entityType!),
-                  if (user.primaryContactPerson != null &&
-                      user.primaryContactPerson!.isNotEmpty)
-                    _infoTile("Primary Contact", user.primaryContactPerson!),
-                  if (user.primaryContactNumber != null &&
-                      user.primaryContactNumber!.isNotEmpty)
-                    _infoTile("Primary Number", user.primaryContactNumber!),
-                  if (user.secondaryContactPerson != null &&
-                      user.secondaryContactPerson!.isNotEmpty)
-                    _infoTile(
-                      "Secondary Contact",
-                      user.secondaryContactPerson!,
-                    ),
-                  if (user.secondaryContactNumber != null &&
-                      user.secondaryContactNumber!.isNotEmpty)
-                    _infoTile("Secondary Number", user.secondaryContactNumber!),
-                  if (user.createdAt != null)
-                    _infoTile(
-                      "Approved On",
-                      DateFormat('dd MMM yyyy').format(user.createdAt!),
-                    ),
-                  if (user.addressList.isNotEmpty)
-                    _infoTile("Addresses", user.addressList.join(", ")),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ButtonWidget(
-                        text: "Assign KAM",
-                        isLoading: false.obs,
-                        height: 35,
-                        fontSize: 12,
-                        backgroundColor: AppColors.blue,
-                        onTap: () {
-                          Get.back(); // Close the bottom sheet
-                          Future.delayed(Duration(milliseconds: 200), () {
-                            _showAssignKamDialog(user); // Then show the dialog
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _infoTile(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              "$title:",
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(color: AppColors.grey, fontSize: 14),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-// Show assign KAM dialog
-  void _showAssignKamDialog(UserModel user) {
-    // Get KAM controller (use existing one if already registered)
-    final kamController = Get.isRegistered<AdminKamController>()
-        ? Get.find<AdminKamController>()
-        : Get.put(AdminKamController(), permanent: true);
-
-    // selected KAM id (empty string = unassign)
-    final selectedKamId = ''.obs;
-
-    showDialog(
-      context: Get.context!,
-      builder: (_) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            "Assign KAM",
-            style: TextStyle(
-              fontSize: 15,
-              color: AppColors.green,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Obx(() {
-            // While KAMs are loading
-            if (kamController.isLoading.value && kamController.kams.isEmpty) {
-              return const SizedBox(
-                height: 80,
-                child: Center(
-                  child: CircularProgressIndicator(color: AppColors.green),
-                ),
-              );
-            }
-
-            // No KAMs available
-            if (kamController.kams.isEmpty) {
-              return const Text(
-                "No KAMs available. Please create a KAM first.",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.grey,
-                ),
-              );
-            }
-
-            return SizedBox(
-              width: 400,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Dealer: ${user.userName}",
-                    style: const TextStyle(
-                      color: AppColors.grey,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    "Select KAM (or choose Unassign):",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: AppColors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Dropdown
-                  Obx(
-                    () => DropdownButtonFormField<String>(
-                      initialValue: selectedKamId.value,
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 10,
-                        ),
-                      ),
-                      items: [
-                        const DropdownMenuItem<String>(
-                          value: '',
-                          child: Text("Unassign KAM"),
-                        ),
-                        ...kamController.kams.map(
-                          (kam) => DropdownMenuItem<String>(
-                            value: kam.id,
-                            child: Text(kam.name),
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        selectedKamId.value = value ?? '';
-                      },
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.black,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-          actionsPadding:
-              const EdgeInsets.only(left: 20, right: 20, bottom: 15, top: 5),
-          actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: ButtonWidget(
-                    text: "Cancel",
-                    isLoading: false.obs,
-                    height: 30,
-                    elevation: 3,
-                    fontSize: 12,
-                    backgroundColor: AppColors.red,
-                    onTap: () => Get.back(),
-                  ),
-                ),
-                if (kamController.kams.isNotEmpty) const SizedBox(width: 10),
-                if (kamController.kams.isNotEmpty)
-                  Expanded(
-                    child: Obx(
-                      () => ButtonWidget(
-                        text: selectedKamId.value.isEmpty
-                            ? "Unassign KAM"
-                            : "Assign KAM",
-                        isLoading: getxController.isAssignKamLoading,
-                        height: 30,
-                        elevation: 3,
-                        fontSize: 12,
-                        onTap: () async {
-                          await getxController.assignKamToDealer(
-                            dealerId: user.id,
-                            kamId: selectedKamId.value.isEmpty
-                                ? null // -> unassign
-                                : selectedKamId.value,
-                          );
-                          Get.back(); // close dialog
-                        },
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        );
-      },
+      child: const ShimmerWidget(width: double.infinity, height: double.infinity, borderRadius: 12),
     );
   }
 }

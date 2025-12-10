@@ -10,6 +10,8 @@ import 'package:otobix_crm/utils/responsive_layout.dart';
 import 'package:otobix_crm/widgets/button_widget.dart';
 import 'package:otobix_crm/admin/controller/admin_home_controller.dart';
 import 'package:otobix_crm/admin/controller/admin_pending_users_list_page.dart';
+import 'package:otobix_crm/widgets/glass_container.dart';
+import 'dart:ui' as ui;
 
 class AdminDesktopHomePage extends StatelessWidget {
   AdminDesktopHomePage({super.key});
@@ -23,95 +25,53 @@ class AdminDesktopHomePage extends StatelessWidget {
 
   // Desktop Layout
   Widget _buildDesktopLayout() {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "User Management",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      "Manage and review user applications",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-                _buildStatsCards(),
-              ],
-            ),
-
-            SizedBox(height: 32),
-
-            // Search and Filter Section
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 8,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
+    return Container(
+       decoration: BoxDecoration(
+        image: DecorationImage(
+          image: const AssetImage("assets/images/dashboard_bg.jpg"),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            Colors.black.withOpacity(0.7), // Same darken overlay as dashboard
+            BlendMode.darken,
+          ),
+        ),
+      ),
+      child: ClipRect( // Added ClipRect to prevent blur bleed to sidebar
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Padding(
+              padding: const EdgeInsets.only(left: 2.0, right: 2.0, top: 0, bottom: 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildDesktopSearchBar(),
+                  // Header Section - Just tabs selector (Title removed)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Styled Tabs (Buy/Sell style from reference)
+                      _buildStyledTabSelector(),
+                      
+                      // Search and Filter
+                      Row(
+                        children: [
+                           SizedBox(
+                             width: 400,
+                             child: _buildDesktopSearchBar(),
+                           ),
+                           const SizedBox(width: 16),
+                           _buildDesktopFilterButton(),
+                        ],
+                      )
+                    ],
                   ),
-                  SizedBox(width: 16),
-                  _buildDesktopFilterButton(),
-                  // SizedBox(width: 12),
-                  // _buildExportButton(),
-                ],
-              ),
-            ),
 
-            SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
-            // Tabs Section
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // Custom Tab Bar for Desktop
-                    _buildDesktopTabBar(),
-
-                    // Tab Content
-                    Expanded(
+                  // Tab Content (Tabs moved to header)
+                  Expanded(
+                    child: GlassContainer(
                       child: Obx(
                         () => IndexedStack(
                           index: getxController.currentTabIndex.value,
@@ -147,78 +107,12 @@ class AdminDesktopHomePage extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
-    );
-  }
-
-  // Desktop Stats Cards
-  Widget _buildStatsCards() {
-    return Obx(() => Row(
-          children: [
-            _buildStatCard(
-              count: getxController.pendingUsersLength.value,
-              label: "Pending",
-              color: Colors.orange,
-            ),
-            SizedBox(width: 16),
-            _buildStatCard(
-              count: getxController.approvedUsersLength.value,
-              label: "Approved",
-              color: AppColors.green,
-            ),
-            SizedBox(width: 16),
-            _buildStatCard(
-              count: getxController.rejectedUsersLength.value,
-              label: "Rejected",
-              color: Colors.red,
-            ),
-          ],
-        ));
-  }
-
-  Widget _buildStatCard(
-      {required int count, required String label, required Color color}) {
-    return Container(
-      width: 120,
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            count.toString(),
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -227,24 +121,24 @@ class AdminDesktopHomePage extends StatelessWidget {
   Widget _buildDesktopSearchBar() {
     return Container(
       height: 48,
+      decoration: BoxDecoration(
+         borderRadius: BorderRadius.circular(12),
+         color: Colors.white.withOpacity(0.05), // Darker inline search
+         border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
       child: TextFormField(
         controller: getxController.searchController,
-        style: TextStyle(fontSize: 14),
+        style: const TextStyle(fontSize: 14, color: AppColors.textWhite),
         decoration: InputDecoration(
-          hintText: 'Search users by name, email, or role...',
-          hintStyle: TextStyle(color: Colors.grey[500]),
-          prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
+          hintText: 'Search users...',
+          hintStyle: TextStyle(color: AppColors.textGrey.withOpacity(0.7)),
+          prefixIcon: Icon(Icons.search, color: AppColors.textGrey.withOpacity(0.7)),
           filled: true,
-          fillColor: Colors.grey[50],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppColors.grey, width: 2),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppColors.green, width: 2),
-          ),
-          contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+          fillColor: Colors.transparent,
+          border: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.only(top: 14), // Vertical Alignment
         ),
         onChanged: (value) {
           getxController.searchQuery.value = value.toLowerCase();
@@ -255,117 +149,114 @@ class AdminDesktopHomePage extends StatelessWidget {
 
   // Desktop Filter Button
   Widget _buildDesktopFilterButton() {
-    return Obx(() => Container(
+    return Obx(() {
+      final isActive = getxController.selectedRoles.length > 1 ||
+                        (getxController.selectedRoles.length == 1 &&
+                            !getxController.selectedRoles.contains('All'));
+      return SizedBox(
           height: 48,
           child: OutlinedButton.icon(
             icon: Icon(
               Icons.filter_alt_outlined,
-              color: getxController.selectedRoles.length > 1 ||
-                      (getxController.selectedRoles.length == 1 &&
-                          !getxController.selectedRoles.contains('All'))
-                  ? AppColors.green
-                  : AppColors.grey,
+              color: isActive ? Colors.black : AppColors.textGrey,
             ),
             label: Text(
               'Filter',
               style: TextStyle(
-                color: AppColors.grey,
+                color: isActive ? Colors.black : AppColors.textGrey,
                 fontSize: 14,
+                fontWeight: FontWeight.w600,
               ),
             ),
             style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+              backgroundColor: isActive ? AppColors.neonGreen : Colors.transparent,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               side: BorderSide(
-                color: getxController.selectedRoles.length > 1 ||
-                        (getxController.selectedRoles.length == 1 &&
-                            !getxController.selectedRoles.contains('All'))
-                    ? AppColors.green
-                    : AppColors.grey,
+                color: isActive ? AppColors.neonGreen : Colors.white.withOpacity(0.1),
               ),
             ),
             onPressed: () {
               _buildDesktopRoleFilterDialog();
             },
           ),
-        ));
+        );
+    });
   }
 
-  // Desktop Tab Bar
-  Widget _buildDesktopTabBar() {
+  // Styled Tab Selector (Buy/Sell Style from reference image)
+  Widget _buildStyledTabSelector() {
     return Obx(() => Container(
-          padding: EdgeInsets.all(20),
-          child: Row(
-            children: [
-              _buildDesktopTab(
-                  'Pending', getxController.pendingUsersLength.value, 0),
-              SizedBox(width: 24),
-              _buildDesktopTab(
-                  'Approved', getxController.approvedUsersLength.value, 1),
-              SizedBox(width: 24),
-              _buildDesktopTab(
-                  'Rejected', getxController.rejectedUsersLength.value, 2),
-            ],
-          ),
-        ));
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E2430).withOpacity(0.8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildStyledTab('Pending', 0, getxController.pendingUsersLength.value, Colors.orange),
+          _buildStyledTab('Approved', 1, getxController.approvedUsersLength.value, AppColors.neonGreen),
+          _buildStyledTab('Rejected', 2, getxController.rejectedUsersLength.value, Colors.redAccent),
+        ],
+      ),
+    ));
   }
 
-  Widget _buildDesktopTab(String title, int count, int index) {
+  Widget _buildStyledTab(String title, int index, int count, Color activeColor) {
     final isSelected = getxController.currentTabIndex.value == index;
-    return Expanded(
-      child: InkWell(
-        onTap: () {
-          getxController.currentTabIndex.value = index;
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.green.withOpacity(0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? AppColors.green : Colors.grey[200]!,
-              width: 2,
-            ),
-          ),
-          child: Column(
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? AppColors.green : Colors.grey[700],
-                ),
+    return GestureDetector(
+      onTap: () => getxController.currentTabIndex.value = index,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Circle icon like Buy/Sell style
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.black.withOpacity(0.2) : activeColor.withOpacity(0.3),
+                shape: BoxShape.circle,
               ),
-              SizedBox(height: 8),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.green : Colors.grey[200],
-                  borderRadius: BorderRadius.circular(20),
-                ),
+              child: Center(
                 child: Text(
                   count.toString(),
                   style: TextStyle(
-                    fontSize: 12,
+                    color: isSelected ? Colors.black : activeColor,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : Colors.grey[700],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? Colors.black : AppColors.textWhite,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // Desktop Filter Dialog
+  // (Old tab bar removed - now using styled tabs in header)
+
+  // Desktop Filter Dialog (Updated to match dark theme fully)
   void _buildDesktopRoleFilterDialog() {
     final roles = getxController.roles;
     final RxList<String> tempSelected = RxList<String>.from(
@@ -374,142 +265,173 @@ class AdminDesktopHomePage extends StatelessWidget {
 
     Get.dialog(
       Dialog(
-        backgroundColor: Colors.white,
-        insetPadding: EdgeInsets.all(40),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 500),
-          child: Obx(() => Padding(
-                padding: EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Filter Users by Role",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
-                          ),
-                        ),
-                        if (tempSelected.length > 1 ||
-                            (tempSelected.length == 1 &&
-                                !tempSelected.contains('All')))
-                          TextButton(
-                            onPressed: () {
-                              tempSelected.assignAll(['All']);
-                            },
-                            child: Text(
-                              'Clear All',
-                              style: TextStyle(color: Colors.red),
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(40),
+        child: GlassContainer(
+          width: 500,
+          padding: EdgeInsets.zero,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Obx(() => Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Filter Users by Role",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textWhite,
                             ),
                           ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Divider(),
-                    SizedBox(height: 20),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: roles.map((role) {
-                        final isSelected = tempSelected.contains(role);
-                        return FilterChip(
-                          label: Text(role),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (role == 'All') {
-                              tempSelected.assignAll(['All']);
-                              return;
-                            }
-                            if (selected) {
-                              tempSelected.remove('All');
-                              tempSelected.add(role);
-                            } else {
-                              tempSelected.remove(role);
-                            }
-                            if (tempSelected.isEmpty) {
-                              tempSelected.assignAll(['All']);
-                            }
-                          },
-                          selectedColor: AppColors.green.withOpacity(0.1),
-                          checkmarkColor: AppColors.green,
-                          showCheckmark: true,
-                          labelStyle: TextStyle(
-                            fontSize: 14,
-                            color:
-                                isSelected ? AppColors.green : Colors.grey[700],
-                            fontWeight: FontWeight.w500,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    SizedBox(height: 32),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Get.back(),
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          if (tempSelected.length > 1 ||
+                              (tempSelected.length == 1 &&
+                                  !tempSelected.contains('All')))
+                            TextButton(
+                              onPressed: () {
+                                tempSelected.assignAll(['All']);
+                              },
+                              child: const Text(
+                                'Clear All',
+                                style: TextStyle(color: Colors.redAccent),
                               ),
                             ),
-                            child: Text(
-                              'Cancel',
-                              style: TextStyle(fontSize: 14),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              getxController.applyRoleSelection(
-                                List<String>.from(tempSelected),
-                              );
-                              Get.back();
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: roles.map((role) {
+                          final isSelected = tempSelected.contains(role);
+                          return GestureDetector(
+                            onTap: () {
+                              if (role == 'All') {
+                                tempSelected.assignAll(['All']);
+                                return;
+                              }
+                              if (tempSelected.contains(role)) {
+                                tempSelected.remove(role);
+                              } else {
+                                tempSelected.remove('All');
+                                tempSelected.add(role);
+                              }
+                              if (tempSelected.isEmpty) {
+                                tempSelected.assignAll(['All']);
+                              }
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.green,
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isSelected 
+                                    ? AppColors.neonGreen 
+                                    : const Color(0xFF2A3040),
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(
+                                  color: isSelected 
+                                      ? AppColors.neonGreen 
+                                      : Colors.white.withOpacity(0.15),
+                                  width: 1.5,
+                                ),
+                                boxShadow: isSelected ? [
+                                  BoxShadow(
+                                    color: AppColors.neonGreen.withOpacity(0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ] : [],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (isSelected) ...[
+                                    const Icon(Icons.check, color: Colors.black, size: 16),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  Text(
+                                    role,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: isSelected ? Colors.black : Colors.white,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            child: Text(
-                              'Apply Filters',
-                              style:
-                                  TextStyle(fontSize: 14, color: Colors.white),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 32),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Get.back(),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: const BorderSide(color: AppColors.glassBorder),
+                              ),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(fontSize: 14, color: AppColors.textGrey),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              )),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                getxController.applyRoleSelection(
+                                  List<String>.from(tempSelected),
+                                );
+                                Get.back();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.neonGreen,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Apply Filters',
+                                style:
+                                    TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )),
+          ),
         ),
       ),
     );
   }
 
-  // Mobile Search Bar (existing)
+  // Mobile - Unchanged visually but logic kept
   Widget _buildSearchBar() {
+     // Kept identical for mobile compatibility
+     // (Skipping mobile specific visual overhaul for now unless requested)
     return SizedBox(
       height: 35,
       child: TextFormField(
         controller: getxController.searchController,
         keyboardType: TextInputType.text,
-        style: TextStyle(fontSize: 12),
+        style: const TextStyle(fontSize: 12),
         decoration: InputDecoration(
           isDense: true,
           hintText: 'Search users...',
@@ -520,11 +442,11 @@ class AdminDesktopHomePage extends StatelessWidget {
           prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(100),
-            borderSide: BorderSide(color: AppColors.black),
+            borderSide: const BorderSide(color: AppColors.black),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(100),
-            borderSide: BorderSide(color: AppColors.green, width: 2),
+            borderSide: const BorderSide(color: AppColors.green, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
             vertical: 0,
@@ -534,110 +456,6 @@ class AdminDesktopHomePage extends StatelessWidget {
         onChanged: (value) {
           getxController.searchQuery.value = value.toLowerCase();
         },
-      ),
-    );
-  }
-
-  void _buildRoleFilterDialog() {
-    // Your existing mobile filter dialog code
-    final roles = getxController.roles;
-    final RxList<String> tempSelected = RxList<String>.from(
-      getxController.selectedRoles,
-    );
-
-    Get.dialog(
-      Dialog(
-        backgroundColor: AppColors.white,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: Obx(() {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Filter by Role",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-                Divider(),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  alignment: WrapAlignment.center,
-                  children: roles.map((role) {
-                    final isSelected = tempSelected.contains(role);
-                    return FilterChip(
-                      label: Text(role),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (role == 'All') {
-                          tempSelected.assignAll(['All']);
-                          return;
-                        }
-                        if (selected) {
-                          tempSelected.remove('All');
-                          tempSelected.add(role);
-                        } else {
-                          tempSelected.remove(role);
-                        }
-                        if (tempSelected.isEmpty) {
-                          tempSelected.assignAll(['All']);
-                        }
-                      },
-                      selectedColor: AppColors.green.withValues(alpha: 0.1),
-                      checkmarkColor: AppColors.green,
-                      showCheckmark: true,
-                      labelPadding: EdgeInsets.symmetric(
-                        horizontal: role == 'All' ? 10 : 5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      labelStyle: TextStyle(
-                        color: isSelected ? AppColors.green : AppColors.black,
-                        fontSize: 12,
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 15),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ButtonWidget(
-                        text: 'Cancel',
-                        isLoading: false.obs,
-                        height: 30,
-                        elevation: 3,
-                        fontSize: 10,
-                        backgroundColor: AppColors.red,
-                        onTap: () => Get.back(),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ButtonWidget(
-                        text: 'Apply',
-                        isLoading: false.obs,
-                        height: 30,
-                        elevation: 3,
-                        fontSize: 10,
-                        onTap: () {
-                          getxController.applyRoleSelection(
-                            List<String>.from(tempSelected),
-                          );
-                          Get.back();
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        }),
       ),
     );
   }

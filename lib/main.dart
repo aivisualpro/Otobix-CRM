@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:otobix_crm/admin/admin_dashboard.dart';
 import 'package:otobix_crm/admin/admin_desktop_dashboard.dart';
 import 'package:otobix_crm/network/socket_service.dart';
@@ -27,14 +28,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Define Lato text themes
+    final latoTextTheme = GoogleFonts.latoTextTheme();
+    final latoDarkTextTheme = GoogleFonts.latoTextTheme(
+      ThemeData.dark().textTheme,
+    );
+    
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,
-        // fontFamily: 'Poppins',
+        fontFamily: GoogleFonts.lato().fontFamily,
+        textTheme: latoTextTheme,
         scaffoldBackgroundColor: AppColors.white,
         canvasColor: AppColors.white,
-        // dialogTheme: const DialogTheme(backgroundColor: AppColors.white),
         bottomSheetTheme: const BottomSheetThemeData(
           backgroundColor: AppColors.white,
         ),
@@ -42,6 +49,13 @@ class MyApp extends StatelessWidget {
           seedColor: AppColors.white,
           brightness: Brightness.light,
         ),
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        fontFamily: GoogleFonts.lato().fontFamily,
+        textTheme: latoDarkTextTheme,
+        scaffoldBackgroundColor: const Color(0xFF0D1117),
+        canvasColor: const Color(0xFF161B22),
       ),
       home: firstScreen,
     );

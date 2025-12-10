@@ -9,6 +9,7 @@ import 'package:otobix_crm/admin/admin_cars_list_page.dart';
 import 'package:otobix_crm/admin/admin_settings_page.dart';
 import 'package:otobix_crm/admin/controller/admin_profile_controller.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
+import 'dart:ui' as ui;
 
 class AdminDesktopProfilePage extends StatefulWidget {
   const AdminDesktopProfilePage({super.key});
@@ -25,261 +26,142 @@ class _AdminDesktopProfilePageState extends State<AdminDesktopProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Obx(
-        () => SingleChildScrollView(
-          child: Column(
+    return Container(
+       decoration: BoxDecoration(
+        image: DecorationImage(
+          image: const AssetImage("assets/images/dashboard_bg.jpg"),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            Colors.black.withOpacity(0.7),
+            BlendMode.darken,
+          ),
+        ),
+      ),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   _buildHeader(),
+                   const SizedBox(height: 40),
+                   _buildProfileSummary(),
+                   const SizedBox(height: 32),
+                   Expanded(child: _buildActionGrid()),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Profile",
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: -0.5,
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          "Manage your account and settings",
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.white54,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileSummary() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E2430).withOpacity(0.6),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Row(
             children: [
-              // Header Section
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               Obx(() {
+                  final imageUrl = adminProfileController.imageUrl.value;
+                  return Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                         BoxShadow(color: AppColors.neonGreen.withOpacity(0.3), blurRadius: 20)
+                      ]
+                    ),
+                    child: CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.white.withOpacity(0.1),
+                      backgroundImage: imageUrl.isNotEmpty
+                          ? NetworkImage(imageUrl)
+                          : null,
+                      child: imageUrl.isEmpty
+                          ? const Icon(Icons.person, size: 40, color: Colors.white)
+                          : null,
+                    ),
+                  );
+                }),
+                const SizedBox(width: 24),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Profile Information",
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
-                          ),
+                     Obx(() => Text(
+                        adminProfileController.username.value,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                        SizedBox(height: 8),
-                        Text(
-                          "Update your profile information",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
+                      )),
+                      const SizedBox(height: 4),
+                      Obx(() => Text(
+                        adminProfileController.useremail.value,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.7),
                         ),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                const SizedBox(height: 16),
-                                Text(
-                                  adminProfileController.username.value,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.black,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  adminProfileController.useremail.value,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 30),
-                            Obx(() {
-                              final imageUrl =
-                                  adminProfileController.imageUrl.value;
-                              return Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border:
-                                      Border.all(color: Colors.white, width: 3),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: CircleAvatar(
-                                  backgroundColor: Colors.white,
-                                  backgroundImage: imageUrl.isNotEmpty
-                                      ? NetworkImage(imageUrl)
-                                      : null,
-                                  child: imageUrl.isEmpty
-                                      ? Icon(Icons.person,
-                                          size: 40, color: AppColors.blue)
-                                      : null,
-                                ),
-                              );
-                            }),
-                          ],
+                      )),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.neonGreen.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      ],
-                    ),
+                        child: const Text(
+                          "Administrator",
+                          style: TextStyle(color: AppColors.neonGreen, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      )
                   ],
-                ),
-              ),
-
-              // Header Section
-              // Container(
-              //   width: double.infinity,
-              //   padding:
-              //       const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-              //   decoration: BoxDecoration(
-              //     gradient: LinearGradient(
-              //       begin: Alignment.topLeft,
-              //       end: Alignment.bottomRight,
-              //       colors: [
-              //         AppColors.green.withOpacity(0.8),
-              //         AppColors.blue.withOpacity(0.8)
-              //       ],
-              //     ),
-              //     borderRadius: const BorderRadius.only(
-              //       bottomLeft: Radius.circular(24),
-              //       bottomRight: Radius.circular(24),
-              //     ),
-              //   ),
-              //   child: Column(
-              //     children: [
-              //       Stack(
-              //         children: [
-              //           Obx(() {
-              //             final imageUrl =
-              //                 adminProfileController.imageUrl.value;
-              //             return Container(
-              //               width: 100,
-              //               height: 100,
-              //               decoration: BoxDecoration(
-              //                 shape: BoxShape.circle,
-              //                 border: Border.all(color: Colors.white, width: 3),
-              //                 boxShadow: [
-              //                   BoxShadow(
-              //                     color: Colors.black.withOpacity(0.1),
-              //                     blurRadius: 8,
-              //                     offset: const Offset(0, 4),
-              //                   ),
-              //                 ],
-              //               ),
-              //               child: CircleAvatar(
-              //                 backgroundColor: Colors.white,
-              //                 backgroundImage: imageUrl.isNotEmpty
-              //                     ? NetworkImage(imageUrl)
-              //                     : null,
-              //                 child: imageUrl.isEmpty
-              //                     ? Icon(Icons.person,
-              //                         size: 40, color: AppColors.blue)
-              //                     : null,
-              //               ),
-              //             );
-              //           }),
-              //           Positioned(
-              //             bottom: 0,
-              //             right: 0,
-              //             child: Container(
-              //               width: 28,
-              //               height: 28,
-              //               decoration: BoxDecoration(
-              //                 color: AppColors.green,
-              //                 shape: BoxShape.circle,
-              //                 border: Border.all(color: Colors.white, width: 2),
-              //               ),
-              //               child:
-              //                   Icon(Icons.edit, color: Colors.white, size: 14),
-              //             ),
-              //           ),
-              //         ],
-              //       ),
-              //       const SizedBox(height: 16),
-              //       Text(
-              //         adminProfileController.username.value,
-              //         style: const TextStyle(
-              //           fontSize: 20,
-              //           fontWeight: FontWeight.bold,
-              //           color: Colors.white,
-              //         ),
-              //       ),
-              //       const SizedBox(height: 4),
-              //       Text(
-              //         adminProfileController.useremail.value,
-              //         style: TextStyle(
-              //           fontSize: 14,
-              //           color: Colors.white.withOpacity(0.9),
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
-
-              // Options Section
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    // Edit Profile Card
-                    _buildProfileCard(
-                      icon: Icons.edit_outlined,
-                      title: "Edit Profile",
-                      subtitle: "Update your personal information",
-                      color: AppColors.green,
-                      onTap: () {
-                        Get.to(ResponsiveLayout(
-                          mobile: EditProfileScreen(),
-                          desktop: EditDesktopProfileScreen(),
-                        ));
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Cars List Card
-                    _buildProfileCard(
-                      icon: Icons.directions_car_outlined,
-                      title: "Cars List",
-                      subtitle: "View and manage all cars",
-                      color: AppColors.blue,
-                      onTap: () {
-                        Get.to(ResponsiveLayout(
-                          mobile: AdminCarsListPage(),
-                          desktop: AdminDesktopCarsListPage(),
-                        ));
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Settings Card
-                    _buildProfileCard(
-                      icon: Icons.settings_outlined,
-                      title: "Settings",
-                      subtitle: "Update terms and privacy policy",
-                      color: Colors.orange,
-                      onTap: () {
-                        Get.to(const ResponsiveLayout(
-                          mobile: AdminSettingsPage(),
-                          desktop: AdminDesktopSettingsPage(),
-                        ));
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Logout Card
-                    _buildProfileCard(
-                      icon: Icons.logout_outlined,
-                      title: "Logout",
-                      subtitle: "Sign out of your account",
-                      color: Colors.red,
-                      onTap: () {
-                        adminProfileController.logout();
-                      },
-                      isLogout: true,
-                    ),
-                  ],
-                ),
-              ),
+                )
             ],
           ),
         ),
@@ -287,74 +169,121 @@ class _AdminDesktopProfilePageState extends State<AdminDesktopProfilePage> {
     );
   }
 
-  Widget _buildProfileCard({
-    required IconData icon,
+  Widget _buildActionGrid() {
+    return GridView.count(
+      crossAxisCount: 4, 
+      crossAxisSpacing: 20,
+      mainAxisSpacing: 20,
+      childAspectRatio: 1.1,
+      children: [
+         _buildActionCard(
+           title: "Edit Profile",
+           subtitle: "Update personal info",
+           icon: Icons.edit_outlined,
+           color: Colors.blueAccent,
+           onTap: () {
+              Get.to(ResponsiveLayout(
+                  mobile: EditProfileScreen(),
+                  desktop: EditDesktopProfileScreen(),
+              ));
+           },
+         ),
+         _buildActionCard(
+           title: "Cars List",
+           subtitle: "Manage inventory",
+           icon: Icons.directions_car_filled_outlined,
+           color: Colors.orangeAccent,
+           onTap: () {
+              Get.to(ResponsiveLayout(
+                  mobile: AdminCarsListPage(),
+                  desktop: AdminDesktopCarsListPage(),
+              ));
+           },
+         ),
+         _buildActionCard(
+           title: "Settings",
+           subtitle: "App preferences",
+           icon: Icons.settings_outlined,
+           color: Colors.purpleAccent,
+           onTap: () {
+              Get.to(const ResponsiveLayout(
+                  mobile: AdminSettingsPage(),
+                  desktop: AdminDesktopSettingsPage(),
+              ));
+           },
+         ),
+         _buildActionCard(
+           title: "Logout",
+           subtitle: "Sign out securely",
+           icon: Icons.logout_outlined,
+           color: Colors.redAccent,
+           onTap: () => adminProfileController.logout(),
+           isDestructive: true,
+         ),
+      ],
+    );
+  }
+
+  Widget _buildActionCard({
     required String title,
     required String subtitle,
+    required IconData icon,
     required Color color,
     required VoidCallback onTap,
-    bool isLogout = false,
+    bool isDestructive = false,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        hoverColor: color.withOpacity(0.1),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: isLogout
-                ? Border.all(color: Colors.red.withOpacity(0.2))
-                : null,
+            color: isDestructive ? Colors.redAccent.withOpacity(0.05) : Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isDestructive ? Colors.redAccent.withOpacity(0.3) : Colors.white.withOpacity(0.1)),
+             boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                )
+             ]
           ),
-          child: Row(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: isLogout ? Colors.red : Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: isLogout ? Colors.red : Colors.grey[400],
-                size: 16,
-              ),
+               Container(
+                 padding: const EdgeInsets.all(16),
+                 decoration: BoxDecoration(
+                   shape: BoxShape.circle,
+                   color: color.withOpacity(0.1),
+                   boxShadow: [
+                      BoxShadow(color: color.withOpacity(0.2), blurRadius: 15)
+                   ]
+                 ),
+                 child: Icon(icon, color: color, size: 32),
+               ),
+               const SizedBox(height: 20),
+               Text(
+                 title,
+                 style: const TextStyle(
+                   color: Colors.white,
+                   fontSize: 18,
+                   fontWeight: FontWeight.bold,
+                 ),
+               ),
+               const SizedBox(height: 8),
+               Text(
+                 subtitle,
+                 textAlign: TextAlign.center,
+                 style: TextStyle(
+                   color: Colors.white.withOpacity(0.5),
+                   fontSize: 13,
+                 ),
+               ),
             ],
           ),
         ),

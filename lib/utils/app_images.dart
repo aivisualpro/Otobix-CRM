@@ -1,8 +1,9 @@
 class AppImages {
   static const String logo = 'lib/assets/images/logo.png';
   static const String profile = 'lib/assets/images/profile.png';
+  static const String carAnimation = 'lib/assets/images/car_animation.png';
 
-  static const String appLogo = 'lib/assets/images/appLogo.png';
+  static const String appLogo = 'lib/assets/images/otobix_logo_final.png';
   static const String splashLogo = 'lib/assets/images/splashLogo.png';
 
   static const String carAlternateImage =

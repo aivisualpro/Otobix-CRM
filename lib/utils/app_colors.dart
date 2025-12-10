@@ -11,4 +11,13 @@ class AppColors {
 
   static const Color grey = Color(0xFF808080);
   static const Color grayWithOpacity1 = Color(0xFFBDBDBD);
+
+  // Dark / Glassmorphism Colors
+  static const Color neonGreen = Color(0xFFCCFF00);
+  static const Color darkBackgroundStart = Color(0xFF000000);
+  static const Color darkBackgroundEnd = Color(0xFF1A1A1A);
+  static const Color glassWhite = Color(0x0DFFFFFF); // 5% opacity
+  static const Color glassBorder = Color(0x33FFFFFF); // 20% opacity
+  static const Color textWhite = Color(0xFFFFFFFF);
+  static const Color textGrey = Color(0xB3FFFFFF); // 70% opacity
 }

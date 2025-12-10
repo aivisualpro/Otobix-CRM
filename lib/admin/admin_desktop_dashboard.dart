@@ -8,9 +8,11 @@ import 'package:otobix_crm/admin/admin_desktop_kam_page.dart';
 import 'package:otobix_crm/admin/admin_kam_page.dart';
 import 'package:otobix_crm/utils/app_colors.dart';
 import 'package:otobix_crm/admin/admin_home.dart';
+import 'package:otobix_crm/admin/admin_new_dashboard_page.dart'; // New Dashboard Import
 import 'package:otobix_crm/admin/admin_profile_page.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
 import 'package:otobix_crm/utils/shared_prefs_helper.dart';
+import 'package:otobix_crm/widgets/glass_container.dart';
 
 class AdminDesktopDashboard extends StatefulWidget {
   const AdminDesktopDashboard({super.key});
@@ -22,6 +24,7 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
   RxInt currentIndex = 0.obs;
 
   final List<Widget> pages = [
+    ResponsiveLayout(mobile: AdminNewDashboardPage(), desktop: AdminNewDashboardPage()), // V1
     ResponsiveLayout(mobile: AdminHome(), desktop: AdminDesktopHomePage()),
     ResponsiveLayout(
         mobile: AdminCustomersPage(), desktop: AdminDesktopCustomersPage()),
@@ -32,29 +35,36 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
 
   // Navigation items for desktop sidebar
   final List<NavigationItem> navItems = [
+    // V1 Default
     NavigationItem(
-      icon: Icons.dashboard_outlined,
-      activeIcon: Icons.dashboard,
-      label: "Home",
+      icon: Icons.dashboard_customize_outlined,
+      activeIcon: Icons.dashboard_customize,
+      label: "Dashboard",
       index: 0,
     ),
     NavigationItem(
-      icon: Icons.person_3_outlined,
-      activeIcon: Icons.person_3,
-      label: "Customers",
+      icon: Icons.grid_view_outlined, 
+      activeIcon: Icons.grid_view_rounded,
+      label: "Users",
       index: 1,
+    ),
+    NavigationItem(
+      icon: Icons.people_outline,
+      activeIcon: Icons.people,
+      label: "Customers",
+      index: 2,
     ),
     NavigationItem(
       icon: Icons.person_outline,
       activeIcon: Icons.person,
       label: "Profile",
-      index: 2,
+      index: 3,
     ),
     NavigationItem(
       icon: Icons.manage_accounts_outlined,
       activeIcon: Icons.manage_accounts,
       label: "KAM Management",
-      index: 3,
+      index: 4,
     ),
   ];
 
@@ -66,35 +76,41 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
   // Desktop Layout with Sidebar
   Widget _buildDesktopLayout() {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Row(
-        children: [
-          // Sidebar Navigation
-          _buildSidebar(),
-
-          // Main Content Area
-          Expanded(
-            child: Column(
-              children: [
-                // Top App Bar
-                // _buildAppBar(),
-
-                // Main Content
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                      ),
-                    ),
-                    child: Obx(() => pages[currentIndex.value]),
-                  ),
-                ),
-              ],
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: const AssetImage('lib/assets/images/dashboard_bg.jpg'),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.6), // Darken the image slightly for text readability
+              BlendMode.darken,
             ),
           ),
-        ],
+        ),
+        child: Row(
+          children: [
+            // Sidebar Navigation
+            _buildSidebar(),
+
+            // Main Content Area
+            Expanded(
+              child: Column(
+                children: [
+                  // Main Content
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 24, right: 24, bottom: 24),
+                      decoration: const BoxDecoration(
+                        // Removed white background
+                      ),
+                      child: Obx(() => pages[currentIndex.value]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -103,39 +119,31 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
   Widget _buildSidebar() {
     return Container(
       width: 280,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          right: BorderSide(color: Colors.grey[200]!),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(2, 0),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Logo and App Name
-          _buildSidebarHeader(),
+      margin: const EdgeInsets.all(24),
+      // Removed white background & border
+      child: GlassContainer( // Use GlassContainer for the sidebar panel
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            // Logo and App Name
+            _buildSidebarHeader(),
 
-          // Navigation Items
-          Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              itemCount: navItems.length,
-              itemBuilder: (context, index) {
-                final item = navItems[index];
-                return _buildNavItem(item);
-              },
+            // Navigation Items
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                itemCount: navItems.length,
+                itemBuilder: (context, index) {
+                  final item = navItems[index];
+                  return _buildNavItem(item);
+                },
+              ),
             ),
-          ),
 
-          // User Profile Section
-          _buildUserSection(),
-        ],
+            // User Profile Section
+            _buildUserSection(),
+          ],
+        ),
       ),
     );
   }
@@ -143,10 +151,10 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
   // Sidebar Header with Logo
   Widget _buildSidebarHeader() {
     return Container(
-      padding: EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!),
+          bottom: BorderSide(color: AppColors.glassBorder),
         ),
       ),
       child: Row(
@@ -155,33 +163,39 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppColors.green, AppColors.blue],
+                colors: [AppColors.neonGreen, Color(0xFFAACC00)],
               ),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                  BoxShadow(
+                    color: AppColors.neonGreen.withOpacity(0.4),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+              ],
             ),
-            child:
-                Icon(Icons.admin_panel_settings, color: Colors.white, size: 20),
+            child: const Icon(Icons.admin_panel_settings, color: Colors.black, size: 24),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 "OtoBix CRM",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+                  color: AppColors.textWhite,
                 ),
               ),
-              Text(
+              const Text(
                 "Admin Panel",
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: AppColors.textGrey,
                 ),
               ),
             ],
@@ -196,53 +210,54 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
     return Obx(() {
       final isActive = currentIndex.value == item.index;
       return Container(
-        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        decoration: BoxDecoration(
-          color:
-              isActive ? AppColors.green.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: ListTile(
-          leading: Icon(
-            isActive ? item.activeIcon : item.icon,
-            color: isActive ? AppColors.green : Colors.grey[600],
-            size: 22,
-          ),
-          title: Text(
-            item.label,
-            style: TextStyle(
-              color: isActive ? AppColors.green : Colors.grey[700],
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              currentIndex.value = item.index;
+            },
+            borderRadius: BorderRadius.circular(12),
+             hoverColor: AppColors.glassWhite,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.neonGreen.withOpacity(0.15) : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isActive ? AppColors.neonGreen.withOpacity(0.5) : Colors.transparent,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isActive ? item.activeIcon : item.icon,
+                    color: isActive ? AppColors.neonGreen : AppColors.textGrey,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    item.label,
+                    style: TextStyle(
+                      color: isActive ? AppColors.neonGreen : AppColors.textGrey,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          // trailing: isActive
-          //     ? Container(
-          //         width: 4,
-          //         height: 4,
-          //         decoration: BoxDecoration(
-          //           color: AppColors.green,
-          //           shape: BoxShape.circle,
-          //         ),
-          //       )
-          //     : null,
-          onTap: () {
-            currentIndex.value = item.index;
-          },
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
           ),
         ),
       );
     });
   }
-
   // User Section at Bottom of Sidebar
   Widget _buildUserSection() {
     return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
         border: Border(
-          top: BorderSide(color: Colors.grey[200]!),
+          top: BorderSide(color: AppColors.glassBorder),
         ),
       ),
       child: FutureBuilder(
@@ -256,8 +271,8 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
                   height: 40,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.blue.withOpacity(0.1),
-                    border: Border.all(color: AppColors.blue, width: 1),
+                    color: AppColors.neonGreen.withOpacity(0.1),
+                    border: Border.all(color: AppColors.neonGreen, width: 1),
                   ),
                   child: userImageUrl.isNotEmpty
                       ? ClipOval(
@@ -267,8 +282,8 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
                             width: 40,
                             height: 40,
                             errorBuilder: (context, error, stackTrace) {
-                              return Icon(Icons.person,
-                                  color: AppColors.blue, size: 20);
+                              return const Icon(Icons.person,
+                                  color: AppColors.neonGreen, size: 20);
                             },
                             loadingBuilder: (context, child, loadingProgress) {
                               if (loadingProgress == null) return child;
@@ -284,25 +299,25 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
                             },
                           ),
                         )
-                      : Icon(Icons.person, color: AppColors.blue, size: 20),
+                      : const Icon(Icons.person, color: AppColors.neonGreen, size: 20),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         "Admin User",
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+                          color: AppColors.textWhite,
                         ),
                       ),
-                      Text(
+                      const Text(
                         "Administrator",
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: AppColors.textGrey,
                         ),
                       ),
                     ],
