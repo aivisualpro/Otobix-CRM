@@ -6,280 +6,261 @@ import 'package:otobix_crm/admin/controller/admin_cars_list_controller.dart';
 import 'package:otobix_crm/models/cars_list_model.dart';
 import 'package:otobix_crm/network/api_service.dart';
 import 'package:otobix_crm/utils/app_colors.dart';
-import 'package:otobix_crm/utils/app_images.dart';
 import 'package:otobix_crm/utils/app_urls.dart';
 import 'package:otobix_crm/utils/global_functions.dart';
 import 'package:otobix_crm/widgets/button_widget.dart';
-import 'package:otobix_crm/widgets/empty_data_widget.dart';
 import 'package:otobix_crm/widgets/shimmer_widget.dart';
 import 'package:otobix_crm/widgets/toast_widget.dart';
 import 'package:otobix_crm/admin/controller/admin_upcoming_cars_list_controller.dart';
+import 'dart:ui' as ui;
 
 class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
   AdminDesktopUpcomingCarsListPage({super.key});
 
-// Main controller
   final AdminCarsListController carsListController =
       Get.find<AdminCarsListController>();
-// Current page controller
   final AdminUpcomingCarsListController upcomingController =
       Get.find<AdminUpcomingCarsListController>();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          Obx(() {
-            if (upcomingController.isLoading.value) {
-              return _buildLoadingWidget();
-            }
-            final carsList = carsListController.searchCar(
-              carsList: upcomingController.filteredUpcomingCarsList,
-            );
-            if (carsList.isEmpty) {
-              return Expanded(
-                child: Center(
-                  child: const EmptyDataWidget(
-                    icon: Icons.local_car_wash,
-                    message: 'No Cars in Upcoming',
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0D1117), Color(0xFF161B22)],
+        ),
+      ),
+      child: Obx(() {
+        if (upcomingController.isLoading.value) {
+          return _buildLoadingGrid();
+        }
+        final carsList = carsListController.searchCar(
+          carsList: upcomingController.filteredUpcomingCarsList,
+        );
+        if (carsList.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.schedule, size: 80, color: Colors.white.withOpacity(0.2)),
+                const SizedBox(height: 16),
+                Text('No Upcoming Cars', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16)),
+              ],
+            ),
+          );
+        }
+        return _buildCarsGrid(carsList);
+      }),
+    );
+  }
+
+  Widget _buildCarsGrid(List<CarsListModel> carsList) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 20,
+        mainAxisSpacing: 20,
+        childAspectRatio: 0.72,
+      ),
+      itemCount: carsList.length,
+      itemBuilder: (context, index) => _buildCarCard(carsList[index]),
+    );
+  }
+
+  Widget _buildCarCard(CarsListModel car) {
+    final String yearOfManufacture =
+        '${GlobalFunctions.getFormattedDate(date: car.yearMonthOfManufacture, type: GlobalFunctions.year)} ';
+
+    return GestureDetector(
+      onTap: () => _showAuctionDialog(car),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white.withOpacity(0.08), Colors.white.withOpacity(0.04)],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCarImage(car),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$yearOfManufacture${car.make} ${car.model}',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(car.variant, style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 12),
+                        _buildSpecsRow(car),
+                        const Spacer(),
+                        _buildBottomRow(car),
+                      ],
+                    ),
                   ),
                 ),
-              );
-            } else {
-              return _buildUpcomingCarsList(carsList);
-            }
-          }),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCarImage(CarsListModel car) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: CachedNetworkImage(
+            imageUrl: car.imageUrl,
+            height: 180,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              height: 180,
+              decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.grey[900]!, Colors.grey[800]!])),
+              child: Center(child: CircularProgressIndicator(color: Colors.orange, strokeWidth: 2)),
+            ),
+            errorWidget: (context, error, stackTrace) => Container(
+              height: 180,
+              decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.grey[900]!, Colors.grey[800]!])),
+              child: Center(child: Icon(Icons.directions_car, size: 50, color: Colors.grey[600])),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.6)]),
+            ),
+          ),
+        ),
+        // Upcoming badge
+        Positioned(
+          top: 12,
+          left: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.schedule, size: 14, color: Colors.white),
+                const SizedBox(width: 6),
+                const Text('UPCOMING', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+              ],
+            ),
+          ),
+        ),
+        // Go Live countdown
+        Positioned(
+          top: 12,
+          right: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.timer_outlined, size: 14, color: AppColors.neonGreen),
+                const SizedBox(width: 4),
+                Obx(() => Text(
+                  upcomingController.remainingTimes[car.id] ?? "--",
+                  style: TextStyle(color: AppColors.neonGreen, fontSize: 11, fontWeight: FontWeight.bold),
+                )),
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                _buildMiniChip(Icons.speed, '${NumberFormat.compact().format(car.odometerReadingInKms)} km'),
+                const SizedBox(width: 8),
+                _buildMiniChip(Icons.settings, car.commentsOnTransmission),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.white70),
+          const SizedBox(width: 4),
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w500)),
         ],
       ),
     );
   }
 
-  // Upcoming Cars List
-  Widget _buildUpcomingCarsList(List<CarsListModel> carsList) {
-    return Expanded(
-      child: GridView.builder(
-        padding: const EdgeInsets.all(10),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3, // 3 items per row
-          crossAxisSpacing: 10, // Horizontal spacing between items
-          mainAxisSpacing: 10, // Vertical spacing between items
-          childAspectRatio:
-              2.5, // Adjust this ratio to control card proportions
-        ),
-        itemCount: carsList.length,
-        itemBuilder: (context, index) {
-          final car = carsList[index];
-          return _buildCarCard(car);
-        },
-      ),
+  Widget _buildSpecsRow(CarsListModel car) {
+    return Row(
+      children: [
+        _buildSpecItem(Icons.local_gas_station, car.fuelType.isNotEmpty ? car.fuelType : 'N/A'),
+        const SizedBox(width: 8),
+        _buildSpecItem(Icons.person, car.ownerSerialNumber == 1 ? '1st Owner' : '${car.ownerSerialNumber} Owners'),
+        const SizedBox(width: 8),
+        _buildSpecItem(Icons.location_on, car.inspectionLocation),
+      ],
     );
   }
 
-  Widget _buildCarCard(CarsListModel car) {
-    final String yearMonthOfManufacture =
-        '${GlobalFunctions.getFormattedDate(date: car.yearMonthOfManufacture, type: GlobalFunctions.year)} ';
-    return GestureDetector(
-      onTap: () => _showAuctionBottomSheet(car),
-      child: Card(
-        elevation: 4,
-        color: AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+  Widget _buildSpecItem(IconData icon, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
         ),
-        child: Stack(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      // Car details
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                // Car Image
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: CachedNetworkImage(
-                                    imageUrl: car.imageUrl,
-                                    width: 120,
-                                    height: 80,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => Container(
-                                      height: 80,
-                                      width: 120,
-                                      color:
-                                          AppColors.grey.withValues(alpha: .3),
-                                      child: const Center(
-                                        child: SizedBox(
-                                          height: 20,
-                                          width: 20,
-                                          child: CircularProgressIndicator(
-                                            color: AppColors.green,
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    errorWidget: (
-                                      context,
-                                      error,
-                                      stackTrace,
-                                    ) {
-                                      return Image.asset(
-                                        AppImages.carAlternateImage,
-                                        width: 120,
-                                        height: 80,
-                                        fit: BoxFit.cover,
-                                      );
-                                    },
-                                  ),
-                                ),
-                                SizedBox(width: 10),
-                                Flexible(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '$yearMonthOfManufacture${car.make} ${car.model} ${car.variant}',
-                                        maxLines: 3,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            'FMV: ',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Rs. ${NumberFormat.decimalPattern('en_IN').format(car.priceDiscovery)}/-',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: AppColors.green,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Go Live In: ',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.green,
-                                  ),
-                                ),
-                                Obx(
-                                  () => Text(
-                                    upcomingController.remainingTimes[car.id] ??
-                                        "--",
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.red,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Divider(),
-                            const SizedBox(height: 5),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildIconAndTextWidget(
-                                      icon: Icons.calendar_today,
-                                      text: GlobalFunctions.getFormattedDate(
-                                            date: car.registrationDate,
-                                            type: GlobalFunctions.monthYear,
-                                          ) ??
-                                          'N/A',
-                                    ),
-                                    // _buildIconAndTextWidget(
-                                    //   icon: Icons.local_gas_station,
-                                    //   text: car.fuelType,
-                                    // ),
-                                    _buildIconAndTextWidget(
-                                      icon: Icons.numbers,
-                                      text: car.appointmentId,
-                                    ),
-                                  ],
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildIconAndTextWidget(
-                                      icon: Icons.speed,
-                                      text:
-                                          '${NumberFormat.decimalPattern('en_IN').format(car.odometerReadingInKms)} km',
-                                    ),
-                                    _buildIconAndTextWidget(
-                                      icon: Icons.location_on,
-                                      text: car.inspectionLocation,
-                                    ),
-                                  ],
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildIconAndTextWidget(
-                                      icon: Icons.receipt_long,
-                                      text: car.roadTaxValidity == 'LTT' ||
-                                              car.roadTaxValidity == 'OTT'
-                                          ? car.roadTaxValidity
-                                          : GlobalFunctions.getFormattedDate(
-                                                date: car.taxValidTill,
-                                                type: GlobalFunctions.monthYear,
-                                              ) ??
-                                              'N/A',
-                                    ),
-                                    _buildIconAndTextWidget(
-                                      icon: Icons.person,
-                                      text: car.ownerSerialNumber == 1
-                                          ? 'First Owner'
-                                          : '${car.ownerSerialNumber} Owners',
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                ],
-              ),
+            Icon(icon, size: 14, color: Colors.orange.withOpacity(0.8)),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(value, style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.7), fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
@@ -287,535 +268,367 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
     );
   }
 
-  // Bottom sheet
-
-  void _showAuctionBottomSheet(final CarsListModel car) {
-    showModalBottomSheet(
-      context: Get.context!,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Widget _buildBottomRow(CarsListModel car) {
+    return Container(
+      padding: const EdgeInsets.only(top: 12),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.white.withOpacity(0.06)))),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('FMV Price', style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.4))),
+              const SizedBox(height: 2),
+              Text('₹${NumberFormat.decimalPattern('en_IN').format(car.priceDiscovery)}', style: TextStyle(fontSize: 18, color: AppColors.neonGreen, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [Colors.orange, Color(0xFFFF9800)]),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.schedule, size: 16, color: Colors.white),
+                SizedBox(width: 6),
+                Text('Schedule', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ],
       ),
-      isScrollControlled: true,
-      constraints: BoxConstraints(maxWidth: Get.width * 0.5),
-      builder: (context) {
-        // Local sheet state
-        int goLiveNowOrScheduleIndex = 0; // 0 = Go Live Now, 1 = Schedule
-        DateTime now = DateTime.now();
-        DateTime? startAt = (car.auctionStartTime ?? now);
-        int durationHrs =
-            (car.auctionDuration is int && car.auctionDuration > 0)
-                ? car.auctionDuration
-                : 2;
+    );
+  }
 
-        DateTime getEnd(DateTime s, int h) => s.add(Duration(hours: h));
-
-        Future<void> _pickDateTime() async {
-          final date = await showDatePicker(
-            context: context,
-            initialDate: startAt!,
-            firstDate: DateTime(now.year - 1),
-            lastDate: DateTime(now.year + 2),
-          );
-          if (date == null) return;
-
-          final time = await showTimePicker(
-            context: context,
-            initialTime: TimeOfDay.fromDateTime(startAt!),
-          );
-          if (time == null) return;
-
-          startAt = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
-        }
-
-        Future<void> _submit({
-          required String carId,
-          required DateTime? auctionStartTime,
-          required int auctionDuration,
-          required int goLiveNowOrScheduleIndex,
-        }) async {
-          try {
-            // final pickedStart =
-            //     (goLiveNowOrScheduleIndex == 0 ? DateTime.now() : startAt)!
-            //         .toUtc();
-
-            // Current time for go live now tab
-            final DateTime currentTime = DateTime.now();
-
-            // Decide start time from the selected tab
-            final DateTime auctionStartTimeLocal =
-                (goLiveNowOrScheduleIndex == 0)
-                    ? currentTime
-                    : (auctionStartTime ?? currentTime);
-
-            // Get auction duration in hours
-            final auctionDurationLocal = auctionDuration;
-
-            // Compute end time from duration
-            final DateTime auctionEndTimeLocal = auctionStartTimeLocal.add(
-              Duration(hours: auctionDuration),
-            );
-
-            final body = {
-              'carId': carId,
-              'auctionStartTime':
-                  auctionStartTimeLocal.toUtc().toIso8601String(),
-              'auctionDuration': auctionDurationLocal,
-              'auctionEndTime': auctionEndTimeLocal.toUtc().toIso8601String(),
-              'auctionMode': goLiveNowOrScheduleIndex == 0
-                  ? 'makeLiveNow'
-                  : 'scheduledForLater',
-            };
-
-            final response = await ApiService.post(
-              // endpoint: AppUrls.updateCarAuctionTime,
-              endpoint: AppUrls.schedulAuction,
-              body: body,
-            );
-
-            if (response.statusCode == 200) {
-              ToastWidget.show(
-                context: Get.context!,
-                title: goLiveNowOrScheduleIndex == 0
-                    ? 'Car is live now'
-                    : 'Auction scheduled',
-                type: ToastType.success,
-              );
-              Get.back(); // close sheet
-            } else {
-              ToastWidget.show(
-                context: Get.context!,
-                title: 'Failed to update',
-                type: ToastType.error,
-              );
-            }
-          } catch (e) {
-            debugPrint(e.toString());
-            ToastWidget.show(
-              context: Get.context!,
-              title: 'Something went wrong',
-              type: ToastType.error,
-            );
-          }
-        }
-
-        return DraggableScrollableSheet(
-          expand: false,
-          maxChildSize: 0.95,
-          minChildSize: 0.55,
-          initialChildSize: 0.7,
-          builder: (_, scrollController) {
-            return StatefulBuilder(
-              builder: (context, setState) {
-                final effectiveStart =
-                    (goLiveNowOrScheduleIndex == 0 ? now : startAt!);
-                final endAt = getEnd(effectiveStart, durationHrs);
-
-                Widget _chip(String label, int value) {
-                  final selected = goLiveNowOrScheduleIndex == value;
-                  return ChoiceChip(
-                    label: Text(label),
-                    selected: selected,
-                    onSelected: (_) =>
-                        setState(() => goLiveNowOrScheduleIndex = value),
-                    backgroundColor: AppColors.grey.withValues(alpha: .1),
-                    selectedColor: AppColors.green.withValues(alpha: .15),
-                    labelStyle: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: selected ? AppColors.green : AppColors.black,
-                    ),
-                    // shape & border
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(50), // radius
-                      side: BorderSide.none, // no border
-                    ),
-
-                    side: BorderSide.none,
-                  );
-                }
-
-                Widget _tile({
-                  required IconData icon,
-                  required String title,
-                  required String subtitle,
-                  Widget? trailing,
-                  VoidCallback? onTap,
-                  bool enabled = true,
-                }) {
-                  return InkWell(
-                    onTap: enabled ? onTap : null,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.grey.withValues(alpha: .2),
-                        ),
-                        color: enabled
-                            ? Colors.white
-                            : Colors.grey.withValues(alpha: .05),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppColors.grey.withValues(alpha: .12),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(icon, size: 18, color: AppColors.grey),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                    color: enabled
-                                        ? AppColors.black
-                                        : Colors.black54,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  subtitle,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (trailing != null) trailing,
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                String fmt(DateTime d) => DateFormat(
-                      'EEE, dd MMM yyyy • hh:mm a',
-                    ).format(d.toLocal());
-
-                return SingleChildScrollView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+  Widget _buildLoadingGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 20, mainAxisSpacing: 20, childAspectRatio: 0.72),
+      itemCount: 6,
+      itemBuilder: (context, index) => ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(24)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ShimmerWidget(height: 180, borderRadius: 24),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Grab handle
-                      Center(
-                        child: Container(
-                          width: 48,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.black12,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
+                      ShimmerWidget(height: 20, width: 150),
+                      const SizedBox(height: 8),
+                      ShimmerWidget(height: 14, width: 100),
+                      const Spacer(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [ShimmerWidget(height: 10, width: 60), const SizedBox(height: 4), ShimmerWidget(height: 18, width: 80)]),
+                          ShimmerWidget(height: 36, width: 100, borderRadius: 12),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAuctionDialog(final CarsListModel car) {
+    int goLiveNowOrScheduleIndex = 0;
+    DateTime now = DateTime.now();
+    DateTime? startAt = (car.auctionStartTime ?? now);
+    int durationHrs = (car.auctionDuration is int && car.auctionDuration > 0) ? car.auctionDuration : 2;
+
+    showDialog(
+      context: Get.context!,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                DateTime getEnd(DateTime s, int h) => s.add(Duration(hours: h));
+                final effectiveStart = (goLiveNowOrScheduleIndex == 0 ? now : startAt!);
+                final endAt = getEnd(effectiveStart, durationHrs);
+                String fmt(DateTime d) => DateFormat('EEE, dd MMM yyyy • hh:mm a').format(d.toLocal());
+
+                Future<void> pickDateTime() async {
+                  final date = await showDatePicker(context: context, initialDate: startAt!, firstDate: DateTime(now.year - 1), lastDate: DateTime(now.year + 2));
+                  if (date == null) return;
+                  final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(startAt!));
+                  if (time == null) return;
+                  startAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                  setState(() {});
+                }
+
+                Future<void> submit() async {
+                  try {
+                    final DateTime currentTime = DateTime.now();
+                    final DateTime auctionStartTimeLocal = (goLiveNowOrScheduleIndex == 0) ? currentTime : (startAt ?? currentTime);
+                    final DateTime auctionEndTimeLocal = auctionStartTimeLocal.add(Duration(hours: durationHrs));
+                    final body = {
+                      'carId': car.id,
+                      'auctionStartTime': auctionStartTimeLocal.toUtc().toIso8601String(),
+                      'auctionDuration': durationHrs,
+                      'auctionEndTime': auctionEndTimeLocal.toUtc().toIso8601String(),
+                      'auctionMode': goLiveNowOrScheduleIndex == 0 ? 'makeLiveNow' : 'scheduledForLater',
+                    };
+                    final response = await ApiService.post(endpoint: AppUrls.schedulAuction, body: body);
+                    if (response.statusCode == 200) {
+                      ToastWidget.show(context: Get.context!, title: goLiveNowOrScheduleIndex == 0 ? 'Car is live now' : 'Auction scheduled', type: ToastType.success);
+                      Get.back();
+                    } else {
+                      ToastWidget.show(context: Get.context!, title: 'Failed to update', type: ToastType.error);
+                    }
+                  } catch (e) {
+                    debugPrint(e.toString());
+                    ToastWidget.show(context: Get.context!, title: 'Something went wrong', type: ToastType.error);
+                  }
+                }
+
+                return Container(
+                  width: 450,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1F2A).withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header
+                      Container(
+                        height: 120,
+                        width: double.infinity,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                              child: CachedNetworkImage(imageUrl: car.imageUrl, fit: BoxFit.cover, errorWidget: (_, __, ___) => Container(color: Colors.grey[900])),
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                                gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.8)]),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 16,
+                              left: 20,
+                              right: 20,
+                              child: Text('${car.make} ${car.model} ${car.variant}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                            ),
+                            Positioned(
+                              top: 12,
+                              right: 12,
+                              child: GestureDetector(
+                                onTap: () => Get.back(),
+                                child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 18)),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 14),
-
-                      // Header
-                      Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: CachedNetworkImage(
-                              imageUrl: car.imageUrl,
-                              width: 64,
-                              height: 48,
-                              fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) =>
-                                  const Icon(Icons.directions_car),
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Mode switcher
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => goLiveNowOrScheduleIndex = 0),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: goLiveNowOrScheduleIndex == 0 ? Colors.orange : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Center(child: Text('Go Live Now', style: TextStyle(color: goLiveNowOrScheduleIndex == 0 ? Colors.white : Colors.white54, fontWeight: FontWeight.w600))),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => goLiveNowOrScheduleIndex = 1),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: goLiveNowOrScheduleIndex == 1 ? Colors.orange : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Center(child: Text('Schedule', style: TextStyle(color: goLiveNowOrScheduleIndex == 1 ? Colors.white : Colors.white54, fontWeight: FontWeight.w600))),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            const SizedBox(height: 20),
+                            // Start time
+                            _buildDialogTile(
+                              icon: Icons.access_time,
+                              title: goLiveNowOrScheduleIndex == 0 ? 'Live start' : 'Scheduled start',
+                              subtitle: fmt(effectiveStart),
+                              trailing: goLiveNowOrScheduleIndex == 1 ? Icons.edit_calendar : Icons.lock_clock,
+                              enabled: goLiveNowOrScheduleIndex == 1,
+                              onTap: goLiveNowOrScheduleIndex == 1 ? pickDateTime : null,
+                            ),
+                            const SizedBox(height: 12),
+                            // Duration
+                            _buildDurationTile(durationHrs, (val) => setState(() => durationHrs = val)),
+                            const SizedBox(height: 12),
+                            // End time
+                            _buildDialogTile(icon: Icons.flag, title: 'Ends at', subtitle: fmt(endAt), trailing: Icons.info_outline, enabled: false),
+                            const SizedBox(height: 24),
+                            // Buttons
+                            Row(
                               children: [
-                                Text(
-                                  '${car.make} ${car.model} ${car.variant}',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => Get.back(),
+                                    child: Container(
+                                      height: 48,
+                                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withOpacity(0.1))),
+                                      child: Center(child: Text('Cancel', style: TextStyle(color: Colors.white.withOpacity(0.7), fontWeight: FontWeight.w500))),
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'FMV: Rs. ${NumberFormat.decimalPattern('en_IN').format(car.priceDiscovery)}/-',
-                                  style: const TextStyle(
-                                    color: AppColors.green,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: submit,
+                                    child: Container(
+                                      height: 48,
+                                      decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12)),
+                                      child: Center(child: Text(goLiveNowOrScheduleIndex == 0 ? 'Make Live Now' : 'Save Schedule', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Go Live In: ',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.green,
-                            ),
-                          ),
-                          Obx(
-                            () => Text(
-                              upcomingController.remainingTimes[car.id] ?? "--",
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.red,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      const SizedBox(height: 10),
-
-                      // Mode switch
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50),
-                          color: AppColors.grey.withValues(alpha: .1),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(child: _chip('Go live now', 0)),
-                            const SizedBox(width: 10), // space between
-                            Expanded(child: _chip('Schedule', 1)),
                           ],
                         ),
                       ),
-
-                      const SizedBox(height: 16),
-
-                      // Start time
-                      _tile(
-                        icon: Icons.access_time,
-                        title: goLiveNowOrScheduleIndex == 0
-                            ? 'Live start'
-                            : 'Scheduled start',
-                        subtitle: fmt(effectiveStart),
-                        onTap: goLiveNowOrScheduleIndex == 1
-                            ? () async {
-                                await _pickDateTime();
-                                setState(() {});
-                              }
-                            : null,
-                        enabled: goLiveNowOrScheduleIndex == 1,
-                        trailing: Icon(
-                          goLiveNowOrScheduleIndex == 1
-                              ? Icons.edit_calendar
-                              : Icons.lock_clock,
-                          color: AppColors.grey,
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Duration picker
-                      _tile(
-                        icon: Icons.timer,
-                        title: 'Duration (hours)',
-                        subtitle:
-                            '$durationHrs hour${durationHrs == 1 ? '' : 's'}',
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              onPressed: () => setState(() {
-                                if (durationHrs > 1) durationHrs--;
-                              }),
-                              icon: const Icon(Icons.remove),
-                              splashRadius: 18,
-                            ),
-                            Text(
-                              '$durationHrs',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () => setState(() => durationHrs++),
-                              icon: const Icon(Icons.add),
-                              splashRadius: 18,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // End time (computed)
-                      _tile(
-                        icon: Icons.flag,
-                        title: 'Ends at',
-                        subtitle: fmt(endAt),
-                        trailing: const Icon(
-                          Icons.info_outline,
-                          color: AppColors.grey,
-                        ),
-                        enabled: false,
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      const SizedBox(height: 10),
-
-                      // Buttons
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ButtonWidget(
-                              text: 'Cancel',
-                              isLoading: false.obs,
-                              backgroundColor: AppColors.grey.withValues(
-                                alpha: .1,
-                              ),
-                              textColor: AppColors.black,
-                              fontSize: 13,
-                              onTap: () => Get.back(),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ButtonWidget(
-                              text: goLiveNowOrScheduleIndex == 0
-                                  ? 'Make Live Now'
-                                  : 'Save Schedule',
-                              isLoading: false.obs,
-                              fontSize: 13,
-                              onTap: () => _submit(
-                                carId: car.id,
-                                auctionStartTime: startAt,
-                                auctionDuration: durationHrs,
-                                goLiveNowOrScheduleIndex:
-                                    goLiveNowOrScheduleIndex,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
                     ],
                   ),
                 );
               },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // Loading widget
-  Widget _buildLoadingWidget() {
-    return Expanded(
-      child: ListView.separated(
-        itemCount: 3,
-        separatorBuilder: (_, __) => const SizedBox(height: 15),
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        itemBuilder: (context, index) {
-          return Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Image shimmer
-                const ShimmerWidget(height: 160, borderRadius: 12),
-
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      // Title shimmer
-                      ShimmerWidget(height: 14, width: 150),
-                      SizedBox(height: 10),
-
-                      // Bid row shimmer
-                      ShimmerWidget(height: 12, width: 100),
-                      SizedBox(height: 6),
-
-                      // Year and KM
-                      Row(
-                        children: [
-                          ShimmerWidget(height: 10, width: 60),
-                          SizedBox(width: 10),
-                          ShimmerWidget(height: 10, width: 80),
-                        ],
-                      ),
-                      SizedBox(height: 6),
-
-                      // Fuel and Location
-                      Row(
-                        children: [
-                          ShimmerWidget(height: 10, width: 60),
-                          SizedBox(width: 10),
-                          ShimmerWidget(height: 10, width: 80),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-
-                      // Inspection badge
-                      ShimmerWidget(height: 10, width: 100),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
 
-  // Icon and text widget
-  Widget _buildIconAndTextWidget({
-    required IconData icon,
-    required String text,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: AppColors.grey),
-        const SizedBox(width: 5),
-        Text(text, style: const TextStyle(fontSize: 12)),
-      ],
+  Widget _buildDialogTile({required IconData icon, required String title, required String subtitle, required IconData trailing, bool enabled = true, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: enabled ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.02),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, size: 20, color: Colors.orange),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(color: enabled ? Colors.white : Colors.white54, fontWeight: FontWeight.w600, fontSize: 13)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                ],
+              ),
+            ),
+            Icon(trailing, color: Colors.white38, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDurationTile(int durationHrs, Function(int) onChanged) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.timer, size: 20, color: Colors.orange),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Duration (hours)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 2),
+                Text('$durationHrs hour${durationHrs == 1 ? '' : 's'}', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: () { if (durationHrs > 1) onChanged(durationHrs - 1); },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.remove, color: Colors.white, size: 18),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text('$durationHrs', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              ),
+              GestureDetector(
+                onTap: () => onChanged(durationHrs + 1),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.add, color: Colors.white, size: 18),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

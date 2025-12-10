@@ -200,74 +200,66 @@ class AdminDesktopCustomersPage extends StatelessWidget {
               ]
             ),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: card.color.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                           BoxShadow(color: card.color.withOpacity(0.2), blurRadius: 10)
-                        ]
+                // Icon with background
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: card.color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: card.color.withOpacity(0.2),
+                        blurRadius: 10,
                       ),
-                      child: Icon(card.icon, color: card.color, size: 28),
-                    ),
-                    Icon(Icons.arrow_forward_ios_rounded,
-                        color: Colors.white38, size: 18),
-                  ],
+                    ],
+                  ),
+                  child: Icon(
+                    card.icon,
+                    color: card.color,
+                    size: 32,
+                  ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
+                // Title
                 Text(
                   card.title,
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Expanded(
+                // Description
+                Text(
+                  card.description,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.5),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const Spacer(),
+                // Count badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: card.color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Text(
-                    card.description,
+                    '${card.count} ${card.countLable}',
                     style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.5),
-                      height: 1.4,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: card.color,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                if (card.count != 0)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: card.color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: card.color.withOpacity(0.2)),
-                    ),
-                    child: Text(
-                      '${card.count} ${card.countLable}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: card.color,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  )
-                else
-                   Text(
-                    'Explore →',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: card.color,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
               ],
             ),
           ),

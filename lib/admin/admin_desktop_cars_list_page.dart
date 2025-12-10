@@ -16,6 +16,7 @@ import 'package:otobix_crm/admin/controller/admin_live_cars_list_controller.dart
 import 'package:otobix_crm/admin/controller/admin_oto_buy_cars_list_controller.dart';
 import 'package:otobix_crm/admin/controller/admin_upcoming_cars_list_controller.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
+import 'dart:ui' as ui;
 
 class AdminDesktopCarsListPage extends StatelessWidget {
   AdminDesktopCarsListPage({super.key});
@@ -41,528 +42,330 @@ class AdminDesktopCarsListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _buildDesktopLayout();
-  }
-
-  // Desktop Layout
-  Widget _buildDesktopLayout() {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Section
-            _buildDesktopHeader(),
-
-            // SizedBox(height: 24),
-
-            // // Stats Cards
-            // _buildStatsCards(),
-
-            SizedBox(height: 32),
-
-            // Main Content Area
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // Search and Filter Bar
-                    _buildDesktopSearchFilterBar(),
-
-                    // Desktop Tabs
-                    _buildDesktopTabs(),
-
-                    // Content Area
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(16),
-                            bottomRight: Radius.circular(16),
-                          ),
-                        ),
-                        child: TabBarView(
-                          controller: tabBarController.tabController,
-                          children: [
-                            _buildDesktopPageContainer(
-                              ResponsiveLayout(
-                                mobile: AdminUpcomingCarsListPage(),
-                                desktop: AdminDesktopUpcomingCarsListPage(),
-                              ),
-                            ),
-                            _buildDesktopPageContainer(ResponsiveLayout(
-                              mobile: AdminLiveCarsListPage(),
-                              desktop: AdminDesktopLiveCarsListPage(),
-                            )),
-                            _buildDesktopPageContainer(ResponsiveLayout(
-                              mobile: AdminAuctionCompletedCarsListPage(),
-                              desktop:
-                                  AdminDesktopAuctionCompletedCarsListPage(),
-                            )),
-                            _buildDesktopPageContainer(ResponsiveLayout(
-                              mobile: AdminOtoBuyCarsListPage(),
-                              desktop: AdminDesktopOtoBuyCarsListPage(),
-                            )),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDesktopHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            IconButton(
-              onPressed: () => Get.back(),
-              icon: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(Icons.arrow_back, color: Colors.grey[600]),
-              ),
-            ),
-            SizedBox(width: 24),
-            Column(
+      backgroundColor: const Color(0xFF0D1117),
+      body: Stack(
+        children: [
+          _buildBackground(),
+          // Main Content - no padding on top to align with sidebar
+          Padding(
+            padding: const EdgeInsets.only(left: 0, right: 0, top: 0, bottom: 0),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Car Management",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  "Manage all cars across different auction stages",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
+                // Header with title and tabs + search inline
+                _buildHeader(),
+                // Main content area
+                Expanded(child: _buildMainContent()),
               ],
             ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsCards() {
-    return Obx(() => Row(
-          children: [
-            _buildStatCard(
-              count: upcomingController.upcomingCarsCount.value,
-              label: "Upcoming Cars",
-              icon: Icons.schedule_outlined,
-              color: Colors.orange,
-            ),
-            SizedBox(width: 16),
-            _buildStatCard(
-              count: liveController.liveCarsCount.value,
-              label: "Live Auctions",
-              icon: Icons.live_tv_outlined,
-              color: Colors.red,
-            ),
-            SizedBox(width: 16),
-            _buildStatCard(
-              count: auctionCompletedController.auctionCompletedCarsCount.value,
-              label: "Completed",
-              icon: Icons.check_circle_outline,
-              color: AppColors.green,
-            ),
-            SizedBox(width: 16),
-            _buildStatCard(
-              count: otoBuyController.otoBuyCarsCount.value,
-              label: "OtoBuy Cars",
-              icon: Icons.shopping_cart_outlined,
-              color: AppColors.blue,
-            ),
-          ],
-        ));
-  }
-
-  Widget _buildStatCard({
-    required int count,
-    required String label,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    count.toString(),
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDesktopSearchFilterBar() {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: _buildDesktopSearchBar(),
           ),
-          // SizedBox(width: 16),
-          // _buildFilterButton(),
-          // SizedBox(width: 12),
-          // _buildSortButton(),
-          // SizedBox(width: 12),
-          // _buildExportButton(),
         ],
       ),
     );
   }
 
-  Widget _buildDesktopSearchBar() {
+  Widget _buildBackground() {
     return Container(
-      height: 48,
-      child: TextFormField(
-        controller: mainController.searchController,
-        style: TextStyle(fontSize: 14),
-        decoration: InputDecoration(
-          hintText: 'Search cars by Appointment ID...',
-          hintStyle: TextStyle(color: Colors.grey[500]),
-          prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
-          filled: true,
-          fillColor: Colors.grey[50],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppColors.grey, width: 2),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppColors.green, width: 2),
-          ),
-          contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF0D1117),
+            Color(0xFF161B22),
+            Color(0xFF0D1117),
+          ],
         ),
-        onChanged: (value) {
-          mainController.searchQuery.value = value.toLowerCase();
-        },
       ),
-    );
-  }
-
-  Widget _buildFilterButton() {
-    return Container(
-      height: 48,
-      child: OutlinedButton.icon(
-        icon: Icon(Icons.filter_alt_outlined, size: 18),
-        label: Text('Filters'),
-        style: OutlinedButton.styleFrom(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: () {
-          // Add filter functionality
-        },
-      ),
-    );
-  }
-
-  Widget _buildSortButton() {
-    return Container(
-      height: 48,
-      child: OutlinedButton.icon(
-        icon: Icon(Icons.sort, size: 18),
-        label: Text('Sort'),
-        style: OutlinedButton.styleFrom(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: () {
-          // Add sort functionality
-        },
-      ),
-    );
-  }
-
-  Widget _buildExportButton() {
-    return Container(
-      height: 48,
-      child: ElevatedButton.icon(
-        icon: Icon(Icons.download, size: 18),
-        label: Text('Export'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.blue,
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: () {
-          // Add export functionality
-        },
-      ),
-    );
-  }
-
-  Widget _buildDesktopTabs() {
-    return Obx(() => Container(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border(
-              bottom: BorderSide(color: Colors.grey[200]!),
-            ),
-          ),
-          child: Row(
-            children: [
-              _buildDesktopTab(
-                  'Upcoming',
-                  upcomingController.upcomingCarsCount.value,
-                  0,
-                  Icons.schedule_outlined,
-                  Colors.orange),
-              SizedBox(width: 16),
-              _buildDesktopTab('Live', liveController.liveCarsCount.value, 1,
-                  Icons.live_tv_outlined, AppColors.red),
-              SizedBox(width: 16),
-              _buildDesktopTab(
-                  'Completed',
-                  auctionCompletedController.auctionCompletedCarsCount.value,
-                  2,
-                  Icons.check_circle_outline,
-                  AppColors.green),
-              SizedBox(width: 16),
-              _buildDesktopTab('OtoBuy', otoBuyController.otoBuyCarsCount.value,
-                  3, Icons.shopping_cart_outlined, AppColors.blue),
-            ],
-          ),
-        ));
-  }
-
-  Widget _buildDesktopTab(
-      String title, int count, int index, IconData icon, Color color) {
-    final isSelected = tabBarController.selectedIndex.value == index;
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            tabBarController.tabController.animateTo(index);
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.green.withOpacity(0.1)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? AppColors.green : Colors.transparent,
-                width: 2,
+      child: Stack(
+        children: [
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.neonGreen.withOpacity(0.08),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
+          ),
+          Positioned(
+            bottom: -150,
+            left: -100,
+            child: Container(
+              width: 500,
+              height: 500,
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.teal.withOpacity(0.05),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title row
+          Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Car Inventory',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Manage auctions, bids, and car listings',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Tabs row with search inline
+          _buildTabsWithSearch(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabsWithSearch() {
+    return Obx(() => Row(
+      children: [
+        // Tabs with counts - wrapped in Expanded to flex
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: color, size: 24),
+                _buildTabWithCount(
+                  label: "Upcoming",
+                  count: upcomingController.upcomingCarsCount.value,
+                  icon: Icons.schedule,
+                  color: Colors.orange,
+                  index: 0,
                 ),
-                SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.green : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        count.toString(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? AppColors.green : Colors.grey[700],
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 12),
+                _buildTabWithCount(
+                  label: "Live",
+                  count: liveController.liveCarsCount.value,
+                  icon: Icons.live_tv,
+                  color: Colors.redAccent,
+                  index: 1,
+                ),
+                const SizedBox(width: 12),
+                _buildTabWithCount(
+                  label: "Completed",
+                  count: auctionCompletedController.auctionCompletedCarsCount.value,
+                  icon: Icons.check_circle,
+                  color: AppColors.neonGreen,
+                  index: 2,
+                ),
+                const SizedBox(width: 12),
+                _buildTabWithCount(
+                  label: "OtoBuy",
+                  count: otoBuyController.otoBuyCarsCount.value,
+                  icon: Icons.shopping_cart,
+                  color: Colors.blueAccent,
+                  index: 3,
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
+        const SizedBox(width: 16),
+        // Search bar
+        _buildSearchBar(),
+      ],
+    ));
   }
 
-  Widget _buildDesktopPageContainer(Widget child) {
-    return Padding(
-      padding: EdgeInsets.all(24),
-      child: Container(
+  Widget _buildTabWithCount({
+    required String label,
+    required int count,
+    required IconData icon,
+    required Color color,
+    required int index,
+  }) {
+    final isSelected = tabBarController.selectedIndex.value == index;
+
+    return GestureDetector(
+      onTap: () => tabBarController.tabController.animateTo(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
+          color: isSelected ? color.withOpacity(0.15) : Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? color.withOpacity(0.4) : Colors.white.withOpacity(0.08),
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: isSelected ? [
             BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: Offset(0, 2),
+              color: color.withOpacity(0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ] : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: isSelected ? color : Colors.white54),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? color : Colors.white54,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 10),
+            // Count badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: isSelected ? color.withOpacity(0.3) : Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                count.toString(),
+                style: TextStyle(
+                  color: isSelected ? color : Colors.white70,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: child,
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: 280,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: TextField(
+            controller: mainController.searchController,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: "Search cars...",
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+              prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.4), size: 20),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            onChanged: (value) {
+              mainController.searchQuery.value = value.toLowerCase();
+            },
+          ),
         ),
       ),
     );
   }
 
-  // Mobile Search Bar (existing)
-  Widget _buildSearchBar() {
-    return SizedBox(
-      height: 35,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        child: TextFormField(
-          controller: mainController.searchController,
-          keyboardType: TextInputType.text,
-          style: TextStyle(fontSize: 12),
-          decoration: InputDecoration(
-            isDense: true,
-            hintText: 'Search cars...',
-            hintStyle: TextStyle(
-              color: AppColors.grey.withValues(alpha: .5),
-              fontSize: 12,
+  Widget _buildMainContent() {
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(24),
+        topRight: Radius.circular(24),
+      ),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.03),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
             ),
-            prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(100),
-              borderSide: BorderSide(color: AppColors.black),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(100),
-              borderSide: BorderSide(color: AppColors.green, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 0,
-              horizontal: 10,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
           ),
-          onChanged: (value) {
-            mainController.searchQuery.value = value.toLowerCase();
-          },
+          child: TabBarView(
+            controller: tabBarController.tabController,
+            children: [
+              _buildTabContent(
+                ResponsiveLayout(
+                  mobile: AdminUpcomingCarsListPage(),
+                  desktop: AdminDesktopUpcomingCarsListPage(),
+                ),
+              ),
+              _buildTabContent(
+                ResponsiveLayout(
+                  mobile: AdminLiveCarsListPage(),
+                  desktop: AdminDesktopLiveCarsListPage(),
+                ),
+              ),
+              _buildTabContent(
+                ResponsiveLayout(
+                  mobile: AdminAuctionCompletedCarsListPage(),
+                  desktop: AdminDesktopAuctionCompletedCarsListPage(),
+                ),
+              ),
+              _buildTabContent(
+                ResponsiveLayout(
+                  mobile: AdminOtoBuyCarsListPage(),
+                  desktop: AdminDesktopOtoBuyCarsListPage(),
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTabContent(Widget child) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: child,
       ),
     );
   }

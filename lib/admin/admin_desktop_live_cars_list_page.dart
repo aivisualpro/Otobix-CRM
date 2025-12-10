@@ -10,166 +10,75 @@ import 'package:otobix_crm/widgets/button_widget.dart';
 import 'package:otobix_crm/widgets/empty_data_widget.dart';
 import 'package:otobix_crm/widgets/shimmer_widget.dart';
 import 'package:otobix_crm/admin/controller/admin_live_cars_list_controller.dart';
+import 'dart:ui' as ui;
 
 class AdminDesktopLiveCarsListPage extends StatelessWidget {
   AdminDesktopLiveCarsListPage({super.key});
 
-// Main controller
   final AdminCarsListController carsListController =
       Get.find<AdminCarsListController>();
-// Current page controller
   final AdminLiveCarsListController getxController =
       Get.find<AdminLiveCarsListController>();
 
   @override
   Widget build(BuildContext context) {
-    return _buildDesktopLayout();
-  }
-
-  // Desktop Layout with Grid
-  Widget _buildDesktopLayout() {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Grid Content
-            Expanded(
-              child: Obx(() {
-                if (getxController.isLoading.value) {
-                  return _buildDesktopLoadingGrid();
-                }
-                final carsList = carsListController.searchCar(
-                  carsList: getxController.filteredLiveBidsCarsList,
-                );
-                if (carsList.isEmpty) {
-                  return Center(
-                    child: EmptyDataWidget(
-                      icon: Icons.car_rental,
-                      message: 'No Live Auction Cars Found',
-                      iconSize: 80,
-                    ),
-                  );
-                } else {
-                  return _buildDesktopGrid(carsList);
-                }
-              }),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDesktopHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Live Auction Cars",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-            SizedBox(height: 8),
-            Obx(() => Text(
-                  "${getxController.filteredLiveBidsCarsList.length} cars in live auction",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                )),
-          ],
-        ),
-        // Search and Filter Buttons can be added here
-      ],
-    );
-  }
-
-  Widget _buildDesktopFilters() {
     return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF0D1117),
+            Color(0xFF161B22),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 45,
-              child: TextField(
-                // controller: getxController.searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search cars by model, brand, or VIN...',
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
+      child: Obx(() {
+        if (getxController.isLoading.value) {
+          return _buildLoadingGrid();
+        }
+        final carsList = carsListController.searchCar(
+          carsList: getxController.filteredLiveBidsCarsList,
+        );
+        if (carsList.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.car_rental, size: 80, color: Colors.white.withOpacity(0.2)),
+                const SizedBox(height: 16),
+                Text(
+                  'No Live Auction Cars Found',
+                  style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
                 ),
-                onChanged: (value) {
-                  // getxController.searchQuery.value = value.toLowerCase();
-                },
-              ),
+              ],
             ),
-          ),
-          SizedBox(width: 16),
-          OutlinedButton.icon(
-            icon: Icon(Icons.filter_alt_outlined, size: 18),
-            label: Text('Filters'),
-            onPressed: () {
-              // Add filter functionality
-            },
-          ),
-          SizedBox(width: 12),
-          OutlinedButton.icon(
-            icon: Icon(Icons.sort, size: 18),
-            label: Text('Sort'),
-            onPressed: () {
-              // Add sort functionality
-            },
-          ),
-        ],
-      ),
+          );
+        }
+        return _buildCarsGrid(carsList);
+      }),
     );
   }
 
-  Widget _buildDesktopGrid(List<CarsListModel> carsList) {
+  Widget _buildCarsGrid(List<CarsListModel> carsList) {
     return GridView.builder(
-      padding: EdgeInsets.zero,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
         crossAxisSpacing: 20,
         mainAxisSpacing: 20,
-        childAspectRatio: 0.9, // Adjust based on your content
+        childAspectRatio: 0.72,
       ),
       itemCount: carsList.length,
       itemBuilder: (context, index) {
         final car = carsList[index];
-        return _buildDesktopCarCard(car);
+        return _buildCarCard(car);
       },
     );
   }
 
-  Widget _buildDesktopCarCard(CarsListModel car) {
-    final String yearofManufacture =
+  Widget _buildCarCard(CarsListModel car) {
+    final String yearOfManufacture =
         '${GlobalFunctions.getFormattedDate(date: car.yearMonthOfManufacture, type: GlobalFunctions.year)} ';
 
     String maskRegistrationNumber(String? input) {
@@ -178,343 +87,301 @@ class AdminDesktopLiveCarsListPage extends StatelessWidget {
       return '$visible*****';
     }
 
-    Widget iconDetail(IconData icon, String value) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(icon, size: 20, color: AppColors.grey),
-          SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              value,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[700],
-                fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: () => _showRemoveCarDialog(car),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.08),
+                  Colors.white.withOpacity(0.04),
+                ],
               ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
-          ),
-        ],
-      );
-    }
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        onTap: () => _showRemoveCarBottomSheet(car),
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Car Image with Overlay
-            Stack(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child: CachedNetworkImage(
-                    imageUrl: car.imageUrl,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      height: 200,
-                      width: double.infinity,
-                      color: Colors.grey[300],
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.green,
-                          strokeWidth: 2,
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, error, stackTrace) {
-                      return Container(
-                        height: 200,
-                        width: double.infinity,
-                        color: Colors.grey[200],
-                        child: Icon(
-                          Icons.directions_car,
-                          size: 50,
-                          color: Colors.grey[400],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Auction Badge
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      'LIVE AUCTION',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Remaining Time
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Obx(() => Text(
-                          car.remainingAuctionTime.value,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )),
-                  ),
-                ),
-              ],
-            ),
-
-            // Car Details
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  // crossAxisAlignment: CrossAxisAlignment.start,
-                  // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Title and Basic Info
-                    Column(
+                // Car Image with overlays
+                _buildCarImage(car),
+                
+                // Car Details
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Car Title
                         Text(
-                          '$yearofManufacture${car.make} ${car.model} ${car.variant}',
-                          style: TextStyle(
+                          '$yearOfManufacture${car.make} ${car.model}',
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey[900],
+                            color: Colors.white,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          car.variant,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        
+                        const SizedBox(height: 12),
+                        
+                        // Specs chips
+                        _buildSpecsRow(car),
+                        
+                        const Spacer(),
+                        
+                        // Bottom row with price and action
+                        _buildBottomRow(car),
                       ],
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-                    // Car Specifications Grid
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(color: Colors.grey[200]!),
-                          bottom: BorderSide(color: Colors.grey[200]!),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          // First Row
-                          Row(
-                            children: [
-                              Expanded(
-                                child: iconDetail(
-                                  Icons.speed,
-                                  '${NumberFormat.decimalPattern('en_IN').format(car.odometerReadingInKms)} km',
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              // Expanded(
-                              //   child: iconDetail(
-                              //     Icons.local_gas_station,
-                              //     car.fuelType,
-                              //   ),
-                              // ),
-                              Expanded(
-                                child: iconDetail(
-                                  Icons.numbers,
-                                  car.appointmentId,
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: iconDetail(
-                                  Icons.settings,
-                                  car.commentsOnTransmission,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-
-                          // Second Row
-                          Row(
-                            children: [
-                              Expanded(
-                                child: iconDetail(
-                                  Icons.person,
-                                  car.ownerSerialNumber == 1
-                                      ? 'First Owner'
-                                      : '${car.ownerSerialNumber} Owners',
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: iconDetail(
-                                  Icons.receipt_long,
-                                  car.roadTaxValidity == 'LTT' ||
-                                          car.roadTaxValidity == 'OTT'
-                                      ? car.roadTaxValidity
-                                      : GlobalFunctions.getFormattedDate(
-                                            date: car.taxValidTill,
-                                            type: GlobalFunctions.monthYear,
-                                          ) ??
-                                          'N/A',
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: iconDetail(
-                                  Icons.science,
-                                  car.cubicCapacity != 0
-                                      ? '${car.cubicCapacity} cc'
-                                      : 'N/A',
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-
-                          // Third Row
-                          Row(
-                            children: [
-                              Expanded(
-                                child: iconDetail(
-                                  Icons.location_on,
-                                  car.inspectionLocation,
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: iconDetail(
-                                  Icons.directions_car_filled,
-                                  maskRegistrationNumber(
-                                      car.registrationNumber),
-                                ),
-                              ),
-                              Expanded(
-                                child: iconDetail(
-                                  Icons.apartment,
-                                  car.registeredRto,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
-
-                    // Bid Information and Action
-                    Container(
-                      padding: EdgeInsets.only(top: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Highest Bid',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              SizedBox(height: 2),
-                              Obx(() => Text(
-                                    'Rs. ${NumberFormat.decimalPattern('en_IN').format(car.highestBid.value)}/-',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: AppColors.green,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )),
-                            ],
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [AppColors.green, AppColors.blue],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.green.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.remove_circle_outline,
-                                  color: Colors.white,
-                                  size: 14,
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  'Remove Car',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+  Widget _buildCarImage(CarsListModel car) {
+    return Stack(
+      children: [
+        // Car Image
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: CachedNetworkImage(
+            imageUrl: car.imageUrl,
+            height: 180,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              height: 180,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.grey[900]!,
+                    Colors.grey[800]!,
                   ],
                 ),
+              ),
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.neonGreen,
+                  strokeWidth: 2,
+                ),
+              ),
+            ),
+            errorWidget: (context, error, stackTrace) {
+              return Container(
+                height: 180,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.grey[900]!, Colors.grey[800]!],
+                  ),
+                ),
+                child: Center(
+                  child: Icon(Icons.directions_car, size: 50, color: Colors.grey[600]),
+                ),
+              );
+            },
+          ),
+        ),
+        
+        // Gradient overlay
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.6),
+                ],
+              ),
+            ),
+          ),
+        ),
+        
+        // Live badge
+        Positioned(
+          top: 12,
+          left: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.redAccent,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.4),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.5),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Text(
+                  'LIVE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // Timer badge
+        Positioned(
+          top: 12,
+          right: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.timer_outlined, size: 14, color: AppColors.neonGreen),
+                const SizedBox(width: 4),
+                Obx(() => Text(
+                  car.remainingAuctionTime.value,
+                  style: TextStyle(
+                    color: AppColors.neonGreen,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )),
+              ],
+            ),
+          ),
+        ),
+        
+        // Bottom info overlay
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                _buildMiniChip(Icons.speed, '${NumberFormat.compact().format(car.odometerReadingInKms)} km'),
+                const SizedBox(width: 8),
+                _buildMiniChip(Icons.settings, car.commentsOnTransmission),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.white70),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpecsRow(CarsListModel car) {
+    return Row(
+      children: [
+        _buildSpecItem(Icons.local_gas_station, car.fuelType.isNotEmpty ? car.fuelType : 'N/A'),
+        const SizedBox(width: 12),
+        _buildSpecItem(Icons.person, car.ownerSerialNumber == 1 ? '1st Owner' : '${car.ownerSerialNumber} Owners'),
+        const SizedBox(width: 12),
+        _buildSpecItem(Icons.location_on, car.inspectionLocation),
+      ],
+    );
+  }
+
+  Widget _buildSpecItem(IconData icon, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: AppColors.neonGreen.withOpacity(0.8)),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.white.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -523,260 +390,338 @@ class AdminDesktopLiveCarsListPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDesktopLoadingGrid() {
+  Widget _buildBottomRow(CarsListModel car) {
+    return Container(
+      padding: const EdgeInsets.only(top: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Colors.white.withOpacity(0.06)),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Highest Bid
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Highest Bid',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.white.withOpacity(0.4),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Obx(() => Text(
+                '₹${NumberFormat.decimalPattern('en_IN').format(car.highestBid.value)}',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: AppColors.neonGreen,
+                  fontWeight: FontWeight.bold,
+                ),
+              )),
+            ],
+          ),
+          
+          // View Details button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.neonGreen, AppColors.neonGreen.withOpacity(0.8)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.neonGreen.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.visibility, size: 16, color: Colors.black),
+                SizedBox(width: 6),
+                Text(
+                  'View Details',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingGrid() {
     return GridView.builder(
-      padding: EdgeInsets.zero,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 20,
         mainAxisSpacing: 20,
-        childAspectRatio: 0.75,
+        childAspectRatio: 0.78,
       ),
       itemCount: 6,
       itemBuilder: (context, index) {
-        return Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image shimmer
-              ShimmerWidget(height: 180, borderRadius: 12),
-
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ShimmerWidget(height: 16, width: 120),
-                          SizedBox(height: 8),
-                          ShimmerWidget(height: 12, width: 80),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          ShimmerWidget(height: 12, width: 100),
-                          SizedBox(height: 4),
-                          ShimmerWidget(height: 12, width: 80),
-                        ],
-                      ),
-                      Container(
-                        padding: EdgeInsets.only(top: 8),
-                        child: Row(
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ShimmerWidget(height: 180, borderRadius: 24),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShimmerWidget(height: 20, width: 150),
+                        const SizedBox(height: 8),
+                        ShimmerWidget(height: 14, width: 100),
+                        const Spacer(),
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                ShimmerWidget(height: 10, width: 40),
-                                SizedBox(height: 4),
-                                ShimmerWidget(height: 14, width: 60),
+                                ShimmerWidget(height: 10, width: 60),
+                                const SizedBox(height: 4),
+                                ShimmerWidget(height: 18, width: 80),
                               ],
                             ),
-                            ShimmerWidget(height: 20, width: 60),
+                            ShimmerWidget(height: 36, width: 100, borderRadius: 12),
                           ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  // Bottom sheet
-  void _showRemoveCarBottomSheet(final CarsListModel car) {
-    showModalBottomSheet(
+  void _showRemoveCarDialog(final CarsListModel car) {
+    showDialog(
       context: Get.context!,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      constraints: BoxConstraints(maxWidth: Get.width * 0.5),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          expand: false,
-          maxChildSize: 0.9,
-          minChildSize: 0.3,
-          initialChildSize: 0.8,
-          builder: (_, scrollController) {
-            return StatefulBuilder(
-              builder: (context, setState) {
-                return _buildBottomSheetContent(car);
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // Bottom sheet content
-  Widget _buildBottomSheetContent(final CarsListModel car) {
-    return GetX<AdminLiveCarsListController>(
-      init: AdminLiveCarsListController(),
-      builder: (liveController) {
-        final canRemove = liveController.reasonText.value.trim().isNotEmpty &&
-            !liveController.isRemoveButtonLoading.value;
-
-        return Column(
-          children: [
-            const SizedBox(height: 20),
-            Center(
-              child: Container(
-                width: 48,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.black12,
-                  borderRadius: BorderRadius.circular(999),
-                ),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              width: 450,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1F2A).withOpacity(0.95),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
               ),
-            ),
-            const SizedBox(height: 14),
-
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: car.imageUrl,
-                      width: 64,
-                      height: 48,
-                      fit: BoxFit.cover,
-                      errorWidget: (_, __, ___) =>
-                          const Icon(Icons.directions_car),
+                  // Header with car image
+                  Container(
+                    height: 150,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        Text(
-                          '${car.make} ${car.model} ${car.variant}',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                          child: CachedNetworkImage(
+                            imageUrl: car.imageUrl,
+                            fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => Container(color: Colors.grey[900]),
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 16,
+                          left: 20,
+                          right: 20,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${car.make} ${car.model} ${car.variant}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Appointment ID: ${car.appointmentId}',
+                                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: GestureDetector(
+                            onTap: () => Get.back(),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.close, color: Colors.white, size: 18),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                  
+                  // Content
+                  GetX<AdminLiveCarsListController>(
+                    init: AdminLiveCarsListController(),
+                    builder: (liveController) {
+                      final canRemove = liveController.reasonText.value.trim().isNotEmpty &&
+                          !liveController.isRemoveButtonLoading.value;
 
-            const SizedBox(height: 15),
-
-            // Remove Car Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Divider(),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Reason of Removal',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: liveController.reasontextController,
-                    maxLines: 3,
-                    onChanged: (v) => liveController.reasonText.value = v,
-                    keyboardType: TextInputType.multiline,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter reason (required)',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AbsorbPointer(
-                          absorbing: !canRemove, // block taps when not allowed
-                          child: Opacity(
-                            opacity: canRemove ? 1 : 0.6,
-                            child: ButtonWidget(
-                              text: 'Remove Car',
-                              height: 40,
-                              fontSize: 12,
-                              isLoading: liveController.isRemoveButtonLoading,
-                              onTap: () async {
-                                final reason =
-                                    liveController.reasonText.value.trim();
-
-                                final ok = await Get.dialog<bool>(
-                                      AlertDialog(
-                                        title: const Text(
-                                          'Confirm removal',
+                      return Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Reason for Removal',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withOpacity(0.1)),
+                              ),
+                              child: TextField(
+                                controller: liveController.reasontextController,
+                                maxLines: 3,
+                                onChanged: (v) => liveController.reasonText.value = v,
+                                style: const TextStyle(color: Colors.white, fontSize: 14),
+                                decoration: InputDecoration(
+                                  hintText: 'Enter reason for removing this car...',
+                                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.all(16),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => Get.back(),
+                                    child: Container(
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.05),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'Cancel',
                                           style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white.withOpacity(0.7),
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                        content: Text('Reason:\n$reason'),
-                                        actions: [
-                                          ButtonWidget(
-                                            text: 'Cancel',
-                                            height: 35,
-                                            width: 80,
-                                            fontSize: 12,
-                                            backgroundColor: AppColors.grey,
-                                            isLoading: false.obs,
-                                            onTap: () =>
-                                                Get.back(result: false),
-                                          ),
-                                          ButtonWidget(
-                                            text: 'Remove',
-                                            height: 35,
-                                            width: 80,
-                                            fontSize: 12,
-                                            backgroundColor: AppColors.red,
-                                            isLoading: false.obs,
-                                            onTap: () => Get.back(result: true),
-                                          ),
-                                        ],
                                       ),
-                                    ) ??
-                                    false;
-                                if (!ok) return;
-
-                                // 👇 call your API / controller method
-                                await liveController.removeCar(carId: car.id);
-                              },
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: canRemove
+                                        ? () async {
+                                            await liveController.removeCar(carId: car.id);
+                                          }
+                                        : null,
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: canRemove ? Colors.redAccent : Colors.redAccent.withOpacity(0.3),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Center(
+                                        child: liveController.isRemoveButtonLoading.value
+                                            ? const SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  color: Colors.white,
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                            : const Text(
+                                                'Remove Car',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
+                          ],
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 8),
                 ],
               ),
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ),
     );
   }
 }

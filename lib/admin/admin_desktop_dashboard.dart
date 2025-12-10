@@ -13,6 +13,8 @@ import 'package:otobix_crm/admin/admin_profile_page.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
 import 'package:otobix_crm/utils/shared_prefs_helper.dart';
 import 'package:otobix_crm/widgets/glass_container.dart';
+import 'package:otobix_crm/admin/admin_desktop_cars_list_page.dart';
+import 'package:otobix_crm/admin/admin_cars_list_page.dart';
 
 class AdminDesktopDashboard extends StatefulWidget {
   const AdminDesktopDashboard({super.key});
@@ -28,6 +30,8 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
     ResponsiveLayout(mobile: AdminHome(), desktop: AdminDesktopHomePage()),
     ResponsiveLayout(
         mobile: AdminCustomersPage(), desktop: AdminDesktopCustomersPage()),
+    ResponsiveLayout(
+        mobile: AdminCarsListPage(), desktop: AdminDesktopCarsListPage()), // Cars
     ResponsiveLayout(
         mobile: AdminProfilePage(), desktop: AdminDesktopProfilePage()),
     ResponsiveLayout(mobile: AdminKamPage(), desktop: AdminDesktopKamPage()),
@@ -55,16 +59,22 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
       index: 2,
     ),
     NavigationItem(
+      icon: Icons.directions_car_outlined,
+      activeIcon: Icons.directions_car,
+      label: "Cars",
+      index: 3,
+    ),
+    NavigationItem(
       icon: Icons.person_outline,
       activeIcon: Icons.person,
       label: "Profile",
-      index: 3,
+      index: 4,
     ),
     NavigationItem(
       icon: Icons.manage_accounts_outlined,
       activeIcon: Icons.manage_accounts,
       label: "KAM Management",
-      index: 4,
+      index: 5,
     ),
   ];
 
