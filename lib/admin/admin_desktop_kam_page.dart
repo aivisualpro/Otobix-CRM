@@ -27,16 +27,6 @@ class AdminDesktopKamPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: const AssetImage("assets/images/dashboard_bg.jpg"),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.7),
-            BlendMode.darken,
-          ),
-        ),
-      ),
       child: ClipRect(
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),

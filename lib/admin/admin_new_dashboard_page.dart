@@ -98,36 +98,599 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     return const SizedBox.shrink(); // Title removed as per user request
   }
 
-  // ==================== INSPECTION TAB ====================
+  // ==================== INSPECTION TAB (REDESIGNED - REFERENCE UI) ====================
   Widget _buildInspectionTab() {
-    return Column(
-      children: [
-        // Top Stats Row
-        _buildStatsRow(),
-        const SizedBox(height: 32),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool isWide = constraints.maxWidth > 900;
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Row - Gauge Cards (3)
+              _buildGaugeCardsRow(isWide),
+              const SizedBox(height: 24),
 
-        // Main Content Area (Chart + Side Panel)
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 2,
-              child: Column(
+              // Second Row - Stats Card + Latest Inspected
+              if (isWide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _buildInspectionStatsCard()),
+                    const SizedBox(width: 20),
+                    Expanded(child: _buildLatestInspectedCard()),
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    _buildInspectionStatsCard(),
+                    const SizedBox(height: 20),
+                    _buildLatestInspectedCard(),
+                  ],
+                ),
+              const SizedBox(height: 24),
+
+              // Third Row - Recent Inspections + Top Inspectors
+              if (isWide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _buildRecentInspectionsCard()),
+                    const SizedBox(width: 20),
+                    Expanded(child: _buildTopInspectorsCardNew()),
+                  ],
+                )
+              else
+                Column(
+                  children: [
+                    _buildRecentInspectionsCard(),
+                    const SizedBox(height: 20),
+                    _buildTopInspectorsCardNew(),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // --- Top Gauge Cards Row ---
+  Widget _buildGaugeCardsRow(bool isWide) {
+    if (!isWide) {
+      return Column(
+        children: [
+          _buildGaugeCardNew("Pending Inspections", "24", 0.3, AppColors.neonGreen),
+          const SizedBox(height: 16),
+          _buildGaugeCardNew("Pass Rate", "87%", 0.87, AppColors.neonGreen),
+          const SizedBox(height: 16),
+          _buildGaugeCardNew("Completed This Week", "156", 0.78, AppColors.neonGreen),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: _buildGaugeCardNew("Pending Inspections", "24", 0.3, AppColors.neonGreen)),
+        const SizedBox(width: 20),
+        Expanded(child: _buildGaugeCardNew("Pass Rate", "87%", 0.87, AppColors.neonGreen)),
+        const SizedBox(width: 20),
+        Expanded(child: _buildGaugeCardNew("Completed This Week", "156", 0.78, AppColors.neonGreen)),
+      ],
+    );
+  }
+
+  Widget _buildGaugeCardNew(String title, String value, double progress, Color accentColor) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1F2E).withOpacity(0.4),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Header with title and arrow button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildMainChartSection(),
-                  const SizedBox(height: 32),
-                  _buildRecentOrdersTable(),
+                  Text(title, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, fontWeight: FontWeight.w500)),
+                  Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.arrow_outward, color: Colors.black, size: 18),
+                  ),
                 ],
               ),
+              const SizedBox(height: 24),
+              // Semi-circular gauge
+              SizedBox(
+                width: 160, height: 90,
+                child: CustomPaint(
+                  painter: SemiCircleGaugePainter(progress: progress, color: accentColor),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Value
+              Text(
+                value,
+                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- Inspection Stats Card (Car Image + Bar Chart) ---
+  Widget _buildInspectionStatsCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1F2E).withOpacity(0.4),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.neonGreen.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.insights, color: AppColors.neonGreen, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text("Inspection Stats", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.neonGreen.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      children: [
+                        Text("Weekly", style: TextStyle(color: AppColors.neonGreen, fontSize: 12, fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 4),
+                        Icon(Icons.keyboard_arrow_down, color: AppColors.neonGreen, size: 16),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Inspections completed and pending this week across all locations",
+                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+              // View All link
+              Row(
+                children: [
+                  Text("View All Reports", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 22, height: 22,
+                    decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
+                    child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Car Image + Bar Chart Row
+              Row(
+                children: [
+                  // Car Image
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        "lib/assets/images/car_silver.png",
+                        height: 120,
+                        fit: BoxFit.contain,
+                        errorBuilder: (ctx, err, st) => Container(
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Center(child: Icon(Icons.directions_car, color: Colors.white24, size: 50)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Bar Chart
+                  Expanded(
+                    child: ClipRect(
+                      child: SizedBox(
+                        height: 120,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            _buildChartBar("Mon", 0.5, false),
+                            _buildChartBar("Wed", 0.85, true, "45"),
+                            _buildChartBar("Fri", 0.6, false),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChartBar(String label, double height, bool isHighlighted, [String? value]) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isHighlighted && value != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            margin: const EdgeInsets.only(bottom: 3),
+            decoration: BoxDecoration(
+              color: AppColors.neonGreen,
+              borderRadius: BorderRadius.circular(4),
             ),
-            const SizedBox(width: 32),
-            Expanded(
-              flex: 1,
-              child: _buildRightSidePanel(),
-            ),
-          ],
+            child: Text(value, style: const TextStyle(fontSize: 8, color: Colors.black, fontWeight: FontWeight.bold)),
+          ),
+        Container(
+          width: 22,
+          height: 55 * height,
+          decoration: BoxDecoration(
+            color: isHighlighted ? AppColors.neonGreen : Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(5),
+            border: Border.all(color: isHighlighted ? AppColors.neonGreen : Colors.white.withOpacity(0.15)),
+          ),
+        ),
+        const SizedBox(height: 5),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          decoration: BoxDecoration(
+            color: isHighlighted ? AppColors.neonGreen : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(label, style: TextStyle(color: isHighlighted ? Colors.black : Colors.white54, fontSize: 8, fontWeight: FontWeight.w500)),
         ),
       ],
+    );
+  }
+
+  // --- Latest Inspected Card (Car Carousel Style) ---
+  Widget _buildLatestInspectedCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1F2E).withOpacity(0.4),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Latest Inspected", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      Text("View All", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 22, height: 22,
+                        decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
+                        child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Recently completed vehicle inspections with full reports available",
+                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+              ),
+              const SizedBox(height: 20),
+              // Car Carousel
+              Row(
+                children: [
+                  // Left Arrow
+                  Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    child: Icon(Icons.arrow_back_ios_new, color: Colors.white.withOpacity(0.4), size: 14),
+                  ),
+                  // Car Image
+                  Expanded(
+                    child: Image.asset(
+                      "lib/assets/images/car_silver.png",
+                      height: 120,
+                      fit: BoxFit.contain,
+                      errorBuilder: (ctx, err, st) => Container(
+                        height: 120,
+                        child: const Center(child: Icon(Icons.directions_car, color: Colors.white24, size: 50)),
+                      ),
+                    ),
+                  ),
+                  // Right Arrow
+                  Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: AppColors.neonGreen,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.arrow_forward_ios, color: Colors.black, size: 14),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Car Details Chips
+              Wrap(
+                spacing: 16,
+                runSpacing: 10,
+                children: [
+                  _buildCarInfoChip(Icons.directions_car, "Toyota Camry"),
+                  _buildCarInfoChip(Icons.calendar_today, "2022"),
+                  _buildCarInfoChip(Icons.confirmation_number, "WB 14 AB 1234"),
+                  _buildCarInfoChip(Icons.check_circle, "Passed"),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCarInfoChip(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: AppColors.neonGreen, size: 14),
+        const SizedBox(width: 6),
+        Text(text, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+      ],
+    );
+  }
+
+  // --- Recent Inspections Card (Table Style) ---
+  Widget _buildRecentInspectionsCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1F2E).withOpacity(0.4),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.fact_check, color: Colors.blueAccent, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text("Recent Inspections", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text("View All", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 22, height: 22,
+                        decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
+                        child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Inspection Rows
+              _buildInspectionRowNew("Toyota Camry", "INS-2024-001", "42", "14-12-2024", "Passed"),
+              const Divider(color: Colors.white10, height: 24),
+              _buildInspectionRowNew("Honda City", "INS-2024-002", "38", "14-12-2024", "Pending"),
+              const Divider(color: Colors.white10, height: 24),
+              _buildInspectionRowNew("Hyundai Creta", "INS-2024-003", "45", "13-12-2024", "Passed"),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInspectionRowNew(String car, String code, String minutes, String date, String status) {
+    Color statusColor = status == "Passed" ? AppColors.neonGreen : (status == "Failed" ? Colors.redAccent : Colors.orangeAccent);
+    return Row(
+      children: [
+        // Car Icon
+        Container(
+          width: 44, height: 44,
+          decoration: BoxDecoration(
+            color: Colors.redAccent.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.directions_car, color: Colors.redAccent, size: 22),
+        ),
+        const SizedBox(width: 14),
+        // Car Name
+        Expanded(
+          flex: 2,
+          child: Text(car, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+        ),
+        // Code
+        Expanded(
+          child: Text(code, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+        ),
+        // Minutes
+        Expanded(
+          child: Text("${minutes}m", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+        ),
+        // Date
+        Expanded(
+          child: Text(date, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+        ),
+        // Status
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(status, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+  }
+
+  // --- Top Inspectors Card (Avatar Circle Layout) ---
+  Widget _buildTopInspectorsCardNew() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1F2E).withOpacity(0.4),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Top 3 Inspectors", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      Text("View All", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 22, height: 22,
+                        decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
+                        child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              // Avatar Circles Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildInspectorAvatar("P", 50, Colors.grey.shade600),
+                  const SizedBox(width: 20),
+                  _buildInspectorAvatar("R", 70, AppColors.neonGreen, isMain: true),
+                  const SizedBox(width: 20),
+                  _buildInspectorAvatar("A", 50, Colors.grey.shade600),
+                ],
+              ),
+              const SizedBox(height: 32),
+              // Stats Box
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text("12+", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text("Inspectors", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInspectorAvatar(String initial, double size, Color borderColor, {bool isMain = false}) {
+    return Container(
+      width: size, height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFF2A3040),
+        border: Border.all(color: borderColor, width: isMain ? 3 : 2),
+        boxShadow: isMain ? [BoxShadow(color: borderColor.withOpacity(0.4), blurRadius: 20, spreadRadius: 2)] : [],
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: TextStyle(
+            color: isMain ? AppColors.neonGreen : Colors.white70,
+            fontWeight: FontWeight.bold,
+            fontSize: size * 0.4,
+          ),
+        ),
+      ),
     );
   }
 
@@ -1014,16 +1577,42 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
   // ==================== INSPECTION TAB WIDGETS ====================
 
   Widget _buildStatsRow() {
-    return Row(
-      children: [
-        Expanded(child: _buildStatCard("Total Revenue", "₹128.5K", "+12.5%", Icons.attach_money, [Colors.blueAccent, Colors.purpleAccent])),
-        const SizedBox(width: 20),
-        Expanded(child: _buildStatCard("Active Users", "1,245", "+4.2%", Icons.people_outline, [Colors.orangeAccent, Colors.pinkAccent])),
-        const SizedBox(width: 20),
-        Expanded(child: _buildStatCard("New Orders", "345", "+8.1%", Icons.shopping_bag_outlined, [AppColors.neonGreen, Colors.tealAccent])),
-        const SizedBox(width: 20),
-        Expanded(child: _buildStatCard("Pending Issues", "12", "-2.4%", Icons.warning_amber_rounded, [Colors.redAccent, Colors.orange], isNegative: true)),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 1000) {
+           return Column(
+             children: [
+               Row(
+                 children: [
+                   Expanded(child: _buildStatCard("Total Revenue", "₹128.5K", "+12.5%", Icons.attach_money, [Colors.blueAccent, Colors.purpleAccent])),
+                   const SizedBox(width: 20),
+                   Expanded(child: _buildStatCard("Active Users", "1,245", "+4.2%", Icons.people_outline, [Colors.orangeAccent, Colors.pinkAccent])),
+                 ],
+               ),
+               const SizedBox(height: 20),
+               Row(
+                 children: [
+                   Expanded(child: _buildStatCard("New Orders", "345", "+8.1%", Icons.shopping_bag_outlined, [AppColors.neonGreen, Colors.tealAccent])),
+                   const SizedBox(width: 20),
+                   Expanded(child: _buildStatCard("Pending Issues", "12", "-2.4%", Icons.warning_amber_rounded, [Colors.redAccent, Colors.orange], isNegative: true)),
+                 ],
+               ),
+             ],
+           );
+        }
+        
+        return Row(
+          children: [
+            Expanded(child: _buildStatCard("Total Revenue", "₹128.5K", "+12.5%", Icons.attach_money, [Colors.blueAccent, Colors.purpleAccent])),
+            const SizedBox(width: 20),
+            Expanded(child: _buildStatCard("Active Users", "1,245", "+4.2%", Icons.people_outline, [Colors.orangeAccent, Colors.pinkAccent])),
+            const SizedBox(width: 20),
+            Expanded(child: _buildStatCard("New Orders", "345", "+8.1%", Icons.shopping_bag_outlined, [AppColors.neonGreen, Colors.tealAccent])),
+            const SizedBox(width: 20),
+            Expanded(child: _buildStatCard("Pending Issues", "12", "-2.4%", Icons.warning_amber_rounded, [Colors.redAccent, Colors.orange], isNegative: true)),
+          ],
+        );
+      }
     );
   }
 
@@ -1580,4 +2169,110 @@ class SemiCircleGaugePainter extends CustomPainter {
   
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// Inspection Stat Data Class
+class _InspectionStat {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final String subtext;
+
+  _InspectionStat(this.label, this.value, this.icon, this.color, this.subtext);
+}
+
+// Inspection Chart Painter
+class InspectionChartPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    // Completed inspections line (green)
+    final completedPoints = [
+      Offset(0, size.height * 0.6),
+      Offset(size.width * 0.1, size.height * 0.5),
+      Offset(size.width * 0.2, size.height * 0.55),
+      Offset(size.width * 0.3, size.height * 0.35),
+      Offset(size.width * 0.4, size.height * 0.4),
+      Offset(size.width * 0.5, size.height * 0.25),
+      Offset(size.width * 0.6, size.height * 0.3),
+      Offset(size.width * 0.7, size.height * 0.15),
+      Offset(size.width * 0.8, size.height * 0.2),
+      Offset(size.width * 0.9, size.height * 0.1),
+      Offset(size.width, size.height * 0.18),
+    ];
+
+    // Failed inspections line (red)
+    final failedPoints = [
+      Offset(0, size.height * 0.85),
+      Offset(size.width * 0.1, size.height * 0.8),
+      Offset(size.width * 0.2, size.height * 0.82),
+      Offset(size.width * 0.3, size.height * 0.75),
+      Offset(size.width * 0.4, size.height * 0.78),
+      Offset(size.width * 0.5, size.height * 0.7),
+      Offset(size.width * 0.6, size.height * 0.72),
+      Offset(size.width * 0.7, size.height * 0.68),
+      Offset(size.width * 0.8, size.height * 0.7),
+      Offset(size.width * 0.9, size.height * 0.65),
+      Offset(size.width, size.height * 0.68),
+    ];
+
+    // Draw completed line
+    paint.shader = LinearGradient(
+      colors: [AppColors.neonGreen, AppColors.neonGreen.withOpacity(0.5)],
+    ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final completedPath = Path();
+    completedPath.moveTo(completedPoints[0].dx, completedPoints[0].dy);
+    for (int i = 0; i < completedPoints.length - 1; i++) {
+      final p0 = completedPoints[i];
+      final p1 = completedPoints[i + 1];
+      final controlX = (p0.dx + p1.dx) / 2;
+      completedPath.cubicTo(controlX, p0.dy, controlX, p1.dy, p1.dx, p1.dy);
+    }
+    canvas.drawPath(completedPath, paint);
+
+    // Fill under completed line
+    final fillPath = Path.from(completedPath);
+    fillPath.lineTo(size.width, size.height);
+    fillPath.lineTo(0, size.height);
+    fillPath.close();
+    
+    final fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [AppColors.neonGreen.withOpacity(0.2), AppColors.neonGreen.withOpacity(0.0)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawPath(fillPath, fillPaint);
+
+    // Draw failed line
+    paint.shader = LinearGradient(
+      colors: [Colors.redAccent, Colors.redAccent.withOpacity(0.5)],
+    ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final failedPath = Path();
+    failedPath.moveTo(failedPoints[0].dx, failedPoints[0].dy);
+    for (int i = 0; i < failedPoints.length - 1; i++) {
+      final p0 = failedPoints[i];
+      final p1 = failedPoints[i + 1];
+      final controlX = (p0.dx + p1.dx) / 2;
+      failedPath.cubicTo(controlX, p0.dy, controlX, p1.dy, p1.dx, p1.dy);
+    }
+    canvas.drawPath(failedPath, paint);
+
+    // Draw dots on completed line
+    for (int i = 0; i < completedPoints.length; i += 2) {
+      canvas.drawCircle(completedPoints[i], 4, Paint()..color = AppColors.neonGreen);
+      canvas.drawCircle(completedPoints[i], 2, Paint()..color = Colors.black);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

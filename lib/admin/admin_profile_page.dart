@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:otobix_crm/admin/admin_desktop_cars_list_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_edit_profile_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_settings_page.dart';
 import 'package:otobix_crm/admin/edit_account_page.dart';
 import 'package:otobix_crm/utils/app_colors.dart';
-import 'package:otobix_crm/admin/admin_cars_list_page.dart';
 import 'package:otobix_crm/admin/admin_settings_page.dart';
 import 'package:otobix_crm/admin/controller/admin_profile_controller.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
@@ -103,18 +101,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                   //     Get.to(DummyCarAddInUpcoming());
                   //   },
                   // ),
-                  ProfileOption(
-                    icon: Icons.car_rental,
-                    color: AppColors.green,
-                    title: "Cars List",
-                    description: "View all cars list.",
-                    onTap: () {
-                      Get.to(ResponsiveLayout(
-                        mobile: AdminCarsListPage(),
-                        desktop: AdminDesktopCarsListPage(),
-                      ));
-                    },
-                  ),
 
                   // ProfileOption(
                   //   icon: Icons.manage_accounts_outlined,
@@ -139,16 +125,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                         mobile: AdminSettingsPage(),
                         desktop: AdminDesktopSettingsPage(),
                       ));
-                    },
-                  ),
-
-                  ProfileOption(
-                    icon: Icons.logout,
-                    color: Colors.red,
-                    title: "Logout",
-                    description: "Sign out of your account securely.",
-                    onTap: () {
-                      adminProfileController.logout();
                     },
                   ),
                 ],

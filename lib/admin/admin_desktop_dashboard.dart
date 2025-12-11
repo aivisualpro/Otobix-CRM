@@ -10,6 +10,7 @@ import 'package:otobix_crm/utils/app_colors.dart';
 import 'package:otobix_crm/admin/admin_home.dart';
 import 'package:otobix_crm/admin/admin_new_dashboard_page.dart'; // New Dashboard Import
 import 'package:otobix_crm/admin/admin_profile_page.dart';
+import 'package:otobix_crm/admin/controller/admin_profile_controller.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
 import 'package:otobix_crm/utils/shared_prefs_helper.dart';
 import 'package:otobix_crm/widgets/glass_container.dart';
@@ -27,14 +28,14 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
 
   final List<Widget> pages = [
     ResponsiveLayout(mobile: AdminNewDashboardPage(), desktop: AdminNewDashboardPage()), // V1
-    ResponsiveLayout(mobile: AdminHome(), desktop: AdminDesktopHomePage()),
+    ResponsiveLayout(mobile: AdminDesktopHomePage(), desktop: AdminDesktopHomePage()),
     ResponsiveLayout(
-        mobile: AdminCustomersPage(), desktop: AdminDesktopCustomersPage()),
+        mobile: AdminDesktopCustomersPage(), desktop: AdminDesktopCustomersPage()),
     ResponsiveLayout(
-        mobile: AdminCarsListPage(), desktop: AdminDesktopCarsListPage()), // Cars
+        mobile: AdminDesktopCarsListPage(), desktop: AdminDesktopCarsListPage()), // Cars
     ResponsiveLayout(
-        mobile: AdminProfilePage(), desktop: AdminDesktopProfilePage()),
-    ResponsiveLayout(mobile: AdminKamPage(), desktop: AdminDesktopKamPage()),
+        mobile: AdminDesktopProfilePage(), desktop: AdminDesktopProfilePage()),
+    ResponsiveLayout(mobile: AdminDesktopKamPage(), desktop: AdminDesktopKamPage()),
   ];
 
   // Navigation items for desktop sidebar
@@ -86,13 +87,15 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
   // Desktop Layout with Sidebar
   Widget _buildDesktopLayout() {
     return Scaffold(
+      backgroundColor: Colors.black, // Prevent any white showing through
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: const AssetImage('lib/assets/images/dashboard_bg.jpg'),
-            fit: BoxFit.cover,
+            image: const AssetImage('lib/assets/images/dashboard_bg.png'),
+            fit: BoxFit.cover, // Cover full screen, may crop edges
+            alignment: Alignment.center,
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.6), // Darken the image slightly for text readability
+              Colors.black.withOpacity(0.5), // Slightly less darkening
               BlendMode.darken,
             ),
           ),
@@ -261,11 +264,14 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
       );
     });
   }
-  // User Section at Bottom of Sidebar
+  // User Section at Bottom of Sidebar with Logout
   Widget _buildUserSection() {
+    final AdminProfileController profileController = Get.put(AdminProfileController());
+    final RxBool isHovering = false.obs;
+    
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
         border: Border(
           top: BorderSide(color: AppColors.glassBorder),
         ),
@@ -274,74 +280,281 @@ class _AdminDesktopDashboardState extends State<AdminDesktopDashboard> {
           future: _getUserImageUrl(),
           builder: (context, snapshot) {
             final String userImageUrl = snapshot.data ?? "";
-            return Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
+            return Obx(() => MouseRegion(
+              onEnter: (_) => isHovering.value = true,
+              onExit: (_) => isHovering.value = false,
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => _showLogoutConfirmation(context, profileController),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.neonGreen.withOpacity(0.1),
-                    border: Border.all(color: AppColors.neonGreen, width: 1),
-                  ),
-                  child: userImageUrl.isNotEmpty
-                      ? ClipOval(
-                          child: Image.network(
-                            userImageUrl,
-                            fit: BoxFit.cover,
-                            width: 40,
-                            height: 40,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(Icons.person,
-                                  color: AppColors.neonGreen, size: 20);
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes !=
-                                          null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                ),
-                              );
-                            },
-                          ),
+                    gradient: isHovering.value 
+                      ? LinearGradient(
+                          colors: [
+                            Colors.redAccent.withOpacity(0.15),
+                            Colors.redAccent.withOpacity(0.05),
+                          ],
                         )
-                      : const Icon(Icons.person, color: AppColors.neonGreen, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                      : null,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isHovering.value 
+                        ? Colors.redAccent.withOpacity(0.4)
+                        : Colors.transparent,
+                    ),
+                    boxShadow: isHovering.value ? [
+                      BoxShadow(
+                        color: Colors.redAccent.withOpacity(0.15),
+                        blurRadius: 15,
+                        offset: const Offset(0, 4),
+                      ),
+                    ] : [],
+                  ),
+                  child: Row(
                     children: [
-                      const Text(
-                        "Admin User",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textWhite,
+                      // User Avatar with glow effect on hover
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isHovering.value 
+                            ? Colors.redAccent.withOpacity(0.15)
+                            : AppColors.neonGreen.withOpacity(0.1),
+                          border: Border.all(
+                            color: isHovering.value 
+                              ? Colors.redAccent
+                              : AppColors.neonGreen, 
+                            width: 1.5,
+                          ),
+                          boxShadow: isHovering.value ? [
+                            BoxShadow(
+                              color: Colors.redAccent.withOpacity(0.3),
+                              blurRadius: 12,
+                            ),
+                          ] : [],
+                        ),
+                        child: userImageUrl.isNotEmpty
+                            ? ClipOval(
+                                child: Image.network(
+                                  userImageUrl,
+                                  fit: BoxFit.cover,
+                                  width: 42,
+                                  height: 42,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      isHovering.value ? Icons.logout_rounded : Icons.person,
+                                      color: isHovering.value ? Colors.redAccent : AppColors.neonGreen, 
+                                      size: 20,
+                                    );
+                                  },
+                                ),
+                              )
+                            : Icon(
+                                isHovering.value ? Icons.logout_rounded : Icons.person, 
+                                color: isHovering.value ? Colors.redAccent : AppColors.neonGreen, 
+                                size: 20,
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 200),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: isHovering.value 
+                                  ? Colors.redAccent 
+                                  : AppColors.textWhite,
+                              ),
+                              child: Text(isHovering.value ? "Sign Out" : "Admin User"),
+                            ),
+                            const SizedBox(height: 2),
+                            AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 200),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isHovering.value 
+                                  ? Colors.redAccent.withOpacity(0.7) 
+                                  : AppColors.textGrey,
+                              ),
+                              child: Text(isHovering.value ? "Click to logout" : "Administrator"),
+                            ),
+                          ],
                         ),
                       ),
-                      const Text(
-                        "Administrator",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textGrey,
+                      // Animated logout icon
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 200),
+                        opacity: isHovering.value ? 1.0 : 0.0,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Colors.redAccent,
+                            size: 16,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                // IconButton(
-                //   icon: Icon(Icons.logout, color: Colors.grey[500], size: 20),
-                //   onPressed: () {
-                //     // Add logout functionality
-                //   },
-                // ),
-              ],
-            );
+              ),
+            ));
           }),
+    );
+  }
+
+  // Logout Confirmation Dialog
+  void _showLogoutConfirmation(BuildContext context, AdminProfileController controller) {
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: 380,
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E2430),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Logout Icon with glow
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.redAccent.withOpacity(0.2),
+                      Colors.redAccent.withOpacity(0.05),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.redAccent.withOpacity(0.3),
+                      blurRadius: 20,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.logout_rounded,
+                  color: Colors.redAccent,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "Sign Out",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Are you sure you want to logout?",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  // Cancel Button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "Cancel",
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Logout Button
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Get.back();
+                        controller.logout();
+                      },
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.redAccent, Colors.redAccent.withOpacity(0.8)],
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.redAccent.withOpacity(0.4),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.logout_rounded, color: Colors.white, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                "Logout",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

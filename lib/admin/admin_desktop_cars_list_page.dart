@@ -119,42 +119,8 @@ class AdminDesktopCarsListPage extends StatelessWidget {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title row
-          Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Car Inventory',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Manage auctions, bids, and car listings',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.5),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Tabs row with search inline
-          _buildTabsWithSearch(),
-        ],
-      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+      child: _buildTabsWithSearch(),
     );
   }
 
@@ -280,7 +246,7 @@ class AdminDesktopCarsListPage extends StatelessWidget {
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          width: 280,
+          width: MediaQuery.of(Get.context!).size.width < 1100 ? 180 : 280,
           height: 48,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.06),
@@ -308,47 +274,43 @@ class AdminDesktopCarsListPage extends StatelessWidget {
 
   Widget _buildMainContent() {
     return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(24),
-        topRight: Radius.circular(24),
-      ),
+      borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30), // Increased blur for cleaner glass
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.03),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.03), // Very subtle start
+                Colors.white.withOpacity(0.01), // Almost clear end
+              ],
             ),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withOpacity(0.1)), // Thinner, crisper border
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1), // Softer shadow
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: TabBarView(
             controller: tabBarController.tabController,
             children: [
               _buildTabContent(
-                ResponsiveLayout(
-                  mobile: AdminUpcomingCarsListPage(),
-                  desktop: AdminDesktopUpcomingCarsListPage(),
-                ),
+                AdminDesktopUpcomingCarsListPage(),
               ),
               _buildTabContent(
-                ResponsiveLayout(
-                  mobile: AdminLiveCarsListPage(),
-                  desktop: AdminDesktopLiveCarsListPage(),
-                ),
+                 AdminDesktopLiveCarsListPage(),
               ),
               _buildTabContent(
-                ResponsiveLayout(
-                  mobile: AdminAuctionCompletedCarsListPage(),
-                  desktop: AdminDesktopAuctionCompletedCarsListPage(),
-                ),
+                 AdminDesktopAuctionCompletedCarsListPage(),
               ),
               _buildTabContent(
-                ResponsiveLayout(
-                  mobile: AdminOtoBuyCarsListPage(),
-                  desktop: AdminDesktopOtoBuyCarsListPage(),
-                ),
+                 AdminDesktopOtoBuyCarsListPage(),
               ),
             ],
           ),

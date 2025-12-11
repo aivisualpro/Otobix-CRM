@@ -26,16 +26,6 @@ class AdminDesktopHomePage extends StatelessWidget {
   // Desktop Layout
   Widget _buildDesktopLayout() {
     return Container(
-       decoration: BoxDecoration(
-        image: DecorationImage(
-          image: const AssetImage("assets/images/dashboard_bg.jpg"),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.7), // Same darken overlay as dashboard
-            BlendMode.darken,
-          ),
-        ),
-      ),
       child: ClipRect( // Added ClipRect to prevent blur bleed to sidebar
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
@@ -47,24 +37,42 @@ class AdminDesktopHomePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header Section - Just tabs selector (Title removed)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Styled Tabs (Buy/Sell style from reference)
-                      _buildStyledTabSelector(),
-                      
-                      // Search and Filter
-                      Row(
-                        children: [
-                           SizedBox(
-                             width: 400,
-                             child: _buildDesktopSearchBar(),
-                           ),
-                           const SizedBox(width: 16),
-                           _buildDesktopFilterButton(),
-                        ],
-                      )
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth < 1000) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildStyledTabSelector(),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                 Expanded(child: _buildDesktopSearchBar()),
+                                 const SizedBox(width: 16),
+                                 _buildDesktopFilterButton(),
+                              ],
+                            ),
+                          ],
+                        );
+                      } else {
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildStyledTabSelector(),
+                            Row(
+                              children: [
+                                 SizedBox(
+                                   width: 400,
+                                   child: _buildDesktopSearchBar(),
+                                 ),
+                                 const SizedBox(width: 16),
+                                 _buildDesktopFilterButton(),
+                              ],
+                            )
+                          ],
+                        );
+                      }
+                    },
                   ),
 
                   const SizedBox(height: 32),

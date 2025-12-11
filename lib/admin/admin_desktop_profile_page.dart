@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:otobix_crm/admin/admin_desktop_cars_list_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_edit_profile_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_settings_page.dart';
 import 'package:otobix_crm/admin/edit_account_page.dart';
 import 'package:otobix_crm/utils/app_colors.dart';
-import 'package:otobix_crm/admin/admin_cars_list_page.dart';
 import 'package:otobix_crm/admin/admin_settings_page.dart';
 import 'package:otobix_crm/admin/controller/admin_profile_controller.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
@@ -27,23 +25,13 @@ class _AdminDesktopProfilePageState extends State<AdminDesktopProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-       decoration: BoxDecoration(
-        image: DecorationImage(
-          image: const AssetImage("assets/images/dashboard_bg.jpg"),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.7),
-            BlendMode.darken,
-          ),
-        ),
-      ),
       child: ClipRect(
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
           child: Scaffold(
             backgroundColor: Colors.transparent,
             body: Padding(
-              padding: const EdgeInsets.all(32.0),
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16.0 : 32.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -129,38 +117,40 @@ class _AdminDesktopProfilePageState extends State<AdminDesktopProfilePage> {
                   );
                 }),
                 const SizedBox(width: 24),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                     Obx(() => Text(
-                        adminProfileController.username.value,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      )),
-                      const SizedBox(height: 4),
-                      Obx(() => Text(
-                        adminProfileController.useremail.value,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white.withOpacity(0.7),
-                        ),
-                      )),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.neonGreen.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          "Administrator",
-                          style: TextStyle(color: AppColors.neonGreen, fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      )
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                       Obx(() => Text(
+                          adminProfileController.username.value,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        )),
+                        const SizedBox(height: 4),
+                        Obx(() => Text(
+                          adminProfileController.useremail.value,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        )),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.neonGreen.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            "Administrator",
+                            style: TextStyle(color: AppColors.neonGreen, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        )
+                    ],
+                  ),
                 )
             ],
           ),
@@ -171,10 +161,10 @@ class _AdminDesktopProfilePageState extends State<AdminDesktopProfilePage> {
 
   Widget _buildActionGrid() {
     return GridView.count(
-      crossAxisCount: 4, 
+      crossAxisCount: 2, 
       crossAxisSpacing: 20,
       mainAxisSpacing: 20,
-      childAspectRatio: 1.1,
+      childAspectRatio: 1.3,
       children: [
          _buildActionCard(
            title: "Edit Profile",
@@ -189,18 +179,6 @@ class _AdminDesktopProfilePageState extends State<AdminDesktopProfilePage> {
            },
          ),
          _buildActionCard(
-           title: "Cars List",
-           subtitle: "Manage inventory",
-           icon: Icons.directions_car_filled_outlined,
-           color: Colors.orangeAccent,
-           onTap: () {
-              Get.to(ResponsiveLayout(
-                  mobile: AdminCarsListPage(),
-                  desktop: AdminDesktopCarsListPage(),
-              ));
-           },
-         ),
-         _buildActionCard(
            title: "Settings",
            subtitle: "App preferences",
            icon: Icons.settings_outlined,
@@ -211,14 +189,6 @@ class _AdminDesktopProfilePageState extends State<AdminDesktopProfilePage> {
                   desktop: AdminDesktopSettingsPage(),
               ));
            },
-         ),
-         _buildActionCard(
-           title: "Logout",
-           subtitle: "Sign out securely",
-           icon: Icons.logout_outlined,
-           color: Colors.redAccent,
-           onTap: () => adminProfileController.logout(),
-           isDestructive: true,
          ),
       ],
     );

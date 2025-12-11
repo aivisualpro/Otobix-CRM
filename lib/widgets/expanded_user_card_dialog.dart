@@ -194,9 +194,12 @@ class ExpandedUserCardDialog extends StatelessWidget {
                 children: [
                   Icon(Icons.email_outlined, size: 16, color: Colors.white54),
                   const SizedBox(width: 6),
-                  Text(
-                    user.email,
-                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 16),
+                  Expanded(
+                    child: Text(
+                      user.email,
+                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 16),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -206,9 +209,12 @@ class ExpandedUserCardDialog extends StatelessWidget {
                 children: [
                   Icon(Icons.location_on_outlined, size: 16, color: Colors.blueAccent),
                   const SizedBox(width: 6),
-                  Text(
-                    user.location,
-                    style: const TextStyle(color: Colors.blueAccent, fontSize: 14, fontWeight: FontWeight.w500),
+                  Expanded(
+                    child: Text(
+                      user.location,
+                      style: const TextStyle(color: Colors.blueAccent, fontSize: 14, fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),

@@ -8,7 +8,9 @@ import 'package:otobix_crm/network/api_service.dart';
 import 'package:otobix_crm/utils/app_colors.dart';
 import 'package:otobix_crm/utils/app_urls.dart';
 import 'package:otobix_crm/utils/global_functions.dart';
+import 'package:otobix_crm/utils/hero_dialog_route.dart';
 import 'package:otobix_crm/widgets/button_widget.dart';
+import 'package:otobix_crm/widgets/expanded_car_card_dialog.dart';
 import 'package:otobix_crm/widgets/shimmer_widget.dart';
 import 'package:otobix_crm/widgets/toast_widget.dart';
 import 'package:otobix_crm/admin/controller/admin_upcoming_cars_list_controller.dart';
@@ -26,11 +28,7 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF0D1117), Color(0xFF161B22)],
-        ),
+        color: Colors.transparent,
       ),
       child: Obx(() {
         if (upcomingController.isLoading.value) {
@@ -57,66 +55,104 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
   }
 
   Widget _buildCarsGrid(List<CarsListModel> carsList) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 20,
-        mainAxisSpacing: 20,
-        childAspectRatio: 0.72,
-      ),
-      itemCount: carsList.length,
-      itemBuilder: (context, index) => _buildCarCard(carsList[index]),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        int crossAxisCount = 3;
+        if (constraints.maxWidth < 700) {
+          crossAxisCount = 1;
+        } else if (constraints.maxWidth < 900) {
+          crossAxisCount = 2;
+        }
+        
+        return GridView.builder(
+          padding: const EdgeInsets.all(8),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            childAspectRatio: 0.72,
+          ),
+          itemCount: carsList.length,
+          itemBuilder: (context, index) => _buildCarCard(carsList[index], context),
+        );
+      },
     );
   }
 
-  Widget _buildCarCard(CarsListModel car) {
+  Widget _buildCarCard(CarsListModel car, BuildContext context) {
     final String yearOfManufacture =
         '${GlobalFunctions.getFormattedDate(date: car.yearMonthOfManufacture, type: GlobalFunctions.year)} ';
+    final heroTag = 'upcoming-car-${car.id}';
 
     return GestureDetector(
-      onTap: () => _showAuctionDialog(car),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white.withOpacity(0.08), Colors.white.withOpacity(0.04)],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+      onTap: () {
+        Navigator.push(
+          context,
+          HeroDialogRoute(
+            builder: (context) => ExpandedCarCardDialog(
+              car: car,
+              heroTag: heroTag,
+              carType: 'upcoming',
+              onAction: () => _showAuctionDialog(car),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildCarImage(car),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '$yearOfManufacture${car.make} ${car.model}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(car.variant, style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 12),
-                        _buildSpecsRow(car),
-                        const Spacer(),
-                        _buildBottomRow(car),
-                      ],
-                    ),
+          ),
+        );
+      },
+      child: Hero(
+        tag: heroTag,
+        createRectTween: (begin, end) => MaterialRectCenterArcTween(begin: begin, end: end),
+        child: Material(
+          color: Colors.transparent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.white.withOpacity(0.04), Colors.white.withOpacity(0.01)],
                   ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white.withOpacity(0.12)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-              ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCarImage(car),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$yearOfManufacture${car.make} ${car.model}',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(car.variant, style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            const SizedBox(height: 12),
+                            _buildSpecsRow(car),
+                            const Spacer(),
+                            _buildBottomRow(car),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
