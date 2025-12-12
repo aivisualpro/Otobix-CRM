@@ -39,7 +39,6 @@ class AdminDesktopShellController extends GetxController {
     UrlHelper.setPath(_adminToPath(i));
   }
 
-  // -------- url mapping --------
   String _hubToPath(int i) {
     switch (i) {
       case 0:
@@ -79,13 +78,11 @@ class AdminDesktopShellController extends GetxController {
   }
 
   void _applyPath(String rawPath) {
-    // ✅ normalize: remove query & trailing slash
     var path = rawPath.split('?').first;
     if (path.length > 1 && path.endsWith('/')) {
       path = path.substring(0, path.length - 1);
     }
 
-    // ---------------- Hub routes ----------------
     if (path == '/admin') {
       inAdminPanel.value = false;
       hubIndex.value = 0;
@@ -117,7 +114,6 @@ class AdminDesktopShellController extends GetxController {
       return;
     }
 
-    // ---------------- Admin Panel routes ----------------
     if (path == '/admin/dashboard') {
       inAdminPanel.value = true;
       adminIndex.value = 0;
@@ -149,7 +145,6 @@ class AdminDesktopShellController extends GetxController {
       return;
     }
 
-    // ✅ fallback => always go to modules hub
     inAdminPanel.value = false;
     hubIndex.value = 0;
   }
