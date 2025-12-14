@@ -9,6 +9,8 @@ class AdminHomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Agar controller already registered hai, toh usko use karein.
+    // Agar nahi hai, toh Get.put se register karein (jo AdminDesktopDashboard mein ho chuka hai).
     final shell = Get.isRegistered<AdminDesktopShellController>()
         ? Get.find<AdminDesktopShellController>()
         : Get.put(AdminDesktopShellController(), permanent: true);
@@ -17,35 +19,28 @@ class AdminHomeView extends StatelessWidget {
       _HubTile(
         title: "Dashboard",
         icon: Icons.dashboard_customize_rounded,
-        onTap: () {
-          shell.selectHub(0);
-          shell.openAdminPanel();
-        },
+        // openAdminFromHome(0) call karega, jisse adminOrigin = "home" set hoga.
+        onTap: () => shell.openAdminFromHome(0),
       ),
       _HubTile(
-        title: "Leads",
-        icon: Icons.leaderboard_rounded,
-        onTap: () => shell.selectHub(1),
+        title: "Users",
+        icon: Icons.group_outlined,
+        // onTap: () => shell.openAdminFromHome(1),
       ),
       _HubTile(
-        title: "Inspection",
-        icon: Icons.fact_check_rounded,
-        onTap: () => shell.selectHub(2),
+        title: "Cars",
+        icon: Icons.directions_car_outlined,
+        // onTap: () => shell.openAdminFromHome(3),
       ),
       _HubTile(
-        title: "Watti",
-        icon: Icons.bolt_rounded,
-        onTap: () => shell.selectHub(3),
+        title: "Profile",
+        icon: Icons.person_outline,
+        // onTap: () => shell.openAdminFromHome(4),
       ),
       _HubTile(
-        title: "Price Discovery",
-        icon: Icons.price_change_rounded,
-        onTap: () => shell.selectHub(4),
-      ),
-      _HubTile(
-        title: "Auction",
-        icon: Icons.gavel_rounded,
-        onTap: () => shell.selectHub(5),
+        title: "KAM Management",
+        icon: Icons.manage_accounts_outlined,
+        // onTap: () => shell.openAdminFromHome(5),
       ),
     ];
 
@@ -79,12 +74,12 @@ class AdminHomeView extends StatelessWidget {
 class _HubTile {
   final String title;
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   _HubTile({
     required this.title,
     required this.icon,
-    required this.onTap,
+    this.onTap,
   });
 }
 

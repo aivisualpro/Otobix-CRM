@@ -4,57 +4,122 @@ import 'package:otobix_crm/utils/url_helper.dart';
 class AdminDesktopShellController extends GetxController {
   final RxBool inAdminPanel = false.obs;
   final RxInt hubIndex = 0.obs;
-  final RxInt adminIndex = 0.obs;
+  final RxInt adminIndex = (-1).obs;
+  final RxString adminOrigin = "".obs;
+
+  // ***************** LEADS PANEL STATE *****************
+  final RxBool inLeadsPanel = false.obs;
+  final RxInt leadsIndex = (-1).obs;
+  // *****************************************************
 
   @override
   void onInit() {
     super.onInit();
-
     _applyPath(UrlHelper.getPath());
     UrlHelper.onPop(_applyPath);
   }
 
-  // -------- actions --------
+  /* ---------------- HUB ---------------- */
+
   void selectHub(int i) {
     inAdminPanel.value = false;
+    inLeadsPanel.value = false; // ✅ Added
+    adminIndex.value = -1;
+    leadsIndex.value = -1; // ✅ Added
+    adminOrigin.value = "";
     hubIndex.value = i;
     UrlHelper.setPath(_hubToPath(i));
   }
 
+  void backToHome() {
+    selectHub(0);
+  }
+
+  /* ---------------- ADMIN ---------------- */
+
   void openAdminPanel() {
     inAdminPanel.value = true;
-    adminIndex.value = 0;
-    UrlHelper.setPath(_adminToPath(0));
+    inLeadsPanel.value = false; // ✅ Added
+    adminIndex.value = -1;
+    leadsIndex.value = -1; // ✅ Added
+    adminOrigin.value = "admin";
+    UrlHelper.setPath('/admin');
   }
 
-  void closeAdminPanel() {
-    inAdminPanel.value = false;
-    hubIndex.value = 0;
-    UrlHelper.setPath(_hubToPath(0));
-  }
-
-  void selectAdmin(int i) {
+  void openAdminFromHome(int pageIndex) {
     inAdminPanel.value = true;
-    adminIndex.value = i;
-    UrlHelper.setPath(_adminToPath(i));
+    inLeadsPanel.value = false; // ✅ Added
+    adminIndex.value = pageIndex;
+    leadsIndex.value = -1; // ✅ Added
+    adminOrigin.value = "home";
+    UrlHelper.setPath('${_adminToPath(pageIndex)}?origin=home');
   }
+
+  void selectAdmin(int i, {String? origin}) {
+    inAdminPanel.value = true;
+    inLeadsPanel.value = false; // ✅ Added
+    adminIndex.value = i;
+    leadsIndex.value = -1; // ✅ Added
+
+    adminOrigin.value = origin ?? adminOrigin.value;
+    if (adminOrigin.value.isEmpty) {
+      adminOrigin.value = "admin";
+    }
+
+    if (i == -1) {
+      UrlHelper.setPath('/admin');
+      return;
+    }
+
+    UrlHelper.setPath(
+      '${_adminToPath(i)}?origin=${adminOrigin.value}',
+    );
+  }
+
+  /* ***************** LEADS PANEL ***************** */
+
+  void openLeadsPanel() {
+    inLeadsPanel.value = true;
+    inAdminPanel.value = false;
+    leadsIndex.value = -1;
+    adminIndex.value = -1;
+    adminOrigin.value = "";
+    UrlHelper.setPath('/leads');
+  }
+
+  void selectLeads(int i) {
+    inLeadsPanel.value = true;
+    inAdminPanel.value = false;
+    leadsIndex.value = i;
+    adminIndex.value = -1;
+    adminOrigin.value = "";
+
+    if (i == -1) {
+      UrlHelper.setPath('/leads');
+      return;
+    }
+
+    UrlHelper.setPath(_leadsToPath(i));
+  }
+
+  /* ************************************************ */
+
+  /* ---------------- PATHS ---------------- */
 
   String _hubToPath(int i) {
     switch (i) {
       case 0:
-        return '/admin';
+        return '/home';
       case 1:
-        return '/admin/leads';
+        return '/leads';
       case 2:
-        return '/admin/inspection';
+        return '/inspection';
       case 3:
-        return '/admin/watti';
+        return '/price-discovery';
       case 4:
-        return '/admin/price-discovery';
-      case 5:
-        return '/admin/auction';
+        return '/auction';
       default:
-        return '/admin';
+        return '/home';
     }
   }
 
@@ -72,80 +137,103 @@ class AdminDesktopShellController extends GetxController {
         return '/admin/profile';
       case 5:
         return '/admin/kam-management';
+      case 6:
+        return '/admin/dropdowns';
+      case 7:
+        return '/admin/banners';
+      case 8:
+        return '/admin/settings';
       default:
-        return '/admin/dashboard';
+        return '/admin';
     }
   }
 
+  // ***************** LEADS PATHS *****************
+  String _leadsToPath(int i) {
+    switch (i) {
+      case 0:
+        return '/leads/telecalling';
+      case 1:
+        return '/leads/customer-request';
+      case 2:
+        return '/leads/allocation';
+      default:
+        return '/leads';
+    }
+  }
+  // ***********************************************
+
+  /* ---------------- URL RESTORE ---------------- */
+
   void _applyPath(String rawPath) {
-    var path = rawPath.split('?').first;
-    if (path.length > 1 && path.endsWith('/')) {
-      path = path.substring(0, path.length - 1);
-    }
-
-    if (path == '/admin') {
-      inAdminPanel.value = false;
-      hubIndex.value = 0;
-      return;
-    }
-    if (path == '/admin/leads') {
-      inAdminPanel.value = false;
-      hubIndex.value = 1;
-      return;
-    }
-    if (path == '/admin/inspection') {
-      inAdminPanel.value = false;
-      hubIndex.value = 2;
-      return;
-    }
-    if (path == '/admin/watti') {
-      inAdminPanel.value = false;
-      hubIndex.value = 3;
-      return;
-    }
-    if (path == '/admin/price-discovery') {
-      inAdminPanel.value = false;
-      hubIndex.value = 4;
-      return;
-    }
-    if (path == '/admin/auction') {
-      inAdminPanel.value = false;
-      hubIndex.value = 5;
-      return;
-    }
-
-    if (path == '/admin/dashboard') {
-      inAdminPanel.value = true;
-      adminIndex.value = 0;
-      return;
-    }
-    if (path == '/admin/users') {
-      inAdminPanel.value = true;
-      adminIndex.value = 1;
-      return;
-    }
-    if (path == '/admin/customers') {
-      inAdminPanel.value = true;
-      adminIndex.value = 2;
-      return;
-    }
-    if (path == '/admin/cars') {
-      inAdminPanel.value = true;
-      adminIndex.value = 3;
-      return;
-    }
-    if (path == '/admin/profile') {
-      inAdminPanel.value = true;
-      adminIndex.value = 4;
-      return;
-    }
-    if (path == '/admin/kam-management') {
-      inAdminPanel.value = true;
-      adminIndex.value = 5;
-      return;
-    }
+    final parts = rawPath.split('?');
+    final path = parts.first;
+    final query =
+        parts.length > 1 ? Uri.splitQueryString(parts[1]) : <String, String>{};
 
     inAdminPanel.value = false;
+    inLeadsPanel.value = false; // ✅ Added
     hubIndex.value = 0;
+    adminIndex.value = -1;
+    leadsIndex.value = -1; // ✅ Added
+    adminOrigin.value = "";
+
+    // ADMIN
+    if (path.startsWith('/admin')) {
+      inAdminPanel.value = true;
+
+      final adminRoutes = {
+        '/admin/dashboard': 0,
+        '/admin/users': 1,
+        '/admin/customers': 2,
+        '/admin/cars': 3,
+        '/admin/profile': 4,
+        '/admin/kam-management': 5,
+        '/admin/dropdowns': 6,
+        '/admin/banners': 7,
+        '/admin/settings': 8,
+      };
+
+      if (adminRoutes.containsKey(path)) {
+        adminIndex.value = adminRoutes[path]!;
+        adminOrigin.value = query['origin'] ?? "admin";
+      } else {
+        adminIndex.value = -1;
+        adminOrigin.value = "admin";
+      }
+      return;
+    }
+
+    // ***************** LEADS ROUTES *****************
+    if (path.startsWith('/leads')) {
+      inLeadsPanel.value = true;
+
+      final leadsRoutes = {
+        '/leads/telecalling': 0,
+        '/leads/customer-request': 1,
+        '/leads/allocation': 2,
+      };
+
+      if (leadsRoutes.containsKey(path)) {
+        leadsIndex.value = leadsRoutes[path]!;
+      } else {
+        leadsIndex.value = -1;
+      }
+      return;
+    }
+    // ************************************************
+
+    // HUB
+    final hubRoutes = {
+      '/home': 0,
+      '/leads': 1,
+      '/inspection': 2,
+      '/price-discovery': 3,
+      '/auction': 4,
+    };
+
+    if (hubRoutes.containsKey(path)) {
+      hubIndex.value = hubRoutes[path]!;
+    }
   }
 }

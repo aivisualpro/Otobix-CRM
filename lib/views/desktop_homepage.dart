@@ -94,12 +94,12 @@ class DesktopHomepage extends StatelessWidget {
               children: [
                 Image(image: AssetImage(AppImages.logo), width: 40, height: 40),
                 const SizedBox(width: 10),
-                // Text(
-                //   "Otobix CRM",
-                //   style: Theme.of(Get.context!).textTheme.titleMedium?.copyWith(
-                //         fontWeight: FontWeight.bold,
-                //       ),
-                // ),
+                Text(
+                  "Otobix CRM",
+                  style: Theme.of(Get.context!).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
                 const SizedBox(width: 100),
                 buildSearchBar(),
               ],

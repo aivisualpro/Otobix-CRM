@@ -9,12 +9,9 @@ import 'package:otobix_crm/admin/admin_desktop_kam_page.dart';
 import 'package:otobix_crm/admin/admin_new_dashboard_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_cars_list_page.dart';
 
-import 'package:otobix_crm/admin/controller/admin_profile_controller.dart';
 import 'package:otobix_crm/admin/controller/admin_shell_controller.dart';
-
 import 'package:otobix_crm/utils/app_colors.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
-import 'package:otobix_crm/utils/shared_prefs_helper.dart';
 import 'package:otobix_crm/widgets/glass_container.dart';
 
 class AdminDesktopDashboard extends StatelessWidget {
@@ -22,6 +19,7 @@ class AdminDesktopDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Agar controller already permanent: true ke saath register hai, toh Get.put() usko hi wapas karega.
     final shell = Get.put(AdminDesktopShellController(), permanent: true);
 
     return Scaffold(
@@ -38,29 +36,31 @@ class AdminDesktopDashboard extends StatelessWidget {
             ),
           ),
         ),
-        child: Row(
+        child: Column(
           children: [
-            _Sidebar(shell: shell),
+            Padding(
+              padding: const EdgeInsets.only(top: 24, left: 24, right: 24),
+              child: _TopTabsBar(shell: shell),
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.only(left: 24, right: 24),
+              child: _BreadcrumbBar(shell: shell),
+            ),
+            const SizedBox(height: 12),
             Expanded(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 24, right: 24),
-                    child: _BreadcrumbBar(shell: shell),
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 24, bottom: 24),
-                      child: Obx(() {
-                        if (!shell.inAdminPanel.value) {
-                          return _HubBody(shell: shell);
-                        }
-                        return _AdminPanelBody(shell: shell);
-                      }),
-                    ),
-                  ),
-                ],
+              child: Container(
+                margin: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+                child: Obx(() {
+                  // Hub body default hai jab tak inAdminPanel true na ho.
+                  // Agar aap chahte hain ki App start par AdminHomeView ho
+                  // aur inAdminPanel false ho (jaisa aapka code dikha raha hai),
+                  // toh yeh theek hai.
+                  if (!shell.inAdminPanel.value) {
+                    return _HubBody(shell: shell);
+                  }
+                  return _AdminPanelBody(shell: shell);
+                }),
               ),
             ),
           ],
@@ -70,620 +70,169 @@ class AdminDesktopDashboard extends StatelessWidget {
   }
 }
 
-/* ----------------------- HUB MODE BODY ----------------------- */
+/* ----------------------- TOP TABS BAR (FIXED) ----------------------- */
 
-class _HubBody extends StatelessWidget {
+class _TopTabsBar extends StatelessWidget {
   final AdminDesktopShellController shell;
-  const _HubBody({required this.shell});
-
-  String _hubLabel(int i) {
-    switch (i) {
-      case 0:
-        return "Dashboard";
-      case 1:
-        return "Leads";
-      case 2:
-        return "Inspection";
-      case 3:
-        return "Watti";
-      case 4:
-        return "Price Discovery";
-      case 5:
-        return "Auction";
-      default:
-        return "Dashboard";
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final idx = shell.hubIndex.value;
-
-      // ✅ Hub Dashboard = show GRID
-      if (idx == 0) return const AdminHomeView();
-
-      // ✅ Other hub pages (placeholder)
-      return Center(
-        child: GlassContainer(
-          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 26),
-          child: Text(
-            _hubLabel(idx),
-            style: const TextStyle(
-              color: AppColors.textWhite,
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      );
-    });
-  }
-}
-
-/* ----------------------- ADMIN PANEL BODY ----------------------- */
-
-class _AdminPanelBody extends StatelessWidget {
-  final AdminDesktopShellController shell;
-  const _AdminPanelBody({required this.shell});
-
-  @override
-  Widget build(BuildContext context) {
-    final pages = <Widget>[
-      ResponsiveLayout(
-        mobile: AdminNewDashboardPage(),
-        desktop: AdminNewDashboardPage(),
-      ),
-      ResponsiveLayout(
-        mobile: AdminDesktopHomePage(),
-        desktop: AdminDesktopHomePage(),
-      ),
-      ResponsiveLayout(
-        mobile: AdminDesktopCustomersPage(),
-        desktop: AdminDesktopCustomersPage(),
-      ),
-      ResponsiveLayout(
-        mobile: AdminDesktopCarsListPage(),
-        desktop: AdminDesktopCarsListPage(),
-      ),
-      ResponsiveLayout(
-        mobile: AdminDesktopProfilePage(),
-        desktop: AdminDesktopProfilePage(),
-      ),
-      ResponsiveLayout(
-        mobile: AdminDesktopKamPage(),
-        desktop: AdminDesktopKamPage(),
-      ),
-    ];
-
-    return Obx(() => pages[shell.adminIndex.value]);
-  }
-}
-
-/* ----------------------------- SIDEBAR ----------------------------- */
-
-class _Sidebar extends StatelessWidget {
-  final AdminDesktopShellController shell;
-  const _Sidebar({required this.shell});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 280,
-      margin: const EdgeInsets.all(24),
-      child: GlassContainer(
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: [
-            Expanded(
-              child: Obx(() {
-                final inAdmin = shell.inAdminPanel.value;
-
-                final hubItems = <NavigationItem>[
-                  NavigationItem(
-                    icon: Icons.dashboard_customize_outlined,
-                    activeIcon: Icons.dashboard_customize,
-                    label: "Dashboard",
-                    index: 0,
-                  ),
-                  NavigationItem(
-                    icon: Icons.leaderboard_outlined,
-                    activeIcon: Icons.leaderboard,
-                    label: "Leads",
-                    index: 1,
-                  ),
-                  NavigationItem(
-                    icon: Icons.fact_check_outlined,
-                    activeIcon: Icons.fact_check,
-                    label: "Inspection",
-                    index: 2,
-                  ),
-                  NavigationItem(
-                    icon: Icons.bolt_outlined,
-                    activeIcon: Icons.bolt,
-                    label: "Watti",
-                    index: 3,
-                  ),
-                  NavigationItem(
-                    icon: Icons.price_change_outlined,
-                    activeIcon: Icons.price_change,
-                    label: "Price Discovery",
-                    index: 4,
-                  ),
-                  NavigationItem(
-                    icon: Icons.gavel_outlined,
-                    activeIcon: Icons.gavel,
-                    label: "Auction",
-                    index: 5,
-                  ),
-                ];
-
-                final adminItems = <NavigationItem>[
-                  NavigationItem(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    activeIcon: Icons.arrow_back_ios_new_rounded,
-                    label: "Back to Modules",
-                    index: -1,
-                  ),
-                  NavigationItem(
-                    icon: Icons.dashboard_customize_outlined,
-                    activeIcon: Icons.dashboard_customize,
-                    label: "Dashboard",
-                    index: 0,
-                  ),
-                  NavigationItem(
-                    icon: Icons.grid_view_outlined,
-                    activeIcon: Icons.grid_view_rounded,
-                    label: "Users",
-                    index: 1,
-                  ),
-                  NavigationItem(
-                    icon: Icons.people_outline,
-                    activeIcon: Icons.people,
-                    label: "Customers",
-                    index: 2,
-                  ),
-                  NavigationItem(
-                    icon: Icons.directions_car_outlined,
-                    activeIcon: Icons.directions_car,
-                    label: "Cars",
-                    index: 3,
-                  ),
-                  NavigationItem(
-                    icon: Icons.person_outline,
-                    activeIcon: Icons.person,
-                    label: "Profile",
-                    index: 4,
-                  ),
-                  NavigationItem(
-                    icon: Icons.manage_accounts_outlined,
-                    activeIcon: Icons.manage_accounts,
-                    label: "KAM Management",
-                    index: 5,
-                  ),
-                ];
-
-                final items = inAdmin ? adminItems : hubItems;
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return _NavItem(shell: shell, item: item);
-                  },
-                );
-              }),
-            ),
-            _UserSection(),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final AdminDesktopShellController shell;
-  final NavigationItem item;
-  const _NavItem({required this.shell, required this.item});
+  const _TopTabsBar({required this.shell});
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final inAdmin = shell.inAdminPanel.value;
-      final selectedIndex =
-          inAdmin ? shell.adminIndex.value : shell.hubIndex.value;
+      final isAdminModulesHome = inAdmin && shell.adminIndex.value == -1;
+      final isOnAdminPage = inAdmin && shell.adminIndex.value != -1;
 
-      final isActive = (item.index == -1) ? false : selectedIndex == item.index;
+      // ***************** NEW LEADS LOGIC *****************
+      final inLeads = shell.inLeadsPanel.value;
+      final isLeadsModulesHome = inLeads && shell.leadsIndex.value == -1;
+      final isOnLeadsPage = inLeads && shell.leadsIndex.value != -1;
+      // ****************************************************
 
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              if (shell.inAdminPanel.value) {
-                if (item.index == -1) {
-                  shell.closeAdminPanel();
-                  return;
-                }
-                shell.selectAdmin(item.index);
-              } else {
-                // ✅ FIX: Hub drawer Dashboard should open Admin Panel
-                if (item.index == 0) {
-                  shell.selectHub(0);
-                  shell.openAdminPanel();
-                  return;
-                }
-                shell.selectHub(item.index);
-              }
-            },
-            borderRadius: BorderRadius.circular(12),
-            hoverColor: AppColors.glassWhite,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isActive
-                    ? AppColors.neonGreen.withOpacity(0.15)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isActive
-                      ? AppColors.neonGreen.withOpacity(0.5)
-                      : Colors.transparent,
+      // HUB TABS
+      final hubTabs = <_TopTab>[
+        _TopTab(
+          label: "Home",
+          icon: Icons.dashboard_customize_outlined,
+          isActive: !inAdmin && !inLeads && shell.hubIndex.value == 0,
+          onTap: () => shell.selectHub(0),
+        ),
+        _TopTab(
+          label: "Admin",
+          icon: Icons.admin_panel_settings_outlined,
+          isActive: isAdminModulesHome,
+          onTap: () => shell.openAdminPanel(),
+        ),
+        // ***************** LEADS MODULE HOME BUTTON *****************
+        _TopTab(
+          label: "Leads",
+          icon: Icons.leaderboard_outlined,
+          isActive: isLeadsModulesHome,
+          onTap: () => shell.openLeadsPanel(),
+        ),
+        // *************************************************************
+        _TopTab(
+          label: "Inspection",
+          icon: Icons.fact_check_outlined,
+          isActive: !inAdmin && !inLeads && shell.hubIndex.value == 2,
+          onTap: () => shell.selectHub(2),
+        ),
+        _TopTab(
+          label: "Price Discovery",
+          icon: Icons.price_change_outlined,
+          isActive: !inAdmin && !inLeads && shell.hubIndex.value == 3,
+          onTap: () => shell.selectHub(3),
+        ),
+        _TopTab(
+          label: "Auction",
+          icon: Icons.gavel_outlined,
+          isActive: !inAdmin && !inLeads && shell.hubIndex.value == 4,
+          onTap: () => shell.selectHub(4),
+        ),
+      ];
+
+      // ADMIN TABS (FIXED: Admin tab sirf tabhi aayega jab origin "admin" ho)
+      final adminTabs = <_TopTab>[
+        _TopTab(
+          label: "Dashboard",
+          icon: Icons.dashboard_customize_outlined,
+          isActive: shell.adminIndex.value == 0,
+          onTap: () => shell.selectAdmin(0),
+        ),
+        _TopTab(
+          label: "Users",
+          icon: Icons.grid_view_outlined,
+          isActive: shell.adminIndex.value == 1,
+          onTap: () => shell.selectAdmin(1),
+        ),
+        _TopTab(
+          label: "Customers",
+          icon: Icons.people_outline,
+          isActive: shell.adminIndex.value == 2,
+          onTap: () => shell.selectAdmin(2),
+        ),
+        _TopTab(
+          label: "Cars",
+          icon: Icons.directions_car_outlined,
+          isActive: shell.adminIndex.value == 3,
+          onTap: () => shell.selectAdmin(3),
+        ),
+        _TopTab(
+          label: "Profile",
+          icon: Icons.person_outline,
+          isActive: shell.adminIndex.value == 4,
+          onTap: () => shell.selectAdmin(4),
+        ),
+        _TopTab(
+          label: "KAM",
+          icon: Icons.manage_accounts_outlined,
+          isActive: shell.adminIndex.value == 5,
+          onTap: () => shell.selectAdmin(5),
+        ),
+      ];
+
+      // ***************** NEW LEADS TABS *****************
+      final leadsTabs = <_TopTab>[
+        _TopTab(
+          label: "Telecalling",
+          icon: Icons.call_outlined,
+          isActive: shell.leadsIndex.value == 0,
+          onTap: () => shell.selectLeads(0),
+        ),
+        _TopTab(
+          label: "Customer Request",
+          icon: Icons.request_page_outlined,
+          isActive: shell.leadsIndex.value == 1,
+          onTap: () => shell.selectLeads(1),
+        ),
+        _TopTab(
+          label: "Allocation",
+          icon: Icons.assignment_turned_in_outlined,
+          isActive: shell.leadsIndex.value == 2,
+          onTap: () => shell.selectLeads(2),
+        ),
+      ];
+      // ****************************************************
+
+      // Agar kisi admin page par hain (i != -1) toh adminTabs dikhao,
+      // agar kisi leads page par hain toh leadsTabs dikhao,
+      // warna HubTabs dikhao (jismein Admin modules home ka button bhi hai).
+      final List<_TopTab> tabs;
+      if (isOnAdminPage) {
+        tabs = adminTabs;
+      } else if (isOnLeadsPage) {
+        tabs = leadsTabs;
+      } else {
+        tabs = hubTabs;
+      }
+
+      return GlassContainer(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            const Icon(Icons.apps_rounded, color: AppColors.textGrey, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: tabs
+                      .map((t) => Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: _TopTabChip(tab: t),
+                          ))
+                      .toList(),
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    isActive ? item.activeIcon : item.icon,
-                    color: isActive ? AppColors.neonGreen : AppColors.textGrey,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      item.label,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color:
-                            isActive ? AppColors.neonGreen : AppColors.textGrey,
-                        fontWeight:
-                            isActive ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
-          ),
+          ],
         ),
       );
     });
   }
 }
 
-/* -------------------------- USER SECTION -------------------------- */
-
-class _UserSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final AdminProfileController profileController =
-        Get.put(AdminProfileController());
-    final RxBool isHovering = false.obs;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: AppColors.glassBorder)),
-      ),
-      child: FutureBuilder(
-        future: _getUserImageUrl(),
-        builder: (context, snapshot) {
-          final String userImageUrl = snapshot.data ?? "";
-          return Obx(() => MouseRegion(
-                onEnter: (_) => isHovering.value = true,
-                onExit: (_) => isHovering.value = false,
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: () =>
-                      _showLogoutConfirmation(context, profileController),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      gradient: isHovering.value
-                          ? LinearGradient(
-                              colors: [
-                                Colors.redAccent.withOpacity(0.15),
-                                Colors.redAccent.withOpacity(0.05),
-                              ],
-                            )
-                          : null,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isHovering.value
-                            ? Colors.redAccent.withOpacity(0.4)
-                            : Colors.transparent,
-                      ),
-                      boxShadow: isHovering.value
-                          ? [
-                              BoxShadow(
-                                color: Colors.redAccent.withOpacity(0.15),
-                                blurRadius: 15,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : [],
-                    ),
-                    child: Row(
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isHovering.value
-                                ? Colors.redAccent.withOpacity(0.15)
-                                : AppColors.neonGreen.withOpacity(0.1),
-                            border: Border.all(
-                              color: isHovering.value
-                                  ? Colors.redAccent
-                                  : AppColors.neonGreen,
-                              width: 1.5,
-                            ),
-                            boxShadow: isHovering.value
-                                ? [
-                                    BoxShadow(
-                                      color: Colors.redAccent.withOpacity(0.3),
-                                      blurRadius: 12,
-                                    ),
-                                  ]
-                                : [],
-                          ),
-                          child: userImageUrl.isNotEmpty
-                              ? ClipOval(
-                                  child: Image.network(
-                                    userImageUrl,
-                                    fit: BoxFit.cover,
-                                    width: 42,
-                                    height: 42,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Icon(
-                                        isHovering.value
-                                            ? Icons.logout_rounded
-                                            : Icons.person,
-                                        color: isHovering.value
-                                            ? Colors.redAccent
-                                            : AppColors.neonGreen,
-                                        size: 20,
-                                      );
-                                    },
-                                  ),
-                                )
-                              : Icon(
-                                  isHovering.value
-                                      ? Icons.logout_rounded
-                                      : Icons.person,
-                                  color: isHovering.value
-                                      ? Colors.redAccent
-                                      : AppColors.neonGreen,
-                                  size: 20,
-                                ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AnimatedDefaultTextStyle(
-                                duration: const Duration(milliseconds: 200),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  color: isHovering.value
-                                      ? Colors.redAccent
-                                      : AppColors.textWhite,
-                                ),
-                                child: Text(isHovering.value
-                                    ? "Sign Out"
-                                    : "Admin User"),
-                              ),
-                              const SizedBox(height: 2),
-                              AnimatedDefaultTextStyle(
-                                duration: const Duration(milliseconds: 200),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isHovering.value
-                                      ? Colors.redAccent.withOpacity(0.7)
-                                      : AppColors.textGrey,
-                                ),
-                                child: Text(isHovering.value
-                                    ? "Click to logout"
-                                    : "Administrator"),
-                              ),
-                            ],
-                          ),
-                        ),
-                        AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: isHovering.value ? 1.0 : 0.0,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.redAccent.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_forward_rounded,
-                              color: Colors.redAccent,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ));
-        },
-      ),
-    );
-  }
-
-  Future<String> _getUserImageUrl() async {
-    return await SharedPrefsHelper.getString(
-            SharedPrefsHelper.userImageUrlKey) ??
-        "";
-  }
-
-  void _showLogoutConfirmation(
-      BuildContext context, AdminProfileController controller) {
-    Get.dialog(
-      Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: 380,
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E2430),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.4),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.redAccent.withOpacity(0.2),
-                      Colors.redAccent.withOpacity(0.05),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.redAccent.withOpacity(0.3),
-                      blurRadius: 20,
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.logout_rounded,
-                    color: Colors.redAccent, size: 36),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                "Sign Out",
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Are you sure you want to logout?",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 14, color: Colors.white.withOpacity(0.6)),
-              ),
-              const SizedBox(height: 28),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => Get.back(),
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(14),
-                          border:
-                              Border.all(color: Colors.white.withOpacity(0.1)),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "Cancel",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        Get.back();
-                        controller.logout();
-                      },
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.redAccent,
-                              Colors.redAccent.withOpacity(0.8)
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.redAccent.withOpacity(0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.logout_rounded,
-                                  color: Colors.white, size: 18),
-                              SizedBox(width: 8),
-                              Text("Logout",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/* ----------------------- BREADCRUMBS ----------------------- */
-
-class _Crumb {
-  final String label;
-  final VoidCallback? onTap;
-  const _Crumb(this.label, this.onTap);
-}
+/* ----------------------- BREADCRUMBS BAR ----------------------- */
 
 class _BreadcrumbBar extends StatelessWidget {
   final AdminDesktopShellController shell;
@@ -692,24 +241,41 @@ class _BreadcrumbBar extends StatelessWidget {
   String _hubLabel(int i) {
     switch (i) {
       case 0:
-        return "Dashboard";
+        return "Home";
       case 1:
         return "Leads";
       case 2:
         return "Inspection";
       case 3:
-        return "Watti";
-      case 4:
         return "Price Discovery";
-      case 5:
+      case 4:
         return "Auction";
       default:
-        return "Dashboard";
+        return "Home";
     }
   }
 
+  // ***************** NEW LEADS LABEL METHOD *****************
+  String _leadsLabel(int i) {
+    switch (i) {
+      case -1:
+        return "Leads";
+      case 0:
+        return "Telecalling";
+      case 1:
+        return "Customer Request";
+      case 2:
+        return "Allocation";
+      default:
+        return "Leads";
+    }
+  }
+  // ****************************************************
+
   String _adminLabel(int i) {
     switch (i) {
+      case -1:
+        return "Admin";
       case 0:
         return "Dashboard";
       case 1:
@@ -722,32 +288,66 @@ class _BreadcrumbBar extends StatelessWidget {
         return "Profile";
       case 5:
         return "KAM Management";
+      case 6:
+        return "Dropdowns";
+      case 7:
+        return "Banners";
+      case 8:
+        return "Settings";
       default:
-        return "Dashboard";
+        return "Admin";
     }
   }
 
-  // ✅ FIXED: Hub Dashboard should show ONLY "Admin"
   List<_Crumb> _buildCrumbs() {
-    if (!shell.inAdminPanel.value) {
-      final hub = shell.hubIndex.value;
+    // ***************** LEADS CRUMBS *****************
+    if (shell.inLeadsPanel.value) {
+      final leads = shell.leadsIndex.value;
 
-      if (hub == 0) {
+      // Leads modules grid: sirf "Leads"
+      if (leads == -1) {
         return [
-          _Crumb("Admin", () => shell.selectHub(0)),
+          _Crumb("Leads", null),
         ];
       }
 
+      // Leads sub-page: Leads > Sub-Page
       return [
-        _Crumb("Admin", () => shell.selectHub(0)),
-        _Crumb(_hubLabel(hub), () => shell.selectHub(hub)),
+        _Crumb("Leads", shell.openLeadsPanel),
+        _Crumb(_leadsLabel(leads), null),
+      ];
+    }
+    // ****************************************************
+
+    // HUB: sirf current label
+    if (!shell.inAdminPanel.value) {
+      return [
+        _Crumb(_hubLabel(shell.hubIndex.value), null),
       ];
     }
 
     final admin = shell.adminIndex.value;
+
+    // Admin modules grid: sirf "Admin"
+    if (admin == -1) {
+      return [
+        _Crumb("Admin", null),
+      ];
+    }
+
+    // Admin page:
+    // origin=admin => Admin > Page
+    // origin=home  => Home > Page
+    if (shell.adminOrigin.value == "home") {
+      return [
+        _Crumb("Home", shell.backToHome),
+        _Crumb(_adminLabel(admin), null),
+      ];
+    }
+
     return [
-      _Crumb("Admin", shell.closeAdminPanel),
-      _Crumb(_adminLabel(admin), () => shell.selectAdmin(admin)),
+      _Crumb("Admin", shell.openAdminPanel),
+      _Crumb(_adminLabel(admin), null),
     ];
   }
 
@@ -757,7 +357,7 @@ class _BreadcrumbBar extends StatelessWidget {
       final crumbs = _buildCrumbs();
 
       return GlassContainer(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         child: Row(
           children: [
             const Icon(Icons.account_tree_rounded,
@@ -811,18 +411,417 @@ class _BreadcrumbBar extends StatelessWidget {
   }
 }
 
-/* ----------------------- NAV ITEM MODEL ----------------------- */
-
-class NavigationItem {
-  final IconData icon;
-  final IconData activeIcon;
+class _Crumb {
   final String label;
-  final int index;
+  final VoidCallback? onTap;
+  const _Crumb(this.label, this.onTap);
+}
 
-  NavigationItem({
-    required this.icon,
-    required this.activeIcon,
+/* ----------------------- TOP TAB MODEL + CHIP ----------------------- */
+
+class _TopTab {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isActive;
+
+  _TopTab({
     required this.label,
-    required this.index,
+    required this.icon,
+    required this.onTap,
+    required this.isActive,
   });
+}
+
+class _TopTabChip extends StatelessWidget {
+  final _TopTab tab;
+  const _TopTabChip({required this.tab});
+
+  @override
+  Widget build(BuildContext context) {
+    final active = tab.isActive;
+
+    return InkWell(
+      onTap: tab.onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: active
+              ? AppColors.neonGreen.withOpacity(0.18)
+              : Colors.white.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: active
+                ? AppColors.neonGreen.withOpacity(0.55)
+                : Colors.white.withOpacity(0.10),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              tab.icon,
+              size: 18,
+              color: active ? AppColors.neonGreen : AppColors.textGrey,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              tab.label,
+              style: TextStyle(
+                color: active ? AppColors.neonGreen : AppColors.textGrey,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                fontSize: 12.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/* ----------------------- HUB MODE BODY ----------------------- */
+
+class _HubBody extends StatelessWidget {
+  final AdminDesktopShellController shell;
+  const _HubBody({required this.shell});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final idx = shell.hubIndex.value;
+
+      // ***************** CHECK IF LEADS PANEL IS ACTIVE *****************
+      if (shell.inLeadsPanel.value) return _LeadsPanelBody(shell: shell);
+      // ******************************************************************
+
+      if (idx == 0) return const AdminHomeView();
+
+      return Center(
+        child: GlassContainer(
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 26),
+          child: Text(
+            _hubLabel(idx),
+            style: const TextStyle(
+              color: AppColors.textWhite,
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  String _hubLabel(int i) {
+    switch (i) {
+      case 0:
+        return "Home";
+      case 1:
+        return "Leads";
+      case 2:
+        return "Inspection";
+      case 3:
+        return "Price Discovery";
+      case 4:
+        return "Auction";
+      default:
+        return "Home";
+    }
+  }
+}
+
+/* ***************** LEADS PANEL BODY (NEW) ***************** */
+
+class _LeadsPanelBody extends StatelessWidget {
+  final AdminDesktopShellController shell;
+  const _LeadsPanelBody({required this.shell});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final idx = shell.leadsIndex.value;
+
+      if (idx == -1) return LeadsPanelHomeView(shell: shell);
+
+      // Leads sub-pages ki mapping
+      final pages = <int, Widget>{
+        0: const _LeadsPlaceholderPage(title: "Telecalling Page"),
+        1: const _LeadsPlaceholderPage(title: "Customer Request Page"),
+        2: const _LeadsPlaceholderPage(title: "Allocation Page"),
+      };
+
+      return pages[idx] ?? LeadsPanelHomeView(shell: shell);
+    });
+  }
+}
+
+/* ***************** LEADS MODULES GRID VIEW (NEW) ***************** */
+
+class LeadsPanelHomeView extends StatelessWidget {
+  final AdminDesktopShellController shell;
+  const LeadsPanelHomeView({super.key, required this.shell});
+
+  @override
+  Widget build(BuildContext context) {
+    final tiles = <_HubTile>[
+      _HubTile(
+        title: "Telecalling",
+        icon: Icons.call_outlined,
+        onTap: () => shell.selectLeads(0),
+      ),
+      _HubTile(
+        title: "Customer Request",
+        icon: Icons.request_page_outlined,
+        onTap: () => shell.selectLeads(1),
+      ),
+      _HubTile(
+        title: "Allocation",
+        icon: Icons.assignment_turned_in_outlined,
+        onTap: () => shell.selectLeads(2),
+      ),
+    ];
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1050),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final w = c.maxWidth;
+            final cross = w >= 900 ? 3 : (w >= 600 ? 2 : 1);
+
+            return GridView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.all(12),
+              itemCount: tiles.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cross,
+                crossAxisSpacing: 18,
+                mainAxisSpacing: 18,
+                childAspectRatio: 2.3,
+              ),
+              itemBuilder: (context, i) => _HubTileCard(tile: tiles[i]),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/* ***************** NEW LEADS PLACEHOLDER PAGE ***************** */
+class _LeadsPlaceholderPage extends StatelessWidget {
+  final String title;
+  const _LeadsPlaceholderPage({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GlassContainer(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 26),
+        child: Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textWhite,
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+// **************************************************************
+
+/* ----------------------- ADMIN PANEL BODY ----------------------- */
+
+class _AdminPanelBody extends StatelessWidget {
+  final AdminDesktopShellController shell;
+  const _AdminPanelBody({required this.shell});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final idx = shell.adminIndex.value;
+
+      if (idx == -1) return AdminPanelHomeView(shell: shell);
+
+      final pages = <int, Widget>{
+        0: ResponsiveLayout(
+          mobile: AdminNewDashboardPage(),
+          desktop: AdminNewDashboardPage(),
+        ),
+        1: ResponsiveLayout(
+          mobile: AdminDesktopHomePage(),
+          desktop: AdminDesktopHomePage(),
+        ),
+        2: ResponsiveLayout(
+          mobile: AdminDesktopCustomersPage(),
+          desktop: AdminDesktopCustomersPage(),
+        ),
+        3: ResponsiveLayout(
+          mobile: AdminDesktopCarsListPage(),
+          desktop: AdminDesktopCarsListPage(),
+        ),
+        4: ResponsiveLayout(
+          mobile: AdminDesktopProfilePage(),
+          desktop: AdminDesktopProfilePage(),
+        ),
+        5: ResponsiveLayout(
+          mobile: AdminDesktopKamPage(),
+          desktop: AdminDesktopKamPage(),
+        ),
+        6: const _AdminPlaceholderPage(title: "Dropdowns"),
+        7: const _AdminPlaceholderPage(title: "Banners"),
+        8: const _AdminPlaceholderPage(title: "Settings"),
+      };
+
+      return pages[idx] ?? AdminPanelHomeView(shell: shell);
+    });
+  }
+}
+
+/* ----------------------- ADMIN MODULES GRID VIEW ----------------------- */
+
+class AdminPanelHomeView extends StatelessWidget {
+  final AdminDesktopShellController shell;
+  const AdminPanelHomeView({super.key, required this.shell});
+
+  @override
+  Widget build(BuildContext context) {
+    final tiles = <_HubTile>[
+      _HubTile(
+        title: "Users",
+        icon: Icons.group_outlined,
+        onTap: () => shell.selectAdmin(1, origin: "admin"),
+      ),
+      _HubTile(
+        title: "Dropdowns",
+        icon: Icons.arrow_drop_down_circle_outlined,
+        onTap: () => shell.selectAdmin(6, origin: "admin"),
+      ),
+      _HubTile(
+        title: "Banners",
+        icon: Icons.photo_library_outlined,
+        onTap: () => shell.selectAdmin(7, origin: "admin"),
+      ),
+      _HubTile(
+        title: "Settings",
+        icon: Icons.settings_outlined,
+        onTap: () => shell.selectAdmin(8, origin: "admin"),
+      ),
+    ];
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1050),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final w = c.maxWidth;
+            final cross = w >= 900 ? 3 : (w >= 600 ? 2 : 1);
+
+            return GridView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.all(12),
+              itemCount: tiles.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cross,
+                crossAxisSpacing: 18,
+                mainAxisSpacing: 18,
+                childAspectRatio: 2.3,
+              ),
+              itemBuilder: (context, i) => _HubTileCard(tile: tiles[i]),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _HubTile {
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  _HubTile({required this.title, required this.icon, required this.onTap});
+}
+
+class _HubTileCard extends StatelessWidget {
+  final _HubTile tile;
+  const _HubTileCard({required this.tile});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: tile.onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: GlassContainer(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.neonGreen.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppColors.neonGreen.withOpacity(0.25),
+                ),
+              ),
+              child: Icon(tile.icon, color: AppColors.neonGreen, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                tile.title,
+                style: const TextStyle(
+                  color: AppColors.textWhite,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: AppColors.neonGreen.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                color: AppColors.neonGreen,
+                size: 18,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminPlaceholderPage extends StatelessWidget {
+  final String title;
+  const _AdminPlaceholderPage({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GlassContainer(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 26),
+        child: Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textWhite,
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
 }
