@@ -30,8 +30,6 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
             SizedBox(
               height: 10,
             ),
-            // ✅ Header removed (as per your existing)
-            // ✅ Tabs removed from here (now in Breadcrumb container)
 
             // Content Switcher (Controlled by shell.dashboardTab)
             Obx(() {
