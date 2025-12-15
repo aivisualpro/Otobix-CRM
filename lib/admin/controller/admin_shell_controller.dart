@@ -11,19 +11,19 @@ class AdminDesktopShellController extends GetxController {
   final RxBool inLeadsPanel = false.obs;
   final RxInt leadsIndex = (-1).obs;
   // *****************************************************
-
   @override
   void onInit() {
     super.onInit();
 
     final p = UrlHelper.getPath();
 
-    // ✅ If user opens only domain ("/") then go to /home
+    // ✅ first load (no hash) -> go Home and update state
     if (p == '/' || p.isEmpty) {
-      UrlHelper.setPath('/home');
+      selectHub(0); // sets state + url
+    } else {
+      _applyPath(p);
     }
 
-    _applyPath(UrlHelper.getPath());
     UrlHelper.onPop(_applyPath);
   }
 
