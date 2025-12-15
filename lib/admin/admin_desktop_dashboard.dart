@@ -68,7 +68,6 @@ class AdminDesktopDashboard extends StatelessWidget {
 }
 
 /* ----------------------- TOP TABS BAR (FIXED ALWAYS) ----------------------- */
-
 class _TopTabsBar extends StatelessWidget {
   final AdminDesktopShellController shell;
   const _TopTabsBar({required this.shell});
@@ -79,7 +78,7 @@ class _TopTabsBar extends StatelessWidget {
       final inAdmin = shell.inAdminPanel.value;
       final inLeads = shell.inLeadsPanel.value;
 
-      // ✅ KEY FIX: If admin opened from Home dropdown, Home should remain active
+      // ✅ If admin opened from Home dropdown, Home should remain active
       final openedFromHome = inAdmin && shell.adminOrigin.value == "home";
 
       final fixedTabs = <_TopTab>[
@@ -198,10 +197,16 @@ class _TopTabsBar extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: fixedTabs
-                      .map((t) => Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: _TopTabChip(tab: t),
-                          ))
+                      .map(
+                        (t) => Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: _TopTabChip(
+                            tab: t,
+                            // ✅ show indicator icon only when hover menu exists
+                            showMenuIndicator: true,
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -555,9 +560,67 @@ class _HoverMenuItem {
   });
 }
 
+/// ✅ Liquid drop reveal animation for dropdown (top -> bottom)
+class _LiquidDropReveal extends StatefulWidget {
+  final Widget child;
+  final Duration duration;
+  final Curve curve;
+
+  const _LiquidDropReveal({
+    required this.child,
+    this.duration = const Duration(milliseconds: 420), // ✅ slower
+    this.curve = Curves.easeOutCubic,
+    super.key,
+  });
+
+  @override
+  State<_LiquidDropReveal> createState() => _LiquidDropRevealState();
+}
+
+class _LiquidDropRevealState extends State<_LiquidDropReveal>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: widget.duration)..forward();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (_, __) {
+        final t = CurvedAnimation(parent: _c, curve: widget.curve).value;
+
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, (1 - t) * -12), // start up, settle down
+            child: ClipRect(
+              child: Align(
+                alignment: Alignment.topCenter,
+                heightFactor: t, // ✅ main top->bottom reveal
+                child: widget.child,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _TopTabChip extends StatefulWidget {
   final _TopTab tab;
-  const _TopTabChip({required this.tab});
+  final bool showMenuIndicator; // ✅ NEW
+
+  const _TopTabChip({
+    required this.tab,
+    this.showMenuIndicator = true,
+  });
 
   @override
   State<_TopTabChip> createState() => _TopTabChipState();
@@ -624,46 +687,50 @@ class _TopTabChipState extends State<_TopTabChip> {
                     },
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 280),
-                      child: GlassContainer(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 10),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: widget.tab.hoverItems!.map((item) {
-                            return InkWell(
-                              onTap: () {
-                                _removeMenu();
-                                item.onTap();
-                              },
-                              borderRadius: BorderRadius.circular(14),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 10),
-                                child: Row(
-                                  children: [
-                                    Icon(item.icon,
-                                        size: 18, color: AppColors.neonGreen),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        item.label,
-                                        style: const TextStyle(
-                                          color: AppColors.textWhite,
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w700,
+                      child: _LiquidDropReveal(
+                        child: GlassContainer(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 10),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: widget.tab.hoverItems!.map((item) {
+                              return InkWell(
+                                onTap: () {
+                                  _removeMenu();
+                                  item.onTap();
+                                },
+                                borderRadius: BorderRadius.circular(14),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  child: Row(
+                                    children: [
+                                      Icon(item.icon,
+                                          size: 18, color: AppColors.neonGreen),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          item.label,
+                                          style: const TextStyle(
+                                            color: AppColors.textWhite,
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    const Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 16,
-                                      color: AppColors.textGrey,
-                                    ),
-                                  ],
+
+                                      // ✅ REMOVE arrow after text in dropdown rows
+                                      // const Icon(
+                                      //   Icons.arrow_forward_rounded,
+                                      //   size: 16,
+                                      //   color: AppColors.textGrey,
+                                      // ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          }).toList(),
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ),
@@ -727,14 +794,16 @@ class _TopTabChipState extends State<_TopTabChip> {
                     fontSize: 12.5,
                   ),
                 ),
-                if (_hasMenu) ...[
-                  const SizedBox(width: 6),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 18,
-                    color: active ? AppColors.neonGreen : AppColors.textGrey,
-                  ),
-                ],
+
+                // ✅ REMOVE arrow after tab text
+                // if (_hasMenu) ...[
+                //   const SizedBox(width: 6),
+                //   Icon(
+                //     Icons.keyboard_arrow_down_rounded,
+                //     size: 18,
+                //     color: active ? AppColors.neonGreen : AppColors.textGrey,
+                //   ),
+                // ],
               ],
             ),
           ),
@@ -1085,8 +1154,8 @@ class _AdminPlaceholderPage extends StatelessWidget {
 }
 
 /* =======================================================================
-   ✅ SINGLE CONTROLLER + Dashboard tab state (used in Breadcrumb right tabs)
-   ======================================================================= */
+    ✅ SINGLE CONTROLLER + Dashboard tab state (used in Breadcrumb right tabs)
+    ======================================================================= */
 
 class AdminDesktopShellController extends GetxController {
   final RxBool inAdminPanel = false.obs;
@@ -1133,7 +1202,7 @@ class AdminDesktopShellController extends GetxController {
   }
 
   void openAdminFromHome(int pageIndex) {
-    hubIndex.value = 0;
+    hubIndex.value = 0; // ✅ add this
     inAdminPanel.value = true;
     inLeadsPanel.value = false;
     adminIndex.value = pageIndex;
