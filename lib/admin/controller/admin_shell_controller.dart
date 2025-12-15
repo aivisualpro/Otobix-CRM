@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 import 'package:otobix_crm/utils/url_helper.dart';
+import 'package:flutter/widgets.dart';
+import 'package:otobix_crm/utils/url_helper_web.dart';
 
 class AdminDesktopShellController extends GetxController {
   final RxBool inAdminPanel = false.obs;
@@ -17,15 +19,17 @@ class AdminDesktopShellController extends GetxController {
 
     final p = UrlHelper.getPath();
 
-    // ✅ If user opened only domain, go home
     if (p == '/' || p.isEmpty) {
+      // default
       selectHub(0);
     } else {
-      // ✅ restore correct state from URL
+      // restore state
       _applyPath(p);
 
-      // ✅ ensure URL also shows /#/path (if browser dropped hash)
-      UrlHelper.setPath(p);
+      // ✅ important: after first frame, force URL back to /#/...
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        UrlHelper.replacePath(p);
+      });
     }
 
     UrlHelper.onPop(_applyPath);
