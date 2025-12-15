@@ -1,94 +1,52 @@
-
 import 'package:flutter/material.dart';
 import 'package:otobix_crm/utils/app_colors.dart';
 import 'package:otobix_crm/widgets/glass_container.dart';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
+import 'package:get/get.dart';
 
 class AdminNewDashboardPage extends StatefulWidget {
-  const AdminNewDashboardPage({super.key});
+  // ✅ controlled by breadcrumb pill tabs (0=Inspection,1=Customer,2=Auction)
+  final RxInt dashboardTab;
+
+  const AdminNewDashboardPage({
+    super.key,
+    required this.dashboardTab,
+  });
 
   @override
   State<AdminNewDashboardPage> createState() => _AdminNewDashboardPageState();
 }
 
 class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
-  int _selectedIndex = 0; // 0 = Inspection, 1 = Customer, 2 = Auction
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header & Tabs
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildHeader(),
-                _buildTabSelector(),
-              ],
+            SizedBox(
+              height: 10,
             ),
-            const SizedBox(height: 32),
+            // ✅ Header removed (as per your existing)
+            // ✅ Tabs removed from here (now in Breadcrumb container)
 
-            // Content Switcher
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _selectedIndex == 0 
-                  ? _buildInspectionTab() 
-                  : _selectedIndex == 1
-                      ? _buildCustomerTab()
-                      : _buildAuctionTab(),
-            ),
+            // Content Switcher (Controlled by shell.dashboardTab)
+            Obx(() {
+              final idx = widget.dashboardTab.value;
+
+              return AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: idx == 0
+                    ? _buildInspectionTab()
+                    : idx == 1
+                        ? _buildCustomerTab()
+                        : _buildAuctionTab(),
+              );
+            }),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabSelector() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildTabBtn("Inspection", 0),
-          const SizedBox(width: 4),
-          _buildTabBtn("Customer", 1),
-          const SizedBox(width: 4),
-          _buildTabBtn("Auction", 2),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabBtn(String label, int index) {
-    bool isActive = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.neonGreen : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? Colors.black : AppColors.textWhite,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
         ),
       ),
     );
@@ -161,26 +119,35 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     if (!isWide) {
       return Column(
         children: [
-          _buildGaugeCardNew("Pending Inspections", "24", 0.3, AppColors.neonGreen),
+          _buildGaugeCardNew(
+              "Pending Inspections", "24", 0.3, AppColors.neonGreen),
           const SizedBox(height: 16),
           _buildGaugeCardNew("Pass Rate", "87%", 0.87, AppColors.neonGreen),
           const SizedBox(height: 16),
-          _buildGaugeCardNew("Completed This Week", "156", 0.78, AppColors.neonGreen),
+          _buildGaugeCardNew(
+              "Completed This Week", "156", 0.78, AppColors.neonGreen),
         ],
       );
     }
     return Row(
       children: [
-        Expanded(child: _buildGaugeCardNew("Pending Inspections", "24", 0.3, AppColors.neonGreen)),
+        Expanded(
+            child: _buildGaugeCardNew(
+                "Pending Inspections", "24", 0.3, AppColors.neonGreen)),
         const SizedBox(width: 20),
-        Expanded(child: _buildGaugeCardNew("Pass Rate", "87%", 0.87, AppColors.neonGreen)),
+        Expanded(
+            child: _buildGaugeCardNew(
+                "Pass Rate", "87%", 0.87, AppColors.neonGreen)),
         const SizedBox(width: 20),
-        Expanded(child: _buildGaugeCardNew("Completed This Week", "156", 0.78, AppColors.neonGreen)),
+        Expanded(
+            child: _buildGaugeCardNew(
+                "Completed This Week", "156", 0.78, AppColors.neonGreen)),
       ],
     );
   }
 
-  Widget _buildGaugeCardNew(String title, String value, double progress, Color accentColor) {
+  Widget _buildGaugeCardNew(
+      String title, String value, double progress, Color accentColor) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
@@ -192,7 +159,10 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: Colors.white.withOpacity(0.08)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10)),
             ],
           ),
           child: Column(
@@ -201,30 +171,42 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(title, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text(title,
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500)),
                   Container(
-                    width: 36, height: 36,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: accentColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.arrow_outward, color: Colors.black, size: 18),
+                    child: const Icon(Icons.arrow_outward,
+                        color: Colors.black, size: 18),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
               // Semi-circular gauge
               SizedBox(
-                width: 160, height: 90,
+                width: 160,
+                height: 90,
                 child: CustomPaint(
-                  painter: SemiCircleGaugePainter(progress: progress, color: accentColor),
+                  painter: SemiCircleGaugePainter(
+                      progress: progress, color: accentColor),
                 ),
               ),
               const SizedBox(height: 20),
               // Value
               Text(
                 value,
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -0.5),
+                style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: -0.5),
               ),
             ],
           ),
@@ -261,24 +243,36 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                           color: AppColors.neonGreen.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.insights, color: AppColors.neonGreen, size: 18),
+                        child: const Icon(Icons.insights,
+                            color: AppColors.neonGreen, size: 18),
                       ),
                       const SizedBox(width: 12),
-                      const Text("Inspection Stats", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text("Inspection Stats",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.neonGreen.withOpacity(0.4)),
+                      border: Border.all(
+                          color: AppColors.neonGreen.withOpacity(0.4)),
                     ),
                     child: Row(
                       children: [
-                        Text("Weekly", style: TextStyle(color: AppColors.neonGreen, fontSize: 12, fontWeight: FontWeight.w600)),
+                        Text("Weekly",
+                            style: TextStyle(
+                                color: AppColors.neonGreen,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600)),
                         const SizedBox(width: 4),
-                        Icon(Icons.keyboard_arrow_down, color: AppColors.neonGreen, size: 16),
+                        Icon(Icons.keyboard_arrow_down,
+                            color: AppColors.neonGreen, size: 16),
                       ],
                     ),
                   ),
@@ -287,18 +281,24 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               const SizedBox(height: 8),
               Text(
                 "Inspections completed and pending this week across all locations",
-                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.4), fontSize: 12),
               ),
               const SizedBox(height: 8),
               // View All link
               Row(
                 children: [
-                  Text("View All Reports", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                  Text("View All Reports",
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.6), fontSize: 12)),
                   const SizedBox(width: 8),
                   Container(
-                    width: 22, height: 22,
-                    decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
-                    child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                    width: 22,
+                    height: 22,
+                    decoration: const BoxDecoration(
+                        color: AppColors.neonGreen, shape: BoxShape.circle),
+                    child: const Icon(Icons.arrow_forward,
+                        color: Colors.black, size: 12),
                   ),
                 ],
               ),
@@ -320,7 +320,9 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                             color: Colors.white.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Center(child: Icon(Icons.directions_car, color: Colors.white24, size: 50)),
+                          child: const Center(
+                              child: Icon(Icons.directions_car,
+                                  color: Colors.white24, size: 50)),
                         ),
                       ),
                     ),
@@ -352,7 +354,8 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     );
   }
 
-  Widget _buildChartBar(String label, double height, bool isHighlighted, [String? value]) {
+  Widget _buildChartBar(String label, double height, bool isHighlighted,
+      [String? value]) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
@@ -365,15 +368,24 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               color: AppColors.neonGreen,
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text(value, style: const TextStyle(fontSize: 8, color: Colors.black, fontWeight: FontWeight.bold)),
+            child: Text(value,
+                style: const TextStyle(
+                    fontSize: 8,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold)),
           ),
         Container(
           width: 22,
           height: 55 * height,
           decoration: BoxDecoration(
-            color: isHighlighted ? AppColors.neonGreen : Colors.white.withOpacity(0.08),
+            color: isHighlighted
+                ? AppColors.neonGreen
+                : Colors.white.withOpacity(0.08),
             borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: isHighlighted ? AppColors.neonGreen : Colors.white.withOpacity(0.15)),
+            border: Border.all(
+                color: isHighlighted
+                    ? AppColors.neonGreen
+                    : Colors.white.withOpacity(0.15)),
           ),
         ),
         const SizedBox(height: 5),
@@ -383,7 +395,11 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
             color: isHighlighted ? AppColors.neonGreen : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(label, style: TextStyle(color: isHighlighted ? Colors.black : Colors.white54, fontSize: 8, fontWeight: FontWeight.w500)),
+          child: Text(label,
+              style: TextStyle(
+                  color: isHighlighted ? Colors.black : Colors.white54,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w500)),
         ),
       ],
     );
@@ -409,15 +425,25 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Latest Inspected", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text("Latest Inspected",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold)),
                   Row(
                     children: [
-                      Text("View All", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                      Text("View All",
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 12)),
                       const SizedBox(width: 8),
                       Container(
-                        width: 22, height: 22,
-                        decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
-                        child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                        width: 22,
+                        height: 22,
+                        decoration: const BoxDecoration(
+                            color: AppColors.neonGreen, shape: BoxShape.circle),
+                        child: const Icon(Icons.arrow_forward,
+                            color: Colors.black, size: 12),
                       ),
                     ],
                   ),
@@ -426,7 +452,8 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               const SizedBox(height: 8),
               Text(
                 "Recently completed vehicle inspections with full reports available",
-                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.4), fontSize: 12),
               ),
               const SizedBox(height: 20),
               // Car Carousel
@@ -434,13 +461,15 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                 children: [
                   // Left Arrow
                   Container(
-                    width: 32, height: 32,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.05),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white.withOpacity(0.1)),
                     ),
-                    child: Icon(Icons.arrow_back_ios_new, color: Colors.white.withOpacity(0.4), size: 14),
+                    child: Icon(Icons.arrow_back_ios_new,
+                        color: Colors.white.withOpacity(0.4), size: 14),
                   ),
                   // Car Image
                   Expanded(
@@ -448,20 +477,24 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                       "lib/assets/images/car_silver.png",
                       height: 120,
                       fit: BoxFit.contain,
-                      errorBuilder: (ctx, err, st) => Container(
+                      errorBuilder: (ctx, err, st) => SizedBox(
                         height: 120,
-                        child: const Center(child: Icon(Icons.directions_car, color: Colors.white24, size: 50)),
+                        child: const Center(
+                            child: Icon(Icons.directions_car,
+                                color: Colors.white24, size: 50)),
                       ),
                     ),
                   ),
                   // Right Arrow
                   Container(
-                    width: 32, height: 32,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       color: AppColors.neonGreen,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.arrow_forward_ios, color: Colors.black, size: 14),
+                    child: const Icon(Icons.arrow_forward_ios,
+                        color: Colors.black, size: 14),
                   ),
                 ],
               ),
@@ -523,20 +556,31 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                           color: Colors.blueAccent.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.fact_check, color: Colors.blueAccent, size: 18),
+                        child: const Icon(Icons.fact_check,
+                            color: Colors.blueAccent, size: 18),
                       ),
                       const SizedBox(width: 12),
-                      const Text("Recent Inspections", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text("Recent Inspections",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Row(
                     children: [
-                      Text("View All", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                      Text("View All",
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 12)),
                       const SizedBox(width: 8),
                       Container(
-                        width: 22, height: 22,
-                        decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
-                        child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                        width: 22,
+                        height: 22,
+                        decoration: const BoxDecoration(
+                            color: AppColors.neonGreen, shape: BoxShape.circle),
+                        child: const Icon(Icons.arrow_forward,
+                            color: Colors.black, size: 12),
                       ),
                     ],
                   ),
@@ -544,11 +588,14 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               ),
               const SizedBox(height: 24),
               // Inspection Rows
-              _buildInspectionRowNew("Toyota Camry", "INS-2024-001", "42", "14-12-2024", "Passed"),
+              _buildInspectionRowNew(
+                  "Toyota Camry", "INS-2024-001", "42", "14-12-2024", "Passed"),
               const Divider(color: Colors.white10, height: 24),
-              _buildInspectionRowNew("Honda City", "INS-2024-002", "38", "14-12-2024", "Pending"),
+              _buildInspectionRowNew(
+                  "Honda City", "INS-2024-002", "38", "14-12-2024", "Pending"),
               const Divider(color: Colors.white10, height: 24),
-              _buildInspectionRowNew("Hyundai Creta", "INS-2024-003", "45", "13-12-2024", "Passed"),
+              _buildInspectionRowNew("Hyundai Creta", "INS-2024-003", "45",
+                  "13-12-2024", "Passed"),
             ],
           ),
         ),
@@ -556,36 +603,51 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     );
   }
 
-  Widget _buildInspectionRowNew(String car, String code, String minutes, String date, String status) {
-    Color statusColor = status == "Passed" ? AppColors.neonGreen : (status == "Failed" ? Colors.redAccent : Colors.orangeAccent);
+  Widget _buildInspectionRowNew(
+      String car, String code, String minutes, String date, String status) {
+    Color statusColor = status == "Passed"
+        ? AppColors.neonGreen
+        : (status == "Failed" ? Colors.redAccent : Colors.orangeAccent);
     return Row(
       children: [
         // Car Icon
         Container(
-          width: 44, height: 44,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
             color: Colors.redAccent.withOpacity(0.15),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(Icons.directions_car, color: Colors.redAccent, size: 22),
+          child: const Icon(Icons.directions_car,
+              color: Colors.redAccent, size: 22),
         ),
         const SizedBox(width: 14),
         // Car Name
         Expanded(
           flex: 2,
-          child: Text(car, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+          child: Text(car,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500)),
         ),
         // Code
         Expanded(
-          child: Text(code, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+          child: Text(code,
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.5), fontSize: 12)),
         ),
         // Minutes
         Expanded(
-          child: Text("${minutes}m", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+          child: Text("${minutes}m",
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.5), fontSize: 12)),
         ),
         // Date
         Expanded(
-          child: Text(date, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+          child: Text(date,
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.5), fontSize: 12)),
         ),
         // Status
         Container(
@@ -594,7 +656,11 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
             color: statusColor.withOpacity(0.15),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(status, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold)),
+          child: Text(status,
+              style: TextStyle(
+                  color: statusColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold)),
         ),
       ],
     );
@@ -620,15 +686,25 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Top 3 Inspectors", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text("Top 3 Inspectors",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold)),
                   Row(
                     children: [
-                      Text("View All", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                      Text("View All",
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 12)),
                       const SizedBox(width: 8),
                       Container(
-                        width: 22, height: 22,
-                        decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
-                        child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                        width: 22,
+                        height: 22,
+                        decoration: const BoxDecoration(
+                            color: AppColors.neonGreen, shape: BoxShape.circle),
+                        child: const Icon(Icons.arrow_forward,
+                            color: Colors.black, size: 12),
                       ),
                     ],
                   ),
@@ -641,7 +717,8 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                 children: [
                   _buildInspectorAvatar("P", 50, Colors.grey.shade600),
                   const SizedBox(width: 20),
-                  _buildInspectorAvatar("R", 70, AppColors.neonGreen, isMain: true),
+                  _buildInspectorAvatar("R", 70, AppColors.neonGreen,
+                      isMain: true),
                   const SizedBox(width: 20),
                   _buildInspectorAvatar("A", 50, Colors.grey.shade600),
                 ],
@@ -650,7 +727,8 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               // Stats Box
               Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(16),
@@ -658,9 +736,16 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                   ),
                   child: Column(
                     children: [
-                      const Text("12+", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                      const Text("12+",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
-                      Text("Inspectors", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                      Text("Inspectors",
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 12)),
                     ],
                   ),
                 ),
@@ -672,14 +757,23 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     );
   }
 
-  Widget _buildInspectorAvatar(String initial, double size, Color borderColor, {bool isMain = false}) {
+  Widget _buildInspectorAvatar(String initial, double size, Color borderColor,
+      {bool isMain = false}) {
     return Container(
-      width: size, height: size,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: const Color(0xFF2A3040),
         border: Border.all(color: borderColor, width: isMain ? 3 : 2),
-        boxShadow: isMain ? [BoxShadow(color: borderColor.withOpacity(0.4), blurRadius: 20, spreadRadius: 2)] : [],
+        boxShadow: isMain
+            ? [
+                BoxShadow(
+                    color: borderColor.withOpacity(0.4),
+                    blurRadius: 20,
+                    spreadRadius: 2)
+              ]
+            : [],
       ),
       child: Center(
         child: Text(
@@ -697,60 +791,67 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
   // ==================== CUSTOMER TAB ====================
   Widget _buildCustomerTab() {
     return Column(
-       crossAxisAlignment: CrossAxisAlignment.start,
-       children: [
-         // Top Gauge Cards Row
-         Row(
-           children: [
-             Expanded(child: _buildGaugeCard("Total Sales", "₹3,000,000", 0.75, AppColors.neonGreen)),
-             const SizedBox(width: 20),
-             Expanded(child: _buildGaugeCard("Profit", "₹600,000", 0.6, AppColors.neonGreen)),
-             const SizedBox(width: 20),
-             Expanded(child: _buildGaugeCard("Current Fleet", "50", 0.5, AppColors.neonGreen)),
-           ],
-         ),
-         const SizedBox(height: 24),
-         
-         // Second Row: Total Sales Chart + Latest Inventory
-         Row(
-           crossAxisAlignment: CrossAxisAlignment.start,
-           children: [
-             // Total Sales with Chart
-             Expanded(
-               flex: 1,
-               child: _buildTotalSalesCard(),
-             ),
-             const SizedBox(width: 20),
-             // Latest Inventory
-             Expanded(
-               flex: 1,
-               child: _buildLatestInventoryCard(),
-             ),
-           ],
-         ),
-         const SizedBox(height: 24),
-         
-         // Third Row: Maintenance + Top Sales Agent
-         Row(
-           crossAxisAlignment: CrossAxisAlignment.start,
-           children: [
-             Expanded(
-               flex: 1,
-               child: _buildMaintenanceCard(),
-             ),
-             const SizedBox(width: 20),
-             Expanded(
-               flex: 1,
-               child: _buildTopSalesAgentCard(),
-             ),
-           ],
-         ),
-       ],
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Top Gauge Cards Row
+        Row(
+          children: [
+            Expanded(
+                child: _buildGaugeCard(
+                    "Total Sales", "₹3,000,000", 0.75, AppColors.neonGreen)),
+            const SizedBox(width: 20),
+            Expanded(
+                child: _buildGaugeCard(
+                    "Profit", "₹600,000", 0.6, AppColors.neonGreen)),
+            const SizedBox(width: 20),
+            Expanded(
+                child: _buildGaugeCard(
+                    "Current Fleet", "50", 0.5, AppColors.neonGreen)),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Second Row: Total Sales Chart + Latest Inventory
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Total Sales with Chart
+            Expanded(
+              flex: 1,
+              child: _buildTotalSalesCard(),
+            ),
+            const SizedBox(width: 20),
+            // Latest Inventory
+            Expanded(
+              flex: 1,
+              child: _buildLatestInventoryCard(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Third Row: Maintenance + Top Sales Agent
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 1,
+              child: _buildMaintenanceCard(),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              flex: 1,
+              child: _buildTopSalesAgentCard(),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
   // --- GAUGE CARD (Semi-circular progress with arrow button) ---
-  Widget _buildGaugeCard(String title, String value, double progress, Color accentColor) {
+  Widget _buildGaugeCard(
+      String title, String value, double progress, Color accentColor) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -762,7 +863,10 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white.withOpacity(0.1)),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 8))
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8))
             ],
           ),
           child: Column(
@@ -771,23 +875,31 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(title, style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text(title,
+                      style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500)),
                   Container(
-                    width: 32, height: 32,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       color: accentColor,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.arrow_outward, color: Colors.black, size: 18),
+                    child: const Icon(Icons.arrow_outward,
+                        color: Colors.black, size: 18),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
               Center(
                 child: SizedBox(
-                  width: 140, height: 80,
+                  width: 140,
+                  height: 80,
                   child: CustomPaint(
-                    painter: SemiCircleGaugePainter(progress: progress, color: accentColor),
+                    painter: SemiCircleGaugePainter(
+                        progress: progress, color: accentColor),
                   ),
                 ),
               ),
@@ -795,7 +907,10 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               Center(
                 child: Text(
                   value,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
                 ),
               ),
             ],
@@ -832,42 +947,58 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                           color: AppColors.neonGreen.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.attach_money, color: AppColors.neonGreen, size: 18),
+                        child: const Icon(Icons.attach_money,
+                            color: AppColors.neonGreen, size: 18),
                       ),
                       const SizedBox(width: 12),
-                      const Text("Total Sales", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text("Total Sales",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.neonGreen.withOpacity(0.3)),
+                      border: Border.all(
+                          color: AppColors.neonGreen.withOpacity(0.3)),
                     ),
                     child: Row(
                       children: const [
-                        Text("Monthly", style: TextStyle(color: AppColors.neonGreen, fontSize: 12)),
+                        Text("Monthly",
+                            style: TextStyle(
+                                color: AppColors.neonGreen, fontSize: 12)),
                         SizedBox(width: 4),
-                        Icon(Icons.keyboard_arrow_down, color: AppColors.neonGreen, size: 16),
+                        Icon(Icons.keyboard_arrow_down,
+                            color: AppColors.neonGreen, size: 16),
                       ],
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              Text("Lorem ipsum dolor sit amet consectetur mauris vitae leo dignissim lectus mi amet elementum",
-                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11),
+              Text(
+                "Lorem ipsum dolor sit amet consectetur mauris vitae leo dignissim lectus mi amet elementum",
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.4), fontSize: 11),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Text("View All Inventory", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const Text("View All Inventory",
+                      style: TextStyle(color: Colors.white70, fontSize: 12)),
                   const SizedBox(width: 6),
                   Container(
-                    width: 20, height: 20,
-                    decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
-                    child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                    width: 20,
+                    height: 20,
+                    decoration: const BoxDecoration(
+                        color: AppColors.neonGreen, shape: BoxShape.circle),
+                    child: const Icon(Icons.arrow_forward,
+                        color: Colors.black, size: 12),
                   ),
                 ],
               ),
@@ -875,8 +1006,16 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               Row(
                 children: [
                   Expanded(
-                    child: Image.asset("lib/assets/images/car_silver.png", height: 120, fit: BoxFit.contain,
-                      errorBuilder: (ctx, err, st) => Container(height: 120, color: Colors.grey[800], child: const Center(child: Icon(Icons.directions_car, color: Colors.white30, size: 50))),
+                    child: Image.asset(
+                      "lib/assets/images/car_silver.png",
+                      height: 120,
+                      fit: BoxFit.contain,
+                      errorBuilder: (ctx, err, st) => Container(
+                          height: 120,
+                          color: Colors.grey[800],
+                          child: const Center(
+                              child: Icon(Icons.directions_car,
+                                  color: Colors.white30, size: 50))),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -906,7 +1045,7 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (isHighlighted) 
+        if (isHighlighted)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             margin: const EdgeInsets.only(bottom: 6),
@@ -914,15 +1053,24 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               color: AppColors.neonGreen,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Text("₹200,000", style: TextStyle(fontSize: 8, color: Colors.black, fontWeight: FontWeight.bold)),
+            child: const Text("₹200,000",
+                style: TextStyle(
+                    fontSize: 8,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold)),
           ),
         Container(
           width: 24,
           height: 100 * height,
           decoration: BoxDecoration(
-            color: isHighlighted ? AppColors.neonGreen : Colors.white.withOpacity(0.1),
+            color: isHighlighted
+                ? AppColors.neonGreen
+                : Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: isHighlighted ? AppColors.neonGreen : Colors.white.withOpacity(0.2)),
+            border: Border.all(
+                color: isHighlighted
+                    ? AppColors.neonGreen
+                    : Colors.white.withOpacity(0.2)),
           ),
         ),
         const SizedBox(height: 8),
@@ -932,7 +1080,10 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
             color: isHighlighted ? AppColors.neonGreen : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Text(label, style: TextStyle(color: isHighlighted ? Colors.black : Colors.white54, fontSize: 10)),
+          child: Text(label,
+              style: TextStyle(
+                  color: isHighlighted ? Colors.black : Colors.white54,
+                  fontSize: 10)),
         ),
       ],
     );
@@ -957,42 +1108,64 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Latest Inventory", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text("Latest Inventory",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold)),
                   Row(
                     children: [
-                      const Text("View All Inventory", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const Text("View All Inventory",
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 12)),
                       const SizedBox(width: 6),
                       Container(
-                        width: 20, height: 20,
-                        decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
-                        child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(
+                            color: AppColors.neonGreen, shape: BoxShape.circle),
+                        child: const Icon(Icons.arrow_forward,
+                            color: Colors.black, size: 12),
                       ),
                     ],
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              Text("Lorem ipsum dolor sit amet consectetur vitae leo dignissim lectus mi amet elementum",
-                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11),
+              Text(
+                "Lorem ipsum dolor sit amet consectetur vitae leo dignissim lectus mi amet elementum",
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.4), fontSize: 11),
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
                   IconButton(
                     onPressed: () {},
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white38, size: 16),
+                    icon: const Icon(Icons.arrow_back_ios,
+                        color: Colors.white38, size: 16),
                   ),
                   Expanded(
-                    child: Image.asset("lib/assets/images/car_red.png", height: 100, fit: BoxFit.contain,
-                      errorBuilder: (ctx, err, st) => Container(height: 100, color: Colors.grey[800], child: const Center(child: Icon(Icons.directions_car, color: Colors.white30, size: 50))),
+                    child: Image.asset(
+                      "lib/assets/images/car_red.png",
+                      height: 100,
+                      fit: BoxFit.contain,
+                      errorBuilder: (ctx, err, st) => Container(
+                          height: 100,
+                          color: Colors.grey[800],
+                          child: const Center(
+                              child: Icon(Icons.directions_car,
+                                  color: Colors.white30, size: 50))),
                     ),
                   ),
                   IconButton(
                     onPressed: () {},
                     icon: Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
-                      child: const Icon(Icons.arrow_forward_ios, color: Colors.black, size: 12),
+                      decoration: const BoxDecoration(
+                          color: AppColors.neonGreen, shape: BoxShape.circle),
+                      child: const Icon(Icons.arrow_forward_ios,
+                          color: Colors.black, size: 12),
                     ),
                   ),
                 ],
@@ -1049,30 +1222,44 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                        child: const Icon(Icons.build, color: Colors.blueAccent, size: 18),
+                        decoration: BoxDecoration(
+                            color: Colors.blueAccent.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.build,
+                            color: Colors.blueAccent, size: 18),
                       ),
                       const SizedBox(width: 12),
-                      const Text("Maintenance", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text("Maintenance",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Row(
                     children: [
-                      const Text("View All", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const Text("View All",
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 12)),
                       const SizedBox(width: 6),
                       Container(
-                        width: 20, height: 20,
-                        decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
-                        child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(
+                            color: AppColors.neonGreen, shape: BoxShape.circle),
+                        child: const Icon(Icons.arrow_forward,
+                            color: Colors.black, size: 12),
                       ),
                     ],
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              _buildMaintenanceRow("Toyota Corolla", "Est12323", "20000", "14-05-2024", "₹20,000"),
+              _buildMaintenanceRow("Toyota Corolla", "Est12323", "20000",
+                  "14-05-2024", "₹20,000"),
               const Divider(color: Colors.white10, height: 24),
-              _buildMaintenanceRow("Toyota Corolla", "Est12323", "20000", "14-05-2024", "₹20,000"),
+              _buildMaintenanceRow("Toyota Corolla", "Est12323", "20000",
+                  "14-05-2024", "₹20,000"),
             ],
           ),
         ),
@@ -1080,20 +1267,27 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     );
   }
 
-  Widget _buildMaintenanceRow(String car, String code, String km, String date, String cost) {
+  Widget _buildMaintenanceRow(
+      String car, String code, String km, String date, String cost) {
     return Row(
       children: [
         Container(
-          width: 40, height: 40,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             color: Colors.redAccent.withOpacity(0.2),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.directions_car, color: Colors.redAccent, size: 20),
+          child: const Icon(Icons.directions_car,
+              color: Colors.redAccent, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(car, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+          child: Text(car,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500)),
         ),
         Text(code, style: const TextStyle(color: Colors.white54, fontSize: 11)),
         const SizedBox(width: 16),
@@ -1101,7 +1295,11 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
         const SizedBox(width: 16),
         Text(date, style: const TextStyle(color: Colors.white54, fontSize: 11)),
         const SizedBox(width: 16),
-        Text(cost, style: const TextStyle(color: AppColors.neonGreen, fontSize: 12, fontWeight: FontWeight.bold)),
+        Text(cost,
+            style: const TextStyle(
+                color: AppColors.neonGreen,
+                fontSize: 12,
+                fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -1125,15 +1323,24 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Top 3 Sales Agent", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text("Top 3 Sales Agent",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold)),
                   Row(
                     children: [
-                      const Text("View All", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const Text("View All",
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 12)),
                       const SizedBox(width: 6),
                       Container(
-                        width: 20, height: 20,
-                        decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
-                        child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(
+                            color: AppColors.neonGreen, shape: BoxShape.circle),
+                        child: const Icon(Icons.arrow_forward,
+                            color: Colors.black, size: 12),
                       ),
                     ],
                   ),
@@ -1153,7 +1360,8 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               const SizedBox(height: 24),
               Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(16),
@@ -1161,9 +1369,15 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                   ),
                   child: Column(
                     children: const [
-                      Text("80+", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      Text("80+",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold)),
                       SizedBox(height: 4),
-                      Text("Sales Agent", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                      Text("Sales Agent",
+                          style:
+                              TextStyle(color: Colors.white54, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -1175,14 +1389,18 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     );
   }
 
-  Widget _buildAgentAvatar(double size, Color borderColor, {bool isMain = false}) {
+  Widget _buildAgentAvatar(double size, Color borderColor,
+      {bool isMain = false}) {
     return Container(
-      width: size, height: size,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.grey[800],
         border: Border.all(color: borderColor, width: isMain ? 3 : 2),
-        boxShadow: isMain ? [BoxShadow(color: borderColor.withOpacity(0.3), blurRadius: 15)] : [],
+        boxShadow: isMain
+            ? [BoxShadow(color: borderColor.withOpacity(0.3), blurRadius: 15)]
+            : [],
       ),
       child: Icon(Icons.person, color: Colors.white54, size: size * 0.5),
     );
@@ -1196,13 +1414,21 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
         // Top Row: Live Auctions Stats + Bidding Overview
         Row(
           children: [
-            Expanded(child: _buildAuctionStatCard("Live Auctions", "12", Icons.gavel, Colors.orangeAccent)),
+            Expanded(
+                child: _buildAuctionStatCard(
+                    "Live Auctions", "12", Icons.gavel, Colors.orangeAccent)),
             const SizedBox(width: 20),
-            Expanded(child: _buildAuctionStatCard("Active Bids", "847", Icons.trending_up, Colors.blueAccent)),
+            Expanded(
+                child: _buildAuctionStatCard("Active Bids", "847",
+                    Icons.trending_up, Colors.blueAccent)),
             const SizedBox(width: 20),
-            Expanded(child: _buildAuctionStatCard("Won Today", "23", Icons.emoji_events, AppColors.neonGreen)),
+            Expanded(
+                child: _buildAuctionStatCard("Won Today", "23",
+                    Icons.emoji_events, AppColors.neonGreen)),
             const SizedBox(width: 20),
-            Expanded(child: _buildAuctionStatCard("Total Revenue", "₹45L", Icons.account_balance_wallet, Colors.purpleAccent)),
+            Expanded(
+                child: _buildAuctionStatCard("Total Revenue", "₹45L",
+                    Icons.account_balance_wallet, Colors.purpleAccent)),
           ],
         ),
         const SizedBox(height: 24),
@@ -1243,7 +1469,8 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     );
   }
 
-  Widget _buildAuctionStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildAuctionStatCard(
+      String title, String value, IconData icon, Color color) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -1258,7 +1485,8 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
           child: Row(
             children: [
               Container(
-                width: 50, height: 50,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(14),
@@ -1269,9 +1497,15 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                  Text(value,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text(title, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+                  Text(title,
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.6), fontSize: 13)),
                 ],
               ),
             ],
@@ -1307,24 +1541,35 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
                           color: Colors.orangeAccent.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 20),
+                        child: const Icon(Icons.local_fire_department,
+                            color: Colors.orangeAccent, size: 20),
                       ),
                       const SizedBox(width: 12),
-                      const Text("Featured Auctions", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text("Featured Auctions",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.redAccent.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                      border:
+                          Border.all(color: Colors.redAccent.withOpacity(0.3)),
                     ),
                     child: Row(
                       children: const [
                         Icon(Icons.circle, color: Colors.redAccent, size: 8),
                         SizedBox(width: 6),
-                        Text("LIVE", style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text("LIVE",
+                            style: TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -1334,11 +1579,17 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               // Featured Cars Grid
               Row(
                 children: [
-                  Expanded(child: _buildAuctionCarCard("Toyota Corolla", "2021", "₹12,50,000", "23 bids", Colors.blueAccent)),
+                  Expanded(
+                      child: _buildAuctionCarCard("Toyota Corolla", "2021",
+                          "₹12,50,000", "23 bids", Colors.blueAccent)),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildAuctionCarCard("Honda City", "2022", "₹15,80,000", "31 bids", Colors.orangeAccent)),
+                  Expanded(
+                      child: _buildAuctionCarCard("Honda City", "2022",
+                          "₹15,80,000", "31 bids", Colors.orangeAccent)),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildAuctionCarCard("Hyundai Creta", "2023", "₹18,20,000", "45 bids", AppColors.neonGreen)),
+                  Expanded(
+                      child: _buildAuctionCarCard("Hyundai Creta", "2023",
+                          "₹18,20,000", "45 bids", AppColors.neonGreen)),
                 ],
               ),
             ],
@@ -1348,7 +1599,8 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     );
   }
 
-  Widget _buildAuctionCarCard(String name, String year, String currentBid, String bids, Color accentColor) {
+  Widget _buildAuctionCarCard(String name, String year, String currentBid,
+      String bids, Color accentColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1365,15 +1617,29 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               color: accentColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(child: Icon(Icons.directions_car, color: accentColor, size: 40)),
+            child: Center(
+                child:
+                    Icon(Icons.directions_car, color: accentColor, size: 40)),
           ),
           const SizedBox(height: 12),
-          Text(name, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-          Text(year, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+          Text(name,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold)),
+          Text(year,
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.5), fontSize: 12)),
           const SizedBox(height: 8),
-          Text(currentBid, style: TextStyle(color: accentColor, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(currentBid,
+              style: TextStyle(
+                  color: accentColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Text(bids, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+          Text(bids,
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.5), fontSize: 11)),
         ],
       ),
     );
@@ -1394,15 +1660,21 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Ending Soon", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text("Ending Soon",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
               _buildCountdownItem("BMW 3 Series", "02:34:15", Colors.redAccent),
               const Divider(color: Colors.white10, height: 24),
-              _buildCountdownItem("Mercedes C-Class", "04:12:45", Colors.orangeAccent),
+              _buildCountdownItem(
+                  "Mercedes C-Class", "04:12:45", Colors.orangeAccent),
               const Divider(color: Colors.white10, height: 24),
               _buildCountdownItem("Audi A4", "06:45:30", AppColors.neonGreen),
               const Divider(color: Colors.white10, height: 24),
-              _buildCountdownItem("Volkswagen Passat", "08:20:00", Colors.blueAccent),
+              _buildCountdownItem(
+                  "Volkswagen Passat", "08:20:00", Colors.blueAccent),
             ],
           ),
         ),
@@ -1415,7 +1687,8 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
-          child: Text(car, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          child: Text(car,
+              style: const TextStyle(color: Colors.white70, fontSize: 13)),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1423,7 +1696,9 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
             color: color.withOpacity(0.15),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(time, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+          child: Text(time,
+              style: TextStyle(
+                  color: color, fontSize: 12, fontWeight: FontWeight.bold)),
         ),
       ],
     );
@@ -1447,28 +1722,41 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Recent Bids", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text("Recent Bids",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold)),
                   Row(
                     children: [
-                      const Text("View All", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const Text("View All",
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 12)),
                       const SizedBox(width: 6),
                       Container(
-                        width: 20, height: 20,
-                        decoration: const BoxDecoration(color: AppColors.neonGreen, shape: BoxShape.circle),
-                        child: const Icon(Icons.arrow_forward, color: Colors.black, size: 12),
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(
+                            color: AppColors.neonGreen, shape: BoxShape.circle),
+                        child: const Icon(Icons.arrow_forward,
+                            color: Colors.black, size: 12),
                       ),
                     ],
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              _buildBidRow("Rahul Sharma", "Toyota Corolla", "₹12,45,000", "2 mins ago", true),
+              _buildBidRow("Rahul Sharma", "Toyota Corolla", "₹12,45,000",
+                  "2 mins ago", true),
               const Divider(color: Colors.white10, height: 20),
-              _buildBidRow("Priya Patel", "Honda City", "₹15,75,000", "5 mins ago", true),
+              _buildBidRow("Priya Patel", "Honda City", "₹15,75,000",
+                  "5 mins ago", true),
               const Divider(color: Colors.white10, height: 20),
-              _buildBidRow("Amit Kumar", "Hyundai Creta", "₹18,10,000", "8 mins ago", false),
+              _buildBidRow("Amit Kumar", "Hyundai Creta", "₹18,10,000",
+                  "8 mins ago", false),
               const Divider(color: Colors.white10, height: 20),
-              _buildBidRow("Sneha Gupta", "BMW 3 Series", "₹35,00,000", "12 mins ago", true),
+              _buildBidRow("Sneha Gupta", "BMW 3 Series", "₹35,00,000",
+                  "12 mins ago", true),
             ],
           ),
         ),
@@ -1476,17 +1764,21 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     );
   }
 
-  Widget _buildBidRow(String bidder, String car, String amount, String time, bool isHighest) {
+  Widget _buildBidRow(
+      String bidder, String car, String amount, String time, bool isHighest) {
     return Row(
       children: [
         Container(
-          width: 40, height: 40,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             color: AppColors.neonGreen.withOpacity(0.2),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Center(
-            child: Text(bidder[0], style: const TextStyle(color: AppColors.neonGreen, fontWeight: FontWeight.bold)),
+            child: Text(bidder[0],
+                style: const TextStyle(
+                    color: AppColors.neonGreen, fontWeight: FontWeight.bold)),
           ),
         ),
         const SizedBox(width: 12),
@@ -1494,22 +1786,35 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(bidder, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
-              Text(car, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+              Text(bidder,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500)),
+              Text(car,
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.5), fontSize: 11)),
             ],
           ),
         ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(amount, style: const TextStyle(color: AppColors.neonGreen, fontSize: 13, fontWeight: FontWeight.bold)),
+            Text(amount,
+                style: const TextStyle(
+                    color: AppColors.neonGreen,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold)),
             Row(
               children: [
                 if (isHighest) ...[
-                  const Icon(Icons.arrow_upward, color: AppColors.neonGreen, size: 10),
+                  const Icon(Icons.arrow_upward,
+                      color: AppColors.neonGreen, size: 10),
                   const SizedBox(width: 2),
                 ],
-                Text(time, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10)),
+                Text(time,
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.5), fontSize: 10)),
               ],
             ),
           ],
@@ -1533,17 +1838,26 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Top Bidders", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text("Top Bidders",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
-              _buildTopBidderRow("1", "Vikram Singh", "₹2.5Cr", AppColors.neonGreen),
+              _buildTopBidderRow(
+                  "1", "Vikram Singh", "₹2.5Cr", AppColors.neonGreen),
               const SizedBox(height: 12),
-              _buildTopBidderRow("2", "Neha Kapoor", "₹1.8Cr", Colors.orangeAccent),
+              _buildTopBidderRow(
+                  "2", "Neha Kapoor", "₹1.8Cr", Colors.orangeAccent),
               const SizedBox(height: 12),
-              _buildTopBidderRow("3", "Arjun Reddy", "₹1.2Cr", Colors.blueAccent),
+              _buildTopBidderRow(
+                  "3", "Arjun Reddy", "₹1.2Cr", Colors.blueAccent),
               const SizedBox(height: 12),
-              _buildTopBidderRow("4", "Meera Joshi", "₹95L", Colors.purpleAccent),
+              _buildTopBidderRow(
+                  "4", "Meera Joshi", "₹95L", Colors.purpleAccent),
               const SizedBox(height: 12),
-              _buildTopBidderRow("5", "Karan Malhotra", "₹78L", Colors.pinkAccent),
+              _buildTopBidderRow(
+                  "5", "Karan Malhotra", "₹78L", Colors.pinkAccent),
             ],
           ),
         ),
@@ -1551,467 +1865,34 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
     );
   }
 
-  Widget _buildTopBidderRow(String rank, String name, String totalBids, Color accentColor) {
+  Widget _buildTopBidderRow(
+      String rank, String name, String totalBids, Color accentColor) {
     return Row(
       children: [
         Container(
-          width: 28, height: 28,
+          width: 28,
+          height: 28,
           decoration: BoxDecoration(
             color: accentColor.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
-            child: Text(rank, style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12)),
+            child: Text(rank,
+                style: TextStyle(
+                    color: accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12)),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(name, style: const TextStyle(color: Colors.white, fontSize: 13)),
+          child: Text(name,
+              style: const TextStyle(color: Colors.white, fontSize: 13)),
         ),
-        Text(totalBids, style: TextStyle(color: accentColor, fontSize: 13, fontWeight: FontWeight.bold)),
+        Text(totalBids,
+            style: TextStyle(
+                color: accentColor, fontSize: 13, fontWeight: FontWeight.bold)),
       ],
-    );
-  }
-
-
-  // ==================== INSPECTION TAB WIDGETS ====================
-
-  Widget _buildStatsRow() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 1000) {
-           return Column(
-             children: [
-               Row(
-                 children: [
-                   Expanded(child: _buildStatCard("Total Revenue", "₹128.5K", "+12.5%", Icons.attach_money, [Colors.blueAccent, Colors.purpleAccent])),
-                   const SizedBox(width: 20),
-                   Expanded(child: _buildStatCard("Active Users", "1,245", "+4.2%", Icons.people_outline, [Colors.orangeAccent, Colors.pinkAccent])),
-                 ],
-               ),
-               const SizedBox(height: 20),
-               Row(
-                 children: [
-                   Expanded(child: _buildStatCard("New Orders", "345", "+8.1%", Icons.shopping_bag_outlined, [AppColors.neonGreen, Colors.tealAccent])),
-                   const SizedBox(width: 20),
-                   Expanded(child: _buildStatCard("Pending Issues", "12", "-2.4%", Icons.warning_amber_rounded, [Colors.redAccent, Colors.orange], isNegative: true)),
-                 ],
-               ),
-             ],
-           );
-        }
-        
-        return Row(
-          children: [
-            Expanded(child: _buildStatCard("Total Revenue", "₹128.5K", "+12.5%", Icons.attach_money, [Colors.blueAccent, Colors.purpleAccent])),
-            const SizedBox(width: 20),
-            Expanded(child: _buildStatCard("Active Users", "1,245", "+4.2%", Icons.people_outline, [Colors.orangeAccent, Colors.pinkAccent])),
-            const SizedBox(width: 20),
-            Expanded(child: _buildStatCard("New Orders", "345", "+8.1%", Icons.shopping_bag_outlined, [AppColors.neonGreen, Colors.tealAccent])),
-            const SizedBox(width: 20),
-            Expanded(child: _buildStatCard("Pending Issues", "12", "-2.4%", Icons.warning_amber_rounded, [Colors.redAccent, Colors.orange], isNegative: true)),
-          ],
-        );
-      }
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, String percentage, IconData icon, List<Color> gradientColors, {bool isNegative = false}) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: gradientColors[0].withOpacity(0.15),
-                  blurRadius: 20,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-          ),
-        ),
-        GlassContainer(
-          padding: EdgeInsets.zero,
-          child: Container(
-             padding: const EdgeInsets.all(24),
-             decoration: BoxDecoration(
-               borderRadius: BorderRadius.circular(16),
-               gradient: LinearGradient(
-                 begin: Alignment.topLeft,
-                 end: Alignment.bottomRight,
-                 colors: [
-                   Colors.white.withOpacity(0.05),
-                   Colors.white.withOpacity(0.01),
-                 ],
-               )
-             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: gradientColors.map((c) => c.withOpacity(0.2)).toList(), begin: Alignment.topLeft, end: Alignment.bottomRight),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: gradientColors[0], size: 22),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isNegative 
-                            ? Colors.red.withOpacity(0.1) 
-                            : AppColors.neonGreen.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: isNegative ? Colors.red.withOpacity(0.2) : AppColors.neonGreen.withOpacity(0.2)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            isNegative ? Icons.arrow_downward : Icons.arrow_upward,
-                            size: 14,
-                            color: isNegative ? Colors.redAccent : AppColors.neonGreen,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            percentage,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: isNegative ? Colors.redAccent : AppColors.neonGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textWhite,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textGrey,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMainChartSection() {
-    return GlassContainer(
-      height: 400,
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Revenue Analytics",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textWhite,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Overview of profit this year",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textGrey,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.glassWhite,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.glassBorder),
-                ),
-                child: Row(
-                  children: const [
-                    Text("2024", style: TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.w600, fontSize: 13)),
-                    SizedBox(width: 8),
-                    Icon(Icons.calendar_today, color: AppColors.textGrey, size: 14),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          Expanded(
-            child: CustomPaint(
-              size: Size.infinite,
-              painter: SmoothLineChartPainter(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentOrdersTable() {
-    return GlassContainer(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Recent Orders",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textWhite,
-                ),
-              ),
-              TextButton(onPressed: (){}, child: const Text("View All", style: TextStyle(color: AppColors.neonGreen)))
-            ],
-          ),
-          const SizedBox(height: 24),
-          Table(
-            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            columnWidths: const {
-              0: FlexColumnWidth(2.5),
-              1: FlexColumnWidth(1.2),
-              2: FlexColumnWidth(1),
-              3: FlexColumnWidth(1),
-            },
-            children: [
-              TableRow(
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: AppColors.glassBorder, width: 1)),
-                ),
-                children: [
-                  _textAlign("CUSTOMER", isHeader: true),
-                  _textAlign("DATE", isHeader: true),
-                  _textAlign("AMOUNT", isHeader: true),
-                  _textAlign("STATUS", isHeader: true),
-                ],
-              ),
-              TableRow(children: [SizedBox(height: 16), SizedBox(height: 16), SizedBox(height: 16), SizedBox(height: 16)]),
-              _buildTableRow("Alice Johnson", "Oct 24, 2025", "₹1,200.00", "Completed", AppColors.neonGreen),
-              _buildTableRow("Bob Williams", "Oct 23, 2025", "₹850.50", "Pending", Colors.orange),
-              _buildTableRow("Charlie Brown", "Oct 22, 2025", "₹2,300.00", "Completed", AppColors.neonGreen),
-              _buildTableRow("Diana Prince", "Oct 21, 2025", "₹150.00", "Cancelled", Colors.redAccent),
-              _buildTableRow("Evan Wright", "Oct 20, 2025", "₹4,200.00", "Processing", Colors.blueAccent),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  TableRow _buildTableRow(String name, String date, String amount, String status, Color statusColor) {
-    return TableRow(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 36, height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [statusColor.withOpacity(0.2), statusColor.withOpacity(0.1)],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
-                ),
-                 alignment: Alignment.center,
-                child: Text(name[0], style: const TextStyle(fontSize: 14, color: AppColors.textWhite, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(width: 12),
-              Text(name, style: const TextStyle(color: AppColors.textWhite, fontSize: 14, fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ),
-        Text(date, style: const TextStyle(color: AppColors.textGrey, fontSize: 13)),
-        Text(amount, style: const TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.bold, fontSize: 14)),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: statusColor.withOpacity(0.3), width: 0.5),
-              ),
-              child: Text(
-                status, 
-                style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _textAlign(String text, {bool isHeader = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: isHeader ? AppColors.textGrey : AppColors.textWhite,
-          fontWeight: isHeader ? FontWeight.w600 : FontWeight.normal,
-          fontSize: isHeader ? 11 : 13,
-          letterSpacing: isHeader ? 1.0 : 0.0,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRightSidePanel() {
-    return Column(
-      children: [
-        GlassContainer(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Performance by Region",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textWhite),
-              ),
-              const SizedBox(height: 24),
-              _buildRegionRow("Kolkata", 85, Colors.blueAccent),
-              const SizedBox(height: 16),
-              _buildRegionRow("Siliguri", 78, Colors.purpleAccent),
-              const SizedBox(height: 16),
-              _buildRegionRow("Krishnanagar", 72, Colors.orangeAccent),
-              const SizedBox(height: 16),
-              _buildRegionRow("Bhubaneswar", 68, AppColors.neonGreen),
-              const SizedBox(height: 16),
-              _buildRegionRow("Patna", 65, Colors.pinkAccent),
-              const SizedBox(height: 16),
-              _buildRegionRow("Gaya", 60, Colors.tealAccent),
-              const SizedBox(height: 16),
-              _buildRegionRow("Cuttack", 55, Colors.cyanAccent),
-              const SizedBox(height: 16),
-              _buildRegionRow("Durgapur", 48, Colors.amberAccent),
-              const SizedBox(height: 16),
-              _buildRegionRow("Asansol", 42, Colors.indigoAccent),
-              const SizedBox(height: 16),
-              _buildRegionRow("Ranchi", 35, Colors.deepOrangeAccent),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
-        GlassContainer(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Recent Notifications",
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textWhite),
-              ),
-              const SizedBox(height: 24),
-              _buildNotificationItem("New user registration", "5 mins ago", Icons.app_registration, Colors.blue),
-              _buildNotificationItem("Server maintenance scheduled", "2 hours ago", Icons.dns, Colors.orange),
-              _buildNotificationItem("Payment gateway update", "1 day ago", Icons.credit_card, Colors.green),
-              _buildNotificationItem("System security check", "2 days ago", Icons.security, Colors.redAccent),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRegionRow(String name, int percentage, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(name, style: const TextStyle(color: AppColors.textGrey, fontSize: 13, fontWeight: FontWeight.w500)),
-            Text("$percentage%", style: const TextStyle(color: AppColors.textWhite, fontSize: 13, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Stack(
-          children: [
-            Container(height: 6, decoration: BoxDecoration(color: AppColors.glassBorder.withOpacity(0.3), borderRadius: BorderRadius.circular(3))),
-            Container(
-              height: 6, 
-              width: 250 * (percentage / 100),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [color, color.withOpacity(0.5)]),
-                borderRadius: BorderRadius.circular(3),
-                boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 6, offset: const Offset(0, 1))]
-              )
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNotificationItem(String title, String time, IconData icon, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: color.withOpacity(0.2)),
-            ),
-            child: Icon(icon, color: color, size: 16),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(color: AppColors.textWhite, fontSize: 13, fontWeight: FontWeight.w500)),
-                const SizedBox(height: 4),
-                Text(time, style: const TextStyle(color: AppColors.textGrey, fontSize: 11)),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -2028,7 +1909,7 @@ class SmoothLineChartPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();
-    
+
     final points = [
       const Offset(0, 0.8),
       const Offset(0.1, 0.7),
@@ -2048,27 +1929,23 @@ class SmoothLineChartPainter extends CustomPainter {
     final gridPaint = Paint()
       ..color = AppColors.glassBorder.withOpacity(0.2)
       ..strokeWidth = 1;
-    
+
     for (int i = 0; i <= 4; i++) {
-        double y = size.height * (i / 4);
-        canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+      double y = size.height * (i / 4);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
     path.moveTo(0, size.height * points[0].dy);
     for (int i = 0; i < points.length - 1; i++) {
       final p1 = points[i];
       final p2 = points[i + 1];
-      
+
       final x1 = p1.dx * size.width;
       final y1 = p1.dy * size.height;
       final x2 = p2.dx * size.width;
       final y2 = p2.dy * size.height;
 
-      path.cubicTo(
-        x1 + (x2 - x1) / 2, y1,
-        x1 + (x2 - x1) / 2, y2,
-        x2, y2
-      );
+      path.cubicTo(x1 + (x2 - x1) / 2, y1, x1 + (x2 - x1) / 2, y2, x2, y2);
     }
 
     canvas.drawPath(path, paint);
@@ -2090,15 +1967,16 @@ class SmoothLineChartPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     canvas.drawPath(fillPath, fillPaint);
-    
+
     for (int i = 0; i < points.length; i++) {
-        if (i % 2 != 0) continue;
-        final p = points[i];
-         final cx = p.dx * size.width;
-         final cy = p.dy * size.height;
-         
-         canvas.drawCircle(Offset(cx, cy), 5, Paint()..color = AppColors.neonGreen);
-         canvas.drawCircle(Offset(cx, cy), 3, Paint()..color = Colors.black);
+      if (i % 2 != 0) continue;
+      final p = points[i];
+      final cx = p.dx * size.width;
+      final cy = p.dy * size.height;
+
+      canvas.drawCircle(
+          Offset(cx, cy), 5, Paint()..color = AppColors.neonGreen);
+      canvas.drawCircle(Offset(cx, cy), 3, Paint()..color = Colors.black);
     }
   }
 
@@ -2110,21 +1988,21 @@ class SmoothLineChartPainter extends CustomPainter {
 class SemiCircleGaugePainter extends CustomPainter {
   final double progress;
   final Color color;
-  
+
   SemiCircleGaugePainter({required this.progress, required this.color});
-  
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height);
     final radius = size.width / 2 - 10;
-    
+
     // Background arc
     final bgPaint = Paint()
       ..color = Colors.white.withOpacity(0.1)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 12
       ..strokeCap = StrokeCap.round;
-    
+
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       math.pi, // Start angle
@@ -2132,7 +2010,7 @@ class SemiCircleGaugePainter extends CustomPainter {
       false,
       bgPaint,
     );
-    
+
     // Progress arc
     final progressPaint = Paint()
       ..color = color
@@ -2142,7 +2020,7 @@ class SemiCircleGaugePainter extends CustomPainter {
       ..shader = LinearGradient(
         colors: [color, color.withOpacity(0.5)],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
-    
+
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       math.pi,
@@ -2150,14 +2028,14 @@ class SemiCircleGaugePainter extends CustomPainter {
       false,
       progressPaint,
     );
-    
+
     // Glow effect
     final glowPaint = Paint()
       ..color = color.withOpacity(0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 20
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    
+
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       math.pi,
@@ -2166,7 +2044,7 @@ class SemiCircleGaugePainter extends CustomPainter {
       glowPaint,
     );
   }
-  
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
@@ -2241,13 +2119,16 @@ class InspectionChartPainter extends CustomPainter {
     fillPath.lineTo(size.width, size.height);
     fillPath.lineTo(0, size.height);
     fillPath.close();
-    
+
     final fillPaint = Paint()
       ..style = PaintingStyle.fill
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [AppColors.neonGreen.withOpacity(0.2), AppColors.neonGreen.withOpacity(0.0)],
+        colors: [
+          AppColors.neonGreen.withOpacity(0.2),
+          AppColors.neonGreen.withOpacity(0.0)
+        ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawPath(fillPath, fillPaint);
 
@@ -2268,7 +2149,8 @@ class InspectionChartPainter extends CustomPainter {
 
     // Draw dots on completed line
     for (int i = 0; i < completedPoints.length; i += 2) {
-      canvas.drawCircle(completedPoints[i], 4, Paint()..color = AppColors.neonGreen);
+      canvas.drawCircle(
+          completedPoints[i], 4, Paint()..color = AppColors.neonGreen);
       canvas.drawCircle(completedPoints[i], 2, Paint()..color = Colors.black);
     }
   }

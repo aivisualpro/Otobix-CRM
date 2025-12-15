@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:otobix_crm/admin/Admin_Home_View.dart';
@@ -9,18 +10,18 @@ import 'package:otobix_crm/admin/admin_desktop_kam_page.dart';
 import 'package:otobix_crm/admin/admin_new_dashboard_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_cars_list_page.dart';
 
-import 'package:otobix_crm/admin/controller/admin_shell_controller.dart';
 import 'package:otobix_crm/utils/app_colors.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
 import 'package:otobix_crm/widgets/glass_container.dart';
+import 'package:otobix_crm/utils/url_helper.dart';
 
 class AdminDesktopDashboard extends StatelessWidget {
   const AdminDesktopDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Agar controller already permanent: true ke saath register hai, toh Get.put() usko hi wapas karega.
-    final shell = Get.put(AdminDesktopShellController(), permanent: true);
+    final AdminDesktopShellController shell =
+        Get.put(AdminDesktopShellController(), permanent: true);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -38,24 +39,20 @@ class AdminDesktopDashboard extends StatelessWidget {
         ),
         child: Column(
           children: [
+            const SizedBox(height: 10),
             Padding(
-              padding: const EdgeInsets.only(top: 24, left: 24, right: 24),
+              padding: const EdgeInsets.only(left: 18, right: 18),
               child: _TopTabsBar(shell: shell),
             ),
             const SizedBox(height: 10),
             Padding(
-              padding: const EdgeInsets.only(left: 24, right: 24),
+              padding: const EdgeInsets.only(left: 18, right: 18),
               child: _BreadcrumbBar(shell: shell),
             ),
-            const SizedBox(height: 12),
             Expanded(
               child: Container(
-                margin: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+                margin: const EdgeInsets.only(left: 18, right: 18, bottom: 18),
                 child: Obx(() {
-                  // Hub body default hai jab tak inAdminPanel true na ho.
-                  // Agar aap chahte hain ki App start par AdminHomeView ho
-                  // aur inAdminPanel false ho (jaisa aapka code dikha raha hai),
-                  // toh yeh theek hai.
                   if (!shell.inAdminPanel.value) {
                     return _HubBody(shell: shell);
                   }
@@ -70,7 +67,7 @@ class AdminDesktopDashboard extends StatelessWidget {
   }
 }
 
-/* ----------------------- TOP TABS BAR (FIXED) ----------------------- */
+/* ----------------------- TOP TABS BAR (FIXED ALWAYS) ----------------------- */
 
 class _TopTabsBar extends StatelessWidget {
   final AdminDesktopShellController shell;
@@ -80,37 +77,97 @@ class _TopTabsBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final inAdmin = shell.inAdminPanel.value;
-      final isAdminModulesHome = inAdmin && shell.adminIndex.value == -1;
-      final isOnAdminPage = inAdmin && shell.adminIndex.value != -1;
-
-      // ***************** NEW LEADS LOGIC *****************
       final inLeads = shell.inLeadsPanel.value;
-      final isLeadsModulesHome = inLeads && shell.leadsIndex.value == -1;
-      final isOnLeadsPage = inLeads && shell.leadsIndex.value != -1;
-      // ****************************************************
 
-      // HUB TABS
-      final hubTabs = <_TopTab>[
+      // ✅ KEY FIX: If admin opened from Home dropdown, Home should remain active
+      final openedFromHome = inAdmin && shell.adminOrigin.value == "home";
+
+      final fixedTabs = <_TopTab>[
         _TopTab(
           label: "Home",
           icon: Icons.dashboard_customize_outlined,
-          isActive: !inAdmin && !inLeads && shell.hubIndex.value == 0,
+          isActive: !inLeads &&
+              (((!inAdmin) && shell.hubIndex.value == 0) || openedFromHome),
           onTap: () => shell.selectHub(0),
+          hoverItems: [
+            _HoverMenuItem(
+              label: "Dashboard",
+              icon: Icons.dashboard_customize_rounded,
+              onTap: () => shell.openAdminFromHome(0),
+            ),
+            _HoverMenuItem(
+              label: "Users",
+              icon: Icons.group_outlined,
+              onTap: () => shell.openAdminFromHome(1),
+            ),
+            _HoverMenuItem(
+              label: "Cars",
+              icon: Icons.directions_car_outlined,
+              onTap: () => shell.openAdminFromHome(3),
+            ),
+            _HoverMenuItem(
+              label: "Profile",
+              icon: Icons.person_outline,
+              onTap: () => shell.openAdminFromHome(4),
+            ),
+            _HoverMenuItem(
+              label: "KAM Management",
+              icon: Icons.manage_accounts_outlined,
+              onTap: () => shell.openAdminFromHome(5),
+            ),
+          ],
         ),
         _TopTab(
           label: "Admin",
           icon: Icons.admin_panel_settings_outlined,
-          isActive: isAdminModulesHome,
+          isActive: inAdmin && !openedFromHome,
           onTap: () => shell.openAdminPanel(),
+          hoverItems: [
+            _HoverMenuItem(
+              label: "Staff",
+              icon: Icons.grid_view_outlined,
+              onTap: () => shell.selectAdmin(1, origin: "admin"),
+            ),
+            _HoverMenuItem(
+              label: "Dropdowns",
+              icon: Icons.arrow_drop_down_circle_outlined,
+              onTap: () => shell.selectAdmin(6, origin: "admin"),
+            ),
+            _HoverMenuItem(
+              label: "Banners",
+              icon: Icons.photo_library_outlined,
+              onTap: () => shell.selectAdmin(7, origin: "admin"),
+            ),
+            _HoverMenuItem(
+              label: "Settings",
+              icon: Icons.settings_outlined,
+              onTap: () => shell.selectAdmin(8, origin: "admin"),
+            ),
+          ],
         ),
-        // ***************** LEADS MODULE HOME BUTTON *****************
         _TopTab(
           label: "Leads",
           icon: Icons.leaderboard_outlined,
-          isActive: isLeadsModulesHome,
+          isActive: inLeads,
           onTap: () => shell.openLeadsPanel(),
+          hoverItems: [
+            _HoverMenuItem(
+              label: "Telecalling",
+              icon: Icons.call_outlined,
+              onTap: () => shell.selectLeads(0),
+            ),
+            _HoverMenuItem(
+              label: "Customer Request",
+              icon: Icons.request_page_outlined,
+              onTap: () => shell.selectLeads(1),
+            ),
+            _HoverMenuItem(
+              label: "Allocation",
+              icon: Icons.assignment_turned_in_outlined,
+              onTap: () => shell.selectLeads(2),
+            ),
+          ],
         ),
-        // *************************************************************
         _TopTab(
           label: "Inspection",
           icon: Icons.fact_check_outlined,
@@ -131,92 +188,16 @@ class _TopTabsBar extends StatelessWidget {
         ),
       ];
 
-      // ADMIN TABS (FIXED: Admin tab sirf tabhi aayega jab origin "admin" ho)
-      final adminTabs = <_TopTab>[
-        _TopTab(
-          label: "Dashboard",
-          icon: Icons.dashboard_customize_outlined,
-          isActive: shell.adminIndex.value == 0,
-          onTap: () => shell.selectAdmin(0),
-        ),
-        _TopTab(
-          label: "Users",
-          icon: Icons.grid_view_outlined,
-          isActive: shell.adminIndex.value == 1,
-          onTap: () => shell.selectAdmin(1),
-        ),
-        _TopTab(
-          label: "Customers",
-          icon: Icons.people_outline,
-          isActive: shell.adminIndex.value == 2,
-          onTap: () => shell.selectAdmin(2),
-        ),
-        _TopTab(
-          label: "Cars",
-          icon: Icons.directions_car_outlined,
-          isActive: shell.adminIndex.value == 3,
-          onTap: () => shell.selectAdmin(3),
-        ),
-        _TopTab(
-          label: "Profile",
-          icon: Icons.person_outline,
-          isActive: shell.adminIndex.value == 4,
-          onTap: () => shell.selectAdmin(4),
-        ),
-        _TopTab(
-          label: "KAM",
-          icon: Icons.manage_accounts_outlined,
-          isActive: shell.adminIndex.value == 5,
-          onTap: () => shell.selectAdmin(5),
-        ),
-      ];
-
-      // ***************** NEW LEADS TABS *****************
-      final leadsTabs = <_TopTab>[
-        _TopTab(
-          label: "Telecalling",
-          icon: Icons.call_outlined,
-          isActive: shell.leadsIndex.value == 0,
-          onTap: () => shell.selectLeads(0),
-        ),
-        _TopTab(
-          label: "Customer Request",
-          icon: Icons.request_page_outlined,
-          isActive: shell.leadsIndex.value == 1,
-          onTap: () => shell.selectLeads(1),
-        ),
-        _TopTab(
-          label: "Allocation",
-          icon: Icons.assignment_turned_in_outlined,
-          isActive: shell.leadsIndex.value == 2,
-          onTap: () => shell.selectLeads(2),
-        ),
-      ];
-      // ****************************************************
-
-      // Agar kisi admin page par hain (i != -1) toh adminTabs dikhao,
-      // agar kisi leads page par hain toh leadsTabs dikhao,
-      // warna HubTabs dikhao (jismein Admin modules home ka button bhi hai).
-      final List<_TopTab> tabs;
-      if (isOnAdminPage) {
-        tabs = adminTabs;
-      } else if (isOnLeadsPage) {
-        tabs = leadsTabs;
-      } else {
-        tabs = hubTabs;
-      }
-
       return GlassContainer(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            const Icon(Icons.apps_rounded, color: AppColors.textGrey, size: 18),
             const SizedBox(width: 10),
             Expanded(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: tabs
+                  children: fixedTabs
                       .map((t) => Padding(
                             padding: const EdgeInsets.only(right: 10),
                             child: _TopTabChip(tab: t),
@@ -232,7 +213,7 @@ class _TopTabsBar extends StatelessWidget {
   }
 }
 
-/* ----------------------- BREADCRUMBS BAR ----------------------- */
+/* ----------------------- BREADCRUMBS BAR (LEFT + CENTER + RIGHT TABS) ----------------------- */
 
 class _BreadcrumbBar extends StatelessWidget {
   final AdminDesktopShellController shell;
@@ -255,7 +236,6 @@ class _BreadcrumbBar extends StatelessWidget {
     }
   }
 
-  // ***************** NEW LEADS LABEL METHOD *****************
   String _leadsLabel(int i) {
     switch (i) {
       case -1:
@@ -270,7 +250,6 @@ class _BreadcrumbBar extends StatelessWidget {
         return "Leads";
     }
   }
-  // ****************************************************
 
   String _adminLabel(int i) {
     switch (i) {
@@ -300,44 +279,25 @@ class _BreadcrumbBar extends StatelessWidget {
   }
 
   List<_Crumb> _buildCrumbs() {
-    // ***************** LEADS CRUMBS *****************
+    // LEADS
     if (shell.inLeadsPanel.value) {
       final leads = shell.leadsIndex.value;
-
-      // Leads modules grid: sirf "Leads"
-      if (leads == -1) {
-        return [
-          _Crumb("Leads", null),
-        ];
-      }
-
-      // Leads sub-page: Leads > Sub-Page
+      if (leads == -1) return [_Crumb("Leads", null)];
       return [
         _Crumb("Leads", shell.openLeadsPanel),
         _Crumb(_leadsLabel(leads), null),
       ];
     }
-    // ****************************************************
 
-    // HUB: sirf current label
+    // HUB
     if (!shell.inAdminPanel.value) {
-      return [
-        _Crumb(_hubLabel(shell.hubIndex.value), null),
-      ];
+      return [_Crumb(_hubLabel(shell.hubIndex.value), null)];
     }
 
+    // ADMIN
     final admin = shell.adminIndex.value;
+    if (admin == -1) return [_Crumb("Admin", null)];
 
-    // Admin modules grid: sirf "Admin"
-    if (admin == -1) {
-      return [
-        _Crumb("Admin", null),
-      ];
-    }
-
-    // Admin page:
-    // origin=admin => Admin > Page
-    // origin=home  => Home > Page
     if (shell.adminOrigin.value == "home") {
       return [
         _Crumb("Home", shell.backToHome),
@@ -356,52 +316,91 @@ class _BreadcrumbBar extends StatelessWidget {
     return Obx(() {
       final crumbs = _buildCrumbs();
 
+      // ✅ Only show on Admin Dashboard page
+      final showTopDashboardTabs =
+          shell.inAdminPanel.value && shell.adminIndex.value == 0;
+
       return GlassContainer(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         child: Row(
           children: [
-            const Icon(Icons.account_tree_rounded,
-                color: AppColors.textGrey, size: 18),
-            const SizedBox(width: 10),
+            // LEFT : Breadcrumbs
             Expanded(
-              child: Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: List.generate(crumbs.length, (i) {
-                  final c = crumbs[i];
-                  final isLast = i == crumbs.length - 1;
-
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      InkWell(
-                        onTap: c.onTap,
-                        child: Text(
-                          c.label,
-                          style: TextStyle(
-                            color: isLast
-                                ? AppColors.neonGreen
-                                : AppColors.textWhite.withOpacity(0.9),
-                            fontWeight:
-                                isLast ? FontWeight.w800 : FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
+              flex: 1,
+              child: Row(
+                children: [
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: List.generate(crumbs.length, (i) {
+                          final c = crumbs[i];
+                          final isLast = i == crumbs.length - 1;
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              InkWell(
+                                onTap: c.onTap,
+                                child: Text(
+                                  c.label,
+                                  style: TextStyle(
+                                    color: isLast
+                                        ? AppColors.neonGreen
+                                        : AppColors.textWhite.withOpacity(0.9),
+                                    fontWeight: isLast
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              if (!isLast) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  ">",
+                                  style: TextStyle(
+                                    color: AppColors.textGrey.withOpacity(0.8),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                            ],
+                          );
+                        }),
                       ),
-                      if (!isLast) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          ">",
-                          style: TextStyle(
-                            color: AppColors.textGrey.withOpacity(0.8),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ],
-                  );
-                }),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 14),
+
+            // CENTER : Search
+            Expanded(
+              flex: 1,
+              child: _BreadcrumbSearchField(
+                hintText: "Search...",
+                onChanged: (v) {},
+              ),
+            ),
+
+            const SizedBox(width: 14),
+
+            Expanded(
+              flex: 1,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: showTopDashboardTabs
+                    ? _DashboardPillTabsControlled(
+                        activeIndex: shell.dashboardTab,
+                        tabs: const ["Inspection", "Customers", "Auction"],
+                      )
+                    : const SizedBox.shrink(),
               ),
             ),
           ],
@@ -417,71 +416,335 @@ class _Crumb {
   const _Crumb(this.label, this.onTap);
 }
 
-/* ----------------------- TOP TAB MODEL + CHIP ----------------------- */
+/* ----------------------- Search Field ----------------------- */
 
-class _TopTab {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool isActive;
+class _BreadcrumbSearchField extends StatelessWidget {
+  final String hintText;
+  final ValueChanged<String>? onChanged;
 
-  _TopTab({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    required this.isActive,
+  const _BreadcrumbSearchField({
+    required this.hintText,
+    this.onChanged,
   });
-}
-
-class _TopTabChip extends StatelessWidget {
-  final _TopTab tab;
-  const _TopTabChip({required this.tab});
 
   @override
   Widget build(BuildContext context) {
-    final active = tab.isActive;
-
-    return InkWell(
-      onTap: tab.onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: active
-              ? AppColors.neonGreen.withOpacity(0.18)
-              : Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: active
-                ? AppColors.neonGreen.withOpacity(0.55)
-                : Colors.white.withOpacity(0.10),
-          ),
+    return SizedBox(
+      height: 42,
+      child: TextField(
+        onChanged: onChanged,
+        style: const TextStyle(
+          color: AppColors.textWhite,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w600,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              tab.icon,
-              size: 18,
-              color: active ? AppColors.neonGreen : AppColors.textGrey,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(
+            color: AppColors.textGrey.withOpacity(0.9),
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+          ),
+          prefixIcon: const Icon(Icons.search_rounded,
+              color: AppColors.textGrey, size: 18),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.06),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide:
+                BorderSide(color: Colors.white.withOpacity(0.10), width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: AppColors.neonGreen.withOpacity(0.55),
+              width: 1,
             ),
-            const SizedBox(width: 8),
-            Text(
-              tab.label,
-              style: TextStyle(
-                color: active ? AppColors.neonGreen : AppColors.textGrey,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                fontSize: 12.5,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/* ----------------------- HUB MODE BODY ----------------------- */
+/* ----------------------- Dashboard pill tabs (RIGHT in Breadcrumb bar) ----------------------- */
+
+class _DashboardPillTabsControlled extends StatelessWidget {
+  final RxInt activeIndex;
+  final List<String> tabs;
+
+  const _DashboardPillTabsControlled({
+    required this.activeIndex,
+    required this.tabs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final active = activeIndex.value;
+
+      return Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.white.withOpacity(0.10)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(tabs.length, (i) {
+            final isActive = i == active;
+
+            return InkWell(
+              onTap: () => activeIndex.value = i,
+              borderRadius: BorderRadius.circular(999),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.neonGreen : Colors.transparent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  tabs[i],
+                  style: TextStyle(
+                    color: isActive ? Colors.black : AppColors.textWhite,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      );
+    });
+  }
+}
+
+/* ----------------------- TOP TAB MODEL + CHIP (HOVER DROPDOWN) ----------------------- */
+
+class _TopTab {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isActive;
+  final List<_HoverMenuItem>? hoverItems;
+
+  _TopTab({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    required this.isActive,
+    this.hoverItems,
+  });
+}
+
+class _HoverMenuItem {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  _HoverMenuItem({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+}
+
+class _TopTabChip extends StatefulWidget {
+  final _TopTab tab;
+  const _TopTabChip({required this.tab});
+
+  @override
+  State<_TopTabChip> createState() => _TopTabChipState();
+}
+
+class _TopTabChipState extends State<_TopTabChip> {
+  final LayerLink _link = LayerLink();
+  OverlayEntry? _entry;
+
+  bool _hoveringChip = false;
+  bool _hoveringMenu = false;
+  Timer? _closeTimer;
+
+  bool get _hasMenu =>
+      widget.tab.hoverItems != null && widget.tab.hoverItems!.isNotEmpty;
+
+  @override
+  void dispose() {
+    _closeTimer?.cancel();
+    _removeMenu();
+    super.dispose();
+  }
+
+  void _scheduleClose() {
+    _closeTimer?.cancel();
+    _closeTimer = Timer(const Duration(milliseconds: 120), () {
+      if (!_hoveringChip && !_hoveringMenu) _removeMenu();
+    });
+  }
+
+  void _removeMenu() {
+    _entry?.remove();
+    _entry = null;
+  }
+
+  void _openMenu() {
+    if (!_hasMenu) return;
+    if (_entry != null) return;
+
+    _entry = OverlayEntry(
+      builder: (ctx) {
+        return Positioned.fill(
+          child: Stack(
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _removeMenu,
+                child: const SizedBox.expand(),
+              ),
+              CompositedTransformFollower(
+                link: _link,
+                showWhenUnlinked: false,
+                offset: const Offset(0, 48),
+                child: Material(
+                  color: Colors.transparent,
+                  child: MouseRegion(
+                    onEnter: (_) {
+                      _hoveringMenu = true;
+                      _closeTimer?.cancel();
+                    },
+                    onExit: (_) {
+                      _hoveringMenu = false;
+                      _scheduleClose();
+                    },
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 280),
+                      child: GlassContainer(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 10),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: widget.tab.hoverItems!.map((item) {
+                            return InkWell(
+                              onTap: () {
+                                _removeMenu();
+                                item.onTap();
+                              },
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  children: [
+                                    Icon(item.icon,
+                                        size: 18, color: AppColors.neonGreen),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        item.label,
+                                        style: const TextStyle(
+                                          color: AppColors.textWhite,
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 16,
+                                      color: AppColors.textGrey,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_entry!);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final active = widget.tab.isActive;
+
+    return CompositedTransformTarget(
+      link: _link,
+      child: MouseRegion(
+        onEnter: (_) {
+          _hoveringChip = true;
+          if (_hasMenu) _openMenu();
+        },
+        onExit: (_) {
+          _hoveringChip = false;
+          _scheduleClose();
+        },
+        child: InkWell(
+          onTap: widget.tab.onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: active
+                  ? AppColors.neonGreen.withOpacity(0.18)
+                  : Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: active
+                    ? AppColors.neonGreen.withOpacity(0.55)
+                    : Colors.white.withOpacity(0.10),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  widget.tab.icon,
+                  size: 18,
+                  color: active ? AppColors.neonGreen : AppColors.textGrey,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  widget.tab.label,
+                  style: TextStyle(
+                    color: active ? AppColors.neonGreen : AppColors.textGrey,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                    fontSize: 12.5,
+                  ),
+                ),
+                if (_hasMenu) ...[
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: active ? AppColors.neonGreen : AppColors.textGrey,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ----------------------- HUB BODY ----------------------- */
 
 class _HubBody extends StatelessWidget {
   final AdminDesktopShellController shell;
@@ -492,9 +755,7 @@ class _HubBody extends StatelessWidget {
     return Obx(() {
       final idx = shell.hubIndex.value;
 
-      // ***************** CHECK IF LEADS PANEL IS ACTIVE *****************
       if (shell.inLeadsPanel.value) return _LeadsPanelBody(shell: shell);
-      // ******************************************************************
 
       if (idx == 0) return const AdminHomeView();
 
@@ -532,7 +793,7 @@ class _HubBody extends StatelessWidget {
   }
 }
 
-/* ***************** LEADS PANEL BODY (NEW) ***************** */
+/* ----------------------- LEADS PANEL BODY ----------------------- */
 
 class _LeadsPanelBody extends StatelessWidget {
   final AdminDesktopShellController shell;
@@ -545,7 +806,6 @@ class _LeadsPanelBody extends StatelessWidget {
 
       if (idx == -1) return LeadsPanelHomeView(shell: shell);
 
-      // Leads sub-pages ki mapping
       final pages = <int, Widget>{
         0: const _LeadsPlaceholderPage(title: "Telecalling Page"),
         1: const _LeadsPlaceholderPage(title: "Customer Request Page"),
@@ -556,8 +816,6 @@ class _LeadsPanelBody extends StatelessWidget {
     });
   }
 }
-
-/* ***************** LEADS MODULES GRID VIEW (NEW) ***************** */
 
 class LeadsPanelHomeView extends StatelessWidget {
   final AdminDesktopShellController shell;
@@ -610,7 +868,6 @@ class LeadsPanelHomeView extends StatelessWidget {
   }
 }
 
-/* ***************** NEW LEADS PLACEHOLDER PAGE ***************** */
 class _LeadsPlaceholderPage extends StatelessWidget {
   final String title;
   const _LeadsPlaceholderPage({required this.title});
@@ -632,7 +889,6 @@ class _LeadsPlaceholderPage extends StatelessWidget {
     );
   }
 }
-// **************************************************************
 
 /* ----------------------- ADMIN PANEL BODY ----------------------- */
 
@@ -649,8 +905,9 @@ class _AdminPanelBody extends StatelessWidget {
 
       final pages = <int, Widget>{
         0: ResponsiveLayout(
-          mobile: AdminNewDashboardPage(),
-          desktop: AdminNewDashboardPage(),
+          // ✅ IMPORTANT: AdminNewDashboardPage uses shell.dashboardTab
+          mobile: AdminNewDashboardPage(dashboardTab: shell.dashboardTab),
+          desktop: AdminNewDashboardPage(dashboardTab: shell.dashboardTab),
         ),
         1: ResponsiveLayout(
           mobile: AdminDesktopHomePage(),
@@ -740,11 +997,12 @@ class AdminPanelHomeView extends StatelessWidget {
   }
 }
 
+/* ----------------------- SHARED TILE ----------------------- */
+
 class _HubTile {
   final String title;
   final IconData icon;
   final VoidCallback onTap;
-
   _HubTile({required this.title, required this.icon, required this.onTap});
 }
 
@@ -823,5 +1081,232 @@ class _AdminPlaceholderPage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/* =======================================================================
+   ✅ SINGLE CONTROLLER + Dashboard tab state (used in Breadcrumb right tabs)
+   ======================================================================= */
+
+class AdminDesktopShellController extends GetxController {
+  final RxBool inAdminPanel = false.obs;
+  final RxInt hubIndex = 0.obs;
+  final RxInt adminIndex = (-1).obs;
+  final RxString adminOrigin = "".obs;
+
+  final RxBool inLeadsPanel = false.obs;
+  final RxInt leadsIndex = (-1).obs;
+
+  // ✅ Dashboard inner tabs state: 0=Inspection, 1=Customer, 2=Auction
+  final RxInt dashboardTab = 0.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _applyPath(UrlHelper.getPath());
+    UrlHelper.onPop(_applyPath);
+  }
+
+  /* ---------------- HUB ---------------- */
+
+  void selectHub(int i) {
+    inAdminPanel.value = false;
+    inLeadsPanel.value = false;
+    adminIndex.value = -1;
+    leadsIndex.value = -1;
+    adminOrigin.value = "";
+    hubIndex.value = i;
+    UrlHelper.setPath(_hubToPath(i));
+  }
+
+  void backToHome() => selectHub(0);
+
+  /* ---------------- ADMIN ---------------- */
+
+  void openAdminPanel() {
+    inAdminPanel.value = true;
+    inLeadsPanel.value = false;
+    adminIndex.value = -1;
+    leadsIndex.value = -1;
+    adminOrigin.value = "admin";
+    UrlHelper.setPath('/admin');
+  }
+
+  void openAdminFromHome(int pageIndex) {
+    hubIndex.value = 0;
+    inAdminPanel.value = true;
+    inLeadsPanel.value = false;
+    adminIndex.value = pageIndex;
+    leadsIndex.value = -1;
+    adminOrigin.value = "home";
+    UrlHelper.setPath('${_adminToPath(pageIndex)}?origin=home');
+  }
+
+  void selectAdmin(int i, {String? origin}) {
+    inAdminPanel.value = true;
+    inLeadsPanel.value = false;
+    adminIndex.value = i;
+    leadsIndex.value = -1;
+
+    adminOrigin.value = origin ?? adminOrigin.value;
+    if (adminOrigin.value.isEmpty) adminOrigin.value = "admin";
+
+    if (i == -1) {
+      UrlHelper.setPath('/admin');
+      return;
+    }
+    UrlHelper.setPath('${_adminToPath(i)}?origin=${adminOrigin.value}');
+  }
+
+  /* ---------------- LEADS ---------------- */
+
+  void openLeadsPanel() {
+    inLeadsPanel.value = true;
+    inAdminPanel.value = false;
+    leadsIndex.value = -1;
+    adminIndex.value = -1;
+    adminOrigin.value = "";
+    UrlHelper.setPath('/leads');
+  }
+
+  void selectLeads(int i) {
+    inLeadsPanel.value = true;
+    inAdminPanel.value = false;
+    leadsIndex.value = i;
+    adminIndex.value = -1;
+    adminOrigin.value = "";
+
+    if (i == -1) {
+      UrlHelper.setPath('/leads');
+      return;
+    }
+    UrlHelper.setPath(_leadsToPath(i));
+  }
+
+  /* ---------------- PATHS ---------------- */
+
+  String _hubToPath(int i) {
+    switch (i) {
+      case 0:
+        return '/home';
+      case 1:
+        return '/leads';
+      case 2:
+        return '/inspection';
+      case 3:
+        return '/price-discovery';
+      case 4:
+        return '/auction';
+      default:
+        return '/home';
+    }
+  }
+
+  String _adminToPath(int i) {
+    switch (i) {
+      case 0:
+        return '/admin/dashboard';
+      case 1:
+        return '/admin/users';
+      case 2:
+        return '/admin/customers';
+      case 3:
+        return '/admin/cars';
+      case 4:
+        return '/admin/profile';
+      case 5:
+        return '/admin/kam-management';
+      case 6:
+        return '/admin/dropdowns';
+      case 7:
+        return '/admin/banners';
+      case 8:
+        return '/admin/settings';
+      default:
+        return '/admin';
+    }
+  }
+
+  String _leadsToPath(int i) {
+    switch (i) {
+      case 0:
+        return '/leads/telecalling';
+      case 1:
+        return '/leads/customer-request';
+      case 2:
+        return '/leads/allocation';
+      default:
+        return '/leads';
+    }
+  }
+
+  /* ---------------- URL RESTORE ---------------- */
+
+  void _applyPath(String rawPath) {
+    final parts = rawPath.split('?');
+    final path = parts.first;
+    final query =
+        parts.length > 1 ? Uri.splitQueryString(parts[1]) : <String, String>{};
+
+    inAdminPanel.value = false;
+    inLeadsPanel.value = false;
+    hubIndex.value = 0;
+    adminIndex.value = -1;
+    leadsIndex.value = -1;
+    adminOrigin.value = "";
+
+    // ADMIN
+    if (path.startsWith('/admin')) {
+      inAdminPanel.value = true;
+
+      final adminRoutes = {
+        '/admin/dashboard': 0,
+        '/admin/users': 1,
+        '/admin/customers': 2,
+        '/admin/cars': 3,
+        '/admin/profile': 4,
+        '/admin/kam-management': 5,
+        '/admin/dropdowns': 6,
+        '/admin/banners': 7,
+        '/admin/settings': 8,
+      };
+
+      if (adminRoutes.containsKey(path)) {
+        adminIndex.value = adminRoutes[path]!;
+        adminOrigin.value = query['origin'] ?? "admin";
+        if (adminOrigin.value == "home") hubIndex.value = 0;
+      } else {
+        adminIndex.value = -1;
+        adminOrigin.value = "admin";
+      }
+      return;
+    }
+
+    // LEADS
+    if (path.startsWith('/leads')) {
+      inLeadsPanel.value = true;
+
+      final leadsRoutes = {
+        '/leads/telecalling': 0,
+        '/leads/customer-request': 1,
+        '/leads/allocation': 2,
+      };
+
+      leadsIndex.value = leadsRoutes[path] ?? -1;
+      return;
+    }
+
+    // HUB
+    final hubRoutes = {
+      '/home': 0,
+      '/leads': 1,
+      '/inspection': 2,
+      '/price-discovery': 3,
+      '/auction': 4,
+    };
+
+    if (hubRoutes.containsKey(path)) {
+      hubIndex.value = hubRoutes[path]!;
+    }
   }
 }
