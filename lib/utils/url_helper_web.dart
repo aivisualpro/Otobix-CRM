@@ -2,21 +2,27 @@ import 'dart:html' as html;
 
 class UrlHelper {
   static void setPath(String path) {
-    // ensure starts with /
-    if (!path.startsWith('/')) path = '/$path';
-    html.window.location.hash = path; // ✅ hash routing
+    final p = path.startsWith('/') ? path : '/$path';
+
+    // ✅ keep server path always "/" and put route in hash
+    // URL becomes: https://domain.com/#/admin/users?origin=admin
+    html.window.history.pushState(null, '', '/#$p');
   }
 
   static String getPath() {
-    // hash example: "#/admin/users?origin=admin"
-    final h = html.window.location.hash ?? '';
-    if (h.isEmpty) return '/';
+    final h = html.window.location.hash; // "#/admin/users?origin=admin"
+    if (h == null || h.isEmpty) return '/';
 
-    final withoutHash = h.startsWith('#') ? h.substring(1) : h;
-    return withoutHash.isEmpty ? '/' : withoutHash;
+    final s = h.startsWith('#') ? h.substring(1) : h;
+    return s.isEmpty ? '/' : s; // "/admin/users?origin=admin"
   }
 
   static void onPop(void Function(String path) cb) {
-    html.window.onHashChange.listen((_) => cb(getPath()));
+    void fire(_) => cb(getPath());
+
+    // ✅ back/forward
+    html.window.onPopState.listen(fire);
+    // ✅ when hash changes
+    html.window.onHashChange.listen(fire);
   }
 }
