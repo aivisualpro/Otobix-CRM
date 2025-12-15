@@ -19,7 +19,7 @@ flutter pub get
 
 # Build for web
 flutter build web
-Collapse
+
 
 
 
