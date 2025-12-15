@@ -15,6 +15,14 @@ class AdminDesktopShellController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    final p = UrlHelper.getPath();
+
+    // ✅ If user opens only domain ("/") then go to /home
+    if (p == '/' || p.isEmpty) {
+      UrlHelper.setPath('/home');
+    }
+
     _applyPath(UrlHelper.getPath());
     UrlHelper.onPop(_applyPath);
   }
