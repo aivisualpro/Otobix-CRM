@@ -17,17 +17,19 @@ class AdminDesktopShellController extends GetxController {
 
     final p = UrlHelper.getPath();
 
-    // ✅ first load (no hash) -> go Home and update state
+    // ✅ If user opened only domain, go home
     if (p == '/' || p.isEmpty) {
-      selectHub(0); // sets state + url
+      selectHub(0);
     } else {
+      // ✅ restore correct state from URL
       _applyPath(p);
+
+      // ✅ ensure URL also shows /#/path (if browser dropped hash)
+      UrlHelper.setPath(p);
     }
 
     UrlHelper.onPop(_applyPath);
   }
-
-  /* ---------------- HUB ---------------- */
 
   void selectHub(int i) {
     inAdminPanel.value = false;
