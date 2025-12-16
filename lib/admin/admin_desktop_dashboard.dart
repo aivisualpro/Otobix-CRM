@@ -9,6 +9,8 @@ import 'package:otobix_crm/admin/admin_desktop_profile_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_kam_page.dart';
 import 'package:otobix_crm/admin/admin_new_dashboard_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_cars_list_page.dart';
+import 'package:otobix_crm/admin/controller/admin_home_controller.dart';
+import 'package:otobix_crm/admin/controller/admin_shell_controller.dart';
 
 import 'package:otobix_crm/utils/app_colors.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
@@ -48,6 +50,9 @@ class AdminDesktopDashboard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 18, right: 18),
               child: _BreadcrumbBar(shell: shell),
+            ),
+            SizedBox(
+              height: 10,
             ),
             Expanded(
               child: Container(
@@ -200,11 +205,7 @@ class _TopTabsBar extends StatelessWidget {
                       .map(
                         (t) => Padding(
                           padding: const EdgeInsets.only(right: 10),
-                          child: _TopTabChip(
-                            tab: t,
-                            // ✅ show indicator icon only when hover menu exists
-                            showMenuIndicator: true,
-                          ),
+                          child: _TopTabChip(tab: t),
                         ),
                       )
                       .toList(),
@@ -224,6 +225,7 @@ class _BreadcrumbBar extends StatelessWidget {
   final AdminDesktopShellController shell;
   const _BreadcrumbBar({required this.shell});
 
+  // ✅ FIXED: Added missing helper methods
   String _hubLabel(int i) {
     switch (i) {
       case 0:
@@ -243,8 +245,6 @@ class _BreadcrumbBar extends StatelessWidget {
 
   String _leadsLabel(int i) {
     switch (i) {
-      case -1:
-        return "Leads";
       case 0:
         return "Telecalling";
       case 1:
@@ -258,8 +258,6 @@ class _BreadcrumbBar extends StatelessWidget {
 
   String _adminLabel(int i) {
     switch (i) {
-      case -1:
-        return "Admin";
       case 0:
         return "Dashboard";
       case 1:
@@ -283,37 +281,31 @@ class _BreadcrumbBar extends StatelessWidget {
     }
   }
 
+  // ✅ FIXED: Added missing _buildCrumbs method
   List<_Crumb> _buildCrumbs() {
-    // LEADS
+    final crumbs = <_Crumb>[];
+
     if (shell.inLeadsPanel.value) {
-      final leads = shell.leadsIndex.value;
-      if (leads == -1) return [_Crumb("Leads", null)];
-      return [
-        _Crumb("Leads", shell.openLeadsPanel),
-        _Crumb(_leadsLabel(leads), null),
-      ];
+      crumbs.add(_Crumb("Leads", () => shell.openLeadsPanel()));
+      if (shell.leadsIndex.value != -1) {
+        crumbs.add(_Crumb(_leadsLabel(shell.leadsIndex.value), null));
+      }
+    } else if (shell.inAdminPanel.value) {
+      // If opened from Home dropdown, show Home first
+      if (shell.adminOrigin.value == "home") {
+        crumbs.add(_Crumb("Home", () => shell.selectHub(0)));
+      } else {
+        crumbs.add(_Crumb("Admin", () => shell.openAdminPanel()));
+      }
+
+      if (shell.adminIndex.value != -1) {
+        crumbs.add(_Crumb(_adminLabel(shell.adminIndex.value), null));
+      }
+    } else {
+      crumbs.add(_Crumb(_hubLabel(shell.hubIndex.value), null));
     }
 
-    // HUB
-    if (!shell.inAdminPanel.value) {
-      return [_Crumb(_hubLabel(shell.hubIndex.value), null)];
-    }
-
-    // ADMIN
-    final admin = shell.adminIndex.value;
-    if (admin == -1) return [_Crumb("Admin", null)];
-
-    if (shell.adminOrigin.value == "home") {
-      return [
-        _Crumb("Home", shell.backToHome),
-        _Crumb(_adminLabel(admin), null),
-      ];
-    }
-
-    return [
-      _Crumb("Admin", shell.openAdminPanel),
-      _Crumb(_adminLabel(admin), null),
-    ];
+    return crumbs;
   }
 
   @override
@@ -321,9 +313,20 @@ class _BreadcrumbBar extends StatelessWidget {
     return Obx(() {
       final crumbs = _buildCrumbs();
 
-      // ✅ Only show on Admin Dashboard page
       final showTopDashboardTabs =
           shell.inAdminPanel.value && shell.adminIndex.value == 0;
+
+      // ✅ Show Users controls only when Users selected
+      final showUsersControls =
+          shell.inAdminPanel.value && shell.adminIndex.value == 1;
+
+      // ✅ Users controller (only when needed)
+      AdminHomeController? usersCtrl;
+      if (showUsersControls) {
+        usersCtrl = Get.isRegistered<AdminHomeController>()
+            ? Get.find<AdminHomeController>()
+            : Get.put(AdminHomeController(), permanent: true);
+      }
 
       return GlassContainer(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -385,17 +388,23 @@ class _BreadcrumbBar extends StatelessWidget {
 
             const SizedBox(width: 14),
 
-            // CENTER : Search
+            // CENTER : Search (Users page -> bind to AdminHomeController)
             Expanded(
               flex: 1,
               child: _BreadcrumbSearchField(
-                hintText: "Search...",
-                onChanged: (v) {},
+                controller: usersCtrl?.searchController,
+                hintText: showUsersControls ? "Search users..." : "Search...",
+                onChanged: (v) {
+                  if (showUsersControls && usersCtrl != null) {
+                    usersCtrl.searchQuery.value = v.toLowerCase();
+                  }
+                },
               ),
             ),
 
             const SizedBox(width: 14),
 
+            // RIGHT : Dashboard pill tabs OR Users controls
             Expanded(
               flex: 1,
               child: Align(
@@ -405,7 +414,9 @@ class _BreadcrumbBar extends StatelessWidget {
                         activeIndex: shell.dashboardTab,
                         tabs: const ["Inspection", "Customers", "Auction"],
                       )
-                    : const SizedBox.shrink(),
+                    : (showUsersControls
+                        ? _UsersHeaderControls(controller: usersCtrl!)
+                        : const SizedBox.shrink()),
               ),
             ),
           ],
@@ -422,14 +433,15 @@ class _Crumb {
 }
 
 /* ----------------------- Search Field ----------------------- */
-
 class _BreadcrumbSearchField extends StatelessWidget {
   final String hintText;
   final ValueChanged<String>? onChanged;
+  final TextEditingController? controller;
 
   const _BreadcrumbSearchField({
     required this.hintText,
     this.onChanged,
+    this.controller,
   });
 
   @override
@@ -437,6 +449,7 @@ class _BreadcrumbSearchField extends StatelessWidget {
     return SizedBox(
       height: 42,
       child: TextField(
+        controller: controller,
         onChanged: onChanged,
         style: const TextStyle(
           color: AppColors.textWhite,
@@ -450,8 +463,11 @@ class _BreadcrumbSearchField extends StatelessWidget {
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
           ),
-          prefixIcon: const Icon(Icons.search_rounded,
-              color: AppColors.textGrey, size: 18),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: AppColors.textGrey,
+            size: 18,
+          ),
           filled: true,
           fillColor: Colors.white.withOpacity(0.06),
           contentPadding:
@@ -568,7 +584,7 @@ class _LiquidDropReveal extends StatefulWidget {
 
   const _LiquidDropReveal({
     required this.child,
-    this.duration = const Duration(milliseconds: 420), // ✅ slower
+    this.duration = const Duration(milliseconds: 420),
     this.curve = Curves.easeOutCubic,
     super.key,
   });
@@ -598,11 +614,11 @@ class _LiquidDropRevealState extends State<_LiquidDropReveal>
         return Opacity(
           opacity: t,
           child: Transform.translate(
-            offset: Offset(0, (1 - t) * -12), // start up, settle down
+            offset: Offset(0, (1 - t) * -12),
             child: ClipRect(
               child: Align(
                 alignment: Alignment.topCenter,
-                heightFactor: t, // ✅ main top->bottom reveal
+                heightFactor: t,
                 child: widget.child,
               ),
             ),
@@ -615,11 +631,9 @@ class _LiquidDropRevealState extends State<_LiquidDropReveal>
 
 class _TopTabChip extends StatefulWidget {
   final _TopTab tab;
-  final bool showMenuIndicator; // ✅ NEW
 
   const _TopTabChip({
     required this.tab,
-    this.showMenuIndicator = true,
   });
 
   @override
@@ -718,13 +732,6 @@ class _TopTabChipState extends State<_TopTabChip> {
                                           ),
                                         ),
                                       ),
-
-                                      // ✅ REMOVE arrow after text in dropdown rows
-                                      // const Icon(
-                                      //   Icons.arrow_forward_rounded,
-                                      //   size: 16,
-                                      //   color: AppColors.textGrey,
-                                      // ),
                                     ],
                                   ),
                                 ),
@@ -794,16 +801,6 @@ class _TopTabChipState extends State<_TopTabChip> {
                     fontSize: 12.5,
                   ),
                 ),
-
-                // ✅ REMOVE arrow after tab text
-                // if (_hasMenu) ...[
-                //   const SizedBox(width: 6),
-                //   Icon(
-                //     Icons.keyboard_arrow_down_rounded,
-                //     size: 18,
-                //     color: active ? AppColors.neonGreen : AppColors.textGrey,
-                //   ),
-                // ],
               ],
             ),
           ),
@@ -974,7 +971,6 @@ class _AdminPanelBody extends StatelessWidget {
 
       final pages = <int, Widget>{
         0: ResponsiveLayout(
-          // ✅ IMPORTANT: AdminNewDashboardPage uses shell.dashboardTab
           mobile: AdminNewDashboardPage(dashboardTab: shell.dashboardTab),
           desktop: AdminNewDashboardPage(dashboardTab: shell.dashboardTab),
         ),
@@ -1153,229 +1149,319 @@ class _AdminPlaceholderPage extends StatelessWidget {
   }
 }
 
-/* =======================================================================
-    ✅ SINGLE CONTROLLER + Dashboard tab state (used in Breadcrumb right tabs)
-    ======================================================================= */
-
-class AdminDesktopShellController extends GetxController {
-  final RxBool inAdminPanel = false.obs;
-  final RxInt hubIndex = 0.obs;
-  final RxInt adminIndex = (-1).obs;
-  final RxString adminOrigin = "".obs;
-
-  final RxBool inLeadsPanel = false.obs;
-  final RxInt leadsIndex = (-1).obs;
-
-  // ✅ Dashboard inner tabs state: 0=Inspection, 1=Customer, 2=Auction
-  final RxInt dashboardTab = 0.obs;
+class _UsersHeaderControls extends StatelessWidget {
+  final AdminHomeController controller;
+  const _UsersHeaderControls({required this.controller});
 
   @override
-  void onInit() {
-    super.onInit();
-    _applyPath(UrlHelper.getPath());
-    UrlHelper.onPop(_applyPath);
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final isActive = controller.selectedRoles.length > 1 ||
+          (controller.selectedRoles.length == 1 &&
+              !controller.selectedRoles.contains('All'));
+
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _UsersTabSelector(controller: controller),
+            const SizedBox(width: 12),
+            SizedBox(
+              height: 42,
+              child: OutlinedButton.icon(
+                icon: Icon(
+                  Icons.filter_alt_outlined,
+                  size: 18,
+                  color: isActive ? Colors.black : AppColors.textGrey,
+                ),
+                label: Text(
+                  'Filter',
+                  style: TextStyle(
+                    color: isActive ? Colors.black : AppColors.textGrey,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor:
+                      isActive ? AppColors.neonGreen : Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  side: BorderSide(
+                    color: isActive
+                        ? AppColors.neonGreen
+                        : Colors.white.withOpacity(0.10),
+                  ),
+                ),
+                onPressed: () => _showRoleFilterDialog(context, controller),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
-  /* ---------------- HUB ---------------- */
+  void _showRoleFilterDialog(
+    BuildContext context,
+    AdminHomeController getxController,
+  ) {
+    final roles = getxController.roles;
 
-  void selectHub(int i) {
-    inAdminPanel.value = false;
-    inLeadsPanel.value = false;
-    adminIndex.value = -1;
-    leadsIndex.value = -1;
-    adminOrigin.value = "";
-    hubIndex.value = i;
-    UrlHelper.setPath(_hubToPath(i));
+    final RxList<String> tempSelected =
+        RxList<String>.from(getxController.selectedRoles);
+
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(40),
+        child: GlassContainer(
+          width: 500,
+          padding: EdgeInsets.zero,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Obx(
+              () => Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Filter Users by Role",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textWhite,
+                          ),
+                        ),
+                        if (tempSelected.length > 1 ||
+                            (tempSelected.length == 1 &&
+                                !tempSelected.contains('All')))
+                          TextButton(
+                            onPressed: () => tempSelected.assignAll(['All']),
+                            child: const Text(
+                              'Clear All',
+                              style: TextStyle(color: Colors.redAccent),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: roles.map((role) {
+                        final isSelected = tempSelected.contains(role);
+
+                        return GestureDetector(
+                          onTap: () {
+                            if (role == 'All') {
+                              tempSelected.assignAll(['All']);
+                              return;
+                            }
+
+                            if (tempSelected.contains(role)) {
+                              tempSelected.remove(role);
+                            } else {
+                              tempSelected.remove('All');
+                              tempSelected.add(role);
+                            }
+
+                            if (tempSelected.isEmpty) {
+                              tempSelected.assignAll(['All']);
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.neonGreen
+                                  : const Color(0xFF2A3040),
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.neonGreen
+                                    : Colors.white.withOpacity(0.15),
+                                width: 1.5,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.neonGreen
+                                            .withOpacity(0.3),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : [],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isSelected) ...[
+                                  const Icon(Icons.check,
+                                      color: Colors.black, size: 16),
+                                  const SizedBox(width: 8),
+                                ],
+                                Text(
+                                  role,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: isSelected
+                                        ? Colors.black
+                                        : Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 28),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Get.back(),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              side: const BorderSide(
+                                  color: AppColors.glassBorder),
+                            ),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                  fontSize: 13, color: AppColors.textGrey),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              getxController.applyRoleSelection(
+                                List<String>.from(tempSelected),
+                              );
+                              Get.back();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.neonGreen,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Apply Filters',
+                              style: TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UsersTabSelector extends StatelessWidget {
+  final AdminHomeController controller;
+  const _UsersTabSelector({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      return Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2430).withOpacity(0.8),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _tab("Pending", 0, controller.pendingUsersLength.value,
+                Colors.orange),
+            _tab("Approved", 1, controller.approvedUsersLength.value,
+                AppColors.neonGreen),
+            _tab("Rejected", 2, controller.rejectedUsersLength.value,
+                Colors.redAccent),
+          ],
+        ),
+      );
+    });
   }
 
-  void backToHome() => selectHub(0);
+  Widget _tab(String title, int index, int count, Color activeColor) {
+    final isSelected = controller.currentTabIndex.value == index;
 
-  /* ---------------- ADMIN ---------------- */
-
-  void openAdminPanel() {
-    inAdminPanel.value = true;
-    inLeadsPanel.value = false;
-    adminIndex.value = -1;
-    leadsIndex.value = -1;
-    adminOrigin.value = "admin";
-    UrlHelper.setPath('/admin');
-  }
-
-  void openAdminFromHome(int pageIndex) {
-    hubIndex.value = 0; // ✅ add this
-    inAdminPanel.value = true;
-    inLeadsPanel.value = false;
-    adminIndex.value = pageIndex;
-    leadsIndex.value = -1;
-    adminOrigin.value = "home";
-    UrlHelper.setPath('${_adminToPath(pageIndex)}?origin=home');
-  }
-
-  void selectAdmin(int i, {String? origin}) {
-    inAdminPanel.value = true;
-    inLeadsPanel.value = false;
-    adminIndex.value = i;
-    leadsIndex.value = -1;
-
-    adminOrigin.value = origin ?? adminOrigin.value;
-    if (adminOrigin.value.isEmpty) adminOrigin.value = "admin";
-
-    if (i == -1) {
-      UrlHelper.setPath('/admin');
-      return;
-    }
-    UrlHelper.setPath('${_adminToPath(i)}?origin=${adminOrigin.value}');
-  }
-
-  /* ---------------- LEADS ---------------- */
-
-  void openLeadsPanel() {
-    inLeadsPanel.value = true;
-    inAdminPanel.value = false;
-    leadsIndex.value = -1;
-    adminIndex.value = -1;
-    adminOrigin.value = "";
-    UrlHelper.setPath('/leads');
-  }
-
-  void selectLeads(int i) {
-    inLeadsPanel.value = true;
-    inAdminPanel.value = false;
-    leadsIndex.value = i;
-    adminIndex.value = -1;
-    adminOrigin.value = "";
-
-    if (i == -1) {
-      UrlHelper.setPath('/leads');
-      return;
-    }
-    UrlHelper.setPath(_leadsToPath(i));
-  }
-
-  /* ---------------- PATHS ---------------- */
-
-  String _hubToPath(int i) {
-    switch (i) {
-      case 0:
-        return '/home';
-      case 1:
-        return '/leads';
-      case 2:
-        return '/inspection';
-      case 3:
-        return '/price-discovery';
-      case 4:
-        return '/auction';
-      default:
-        return '/home';
-    }
-  }
-
-  String _adminToPath(int i) {
-    switch (i) {
-      case 0:
-        return '/admin/dashboard';
-      case 1:
-        return '/admin/users';
-      case 2:
-        return '/admin/customers';
-      case 3:
-        return '/admin/cars';
-      case 4:
-        return '/admin/profile';
-      case 5:
-        return '/admin/kam-management';
-      case 6:
-        return '/admin/dropdowns';
-      case 7:
-        return '/admin/banners';
-      case 8:
-        return '/admin/settings';
-      default:
-        return '/admin';
-    }
-  }
-
-  String _leadsToPath(int i) {
-    switch (i) {
-      case 0:
-        return '/leads/telecalling';
-      case 1:
-        return '/leads/customer-request';
-      case 2:
-        return '/leads/allocation';
-      default:
-        return '/leads';
-    }
-  }
-
-  /* ---------------- URL RESTORE ---------------- */
-
-  void _applyPath(String rawPath) {
-    final parts = rawPath.split('?');
-    final path = parts.first;
-    final query =
-        parts.length > 1 ? Uri.splitQueryString(parts[1]) : <String, String>{};
-
-    inAdminPanel.value = false;
-    inLeadsPanel.value = false;
-    hubIndex.value = 0;
-    adminIndex.value = -1;
-    leadsIndex.value = -1;
-    adminOrigin.value = "";
-
-    // ADMIN
-    if (path.startsWith('/admin')) {
-      inAdminPanel.value = true;
-
-      final adminRoutes = {
-        '/admin/dashboard': 0,
-        '/admin/users': 1,
-        '/admin/customers': 2,
-        '/admin/cars': 3,
-        '/admin/profile': 4,
-        '/admin/kam-management': 5,
-        '/admin/dropdowns': 6,
-        '/admin/banners': 7,
-        '/admin/settings': 8,
-      };
-
-      if (adminRoutes.containsKey(path)) {
-        adminIndex.value = adminRoutes[path]!;
-        adminOrigin.value = query['origin'] ?? "admin";
-        if (adminOrigin.value == "home") hubIndex.value = 0;
-      } else {
-        adminIndex.value = -1;
-        adminOrigin.value = "admin";
-      }
-      return;
-    }
-
-    // LEADS
-    if (path.startsWith('/leads')) {
-      inLeadsPanel.value = true;
-
-      final leadsRoutes = {
-        '/leads/telecalling': 0,
-        '/leads/customer-request': 1,
-        '/leads/allocation': 2,
-      };
-
-      leadsIndex.value = leadsRoutes[path] ?? -1;
-      return;
-    }
-
-    // HUB
-    final hubRoutes = {
-      '/home': 0,
-      '/leads': 1,
-      '/inspection': 2,
-      '/price-discovery': 3,
-      '/auction': 4,
-    };
-
-    if (hubRoutes.containsKey(path)) {
-      hubIndex.value = hubRoutes[path]!;
-    }
+    return GestureDetector(
+      onTap: () => controller.currentTabIndex.value = index,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? Colors.black.withOpacity(0.2)
+                    : activeColor.withOpacity(0.3),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  count.toString(),
+                  style: TextStyle(
+                    color: isSelected ? Colors.black : activeColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? Colors.black : AppColors.textWhite,
+                fontWeight: FontWeight.w700,
+                fontSize: 13.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

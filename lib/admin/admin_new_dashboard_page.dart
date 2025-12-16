@@ -27,10 +27,6 @@ class _AdminNewDashboardPageState extends State<AdminNewDashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: 10,
-            ),
-
             // Content Switcher (Controlled by shell.dashboardTab)
             Obx(() {
               final idx = widget.dashboardTab.value;
