@@ -51,6 +51,7 @@ class AdminDesktopDashboard extends StatelessWidget {
               padding: const EdgeInsets.only(left: 18, right: 18),
               child: _BreadcrumbBar(shell: shell),
             ),
+            const SizedBox(height: 10),
             Expanded(
               child: Container(
                 margin: const EdgeInsets.only(left: 18, right: 18, bottom: 18),
