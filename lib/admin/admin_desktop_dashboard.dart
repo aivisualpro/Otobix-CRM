@@ -570,56 +570,19 @@ class _HoverMenuItem {
   });
 }
 
-/// ✅ Liquid drop reveal animation for dropdown (top -> bottom)
-class _LiquidDropReveal extends StatefulWidget {
-  final Widget child;
-  final Duration duration;
-  final Curve curve;
+/* ----------------------- Simple Dropdown Container (Without Animation) ----------------------- */
 
-  const _LiquidDropReveal({
+class _SimpleDropdownContainer extends StatelessWidget {
+  final Widget child;
+
+  const _SimpleDropdownContainer({
     required this.child,
-    this.duration = const Duration(milliseconds: 420),
-    this.curve = Curves.easeOutCubic,
     super.key,
   });
 
   @override
-  State<_LiquidDropReveal> createState() => _LiquidDropRevealState();
-}
-
-class _LiquidDropRevealState extends State<_LiquidDropReveal>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: widget.duration)..forward();
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (_, __) {
-        final t = CurvedAnimation(parent: _c, curve: widget.curve).value;
-
-        return Opacity(
-          opacity: t,
-          child: Transform.translate(
-            offset: Offset(0, (1 - t) * -12),
-            child: ClipRect(
-              child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: t,
-                child: widget.child,
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    return child; // Direct child return without any animation
   }
 }
 
@@ -695,7 +658,8 @@ class _TopTabChipState extends State<_TopTabChip> {
                     },
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 280),
-                      child: _LiquidDropReveal(
+                      child: _SimpleDropdownContainer(
+                        // Changed from _LiquidDropReveal to _SimpleDropdownContainer
                         child: GlassContainer(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 10),
