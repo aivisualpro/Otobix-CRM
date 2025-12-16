@@ -42,9 +42,12 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.schedule, size: 80, color: Colors.white.withOpacity(0.2)),
+                Icon(Icons.schedule,
+                    size: 80, color: Colors.white.withOpacity(0.2)),
                 const SizedBox(height: 16),
-                Text('No Upcoming Cars', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16)),
+                Text('No Upcoming Cars',
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.5), fontSize: 16)),
               ],
             ),
           );
@@ -63,7 +66,7 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
         } else if (constraints.maxWidth < 900) {
           crossAxisCount = 2;
         }
-        
+
         return GridView.builder(
           padding: const EdgeInsets.all(8),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -73,7 +76,8 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
             childAspectRatio: 0.72,
           ),
           itemCount: carsList.length,
-          itemBuilder: (context, index) => _buildCarCard(carsList[index], context),
+          itemBuilder: (context, index) =>
+              _buildCarCard(carsList[index], context),
         );
       },
     );
@@ -100,7 +104,8 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
       },
       child: Hero(
         tag: heroTag,
-        createRectTween: (begin, end) => MaterialRectCenterArcTween(begin: begin, end: end),
+        createRectTween: (begin, end) =>
+            MaterialRectCenterArcTween(begin: begin, end: end),
         child: Material(
           color: Colors.transparent,
           child: ClipRRect(
@@ -112,7 +117,10 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Colors.white.withOpacity(0.04), Colors.white.withOpacity(0.01)],
+                    colors: [
+                      Colors.white.withOpacity(0.04),
+                      Colors.white.withOpacity(0.01)
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: Colors.white.withOpacity(0.12)),
@@ -136,12 +144,20 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
                           children: [
                             Text(
                               '$yearOfManufacture${car.make} ${car.model}',
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
-                            Text(car.variant, style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Text(car.variant,
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white.withOpacity(0.5)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
                             const SizedBox(height: 12),
                             _buildSpecsRow(car),
                             const Spacer(),
@@ -172,21 +188,33 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
             fit: BoxFit.cover,
             placeholder: (context, url) => Container(
               height: 180,
-              decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.grey[900]!, Colors.grey[800]!])),
-              child: Center(child: CircularProgressIndicator(color: Colors.orange, strokeWidth: 2)),
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      colors: [Colors.grey[900]!, Colors.grey[800]!])),
+              child: Center(
+                  child: CircularProgressIndicator(
+                      color: Colors.orange, strokeWidth: 2)),
             ),
             errorWidget: (context, error, stackTrace) => Container(
               height: 180,
-              decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.grey[900]!, Colors.grey[800]!])),
-              child: Center(child: Icon(Icons.directions_car, size: 50, color: Colors.grey[600])),
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      colors: [Colors.grey[900]!, Colors.grey[800]!])),
+              child: Center(
+                  child: Icon(Icons.directions_car,
+                      size: 50, color: Colors.grey[600])),
             ),
           ),
         ),
         Positioned.fill(
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.6)]),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+              gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.6)]),
             ),
           ),
         ),
@@ -199,14 +227,24 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.orange,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.orange.withOpacity(0.4),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.schedule, size: 14, color: Colors.white),
                 const SizedBox(width: 6),
-                const Text('UPCOMING', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                const Text('UPCOMING',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1)),
               ],
             ),
           ),
@@ -225,12 +263,16 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.timer_outlined, size: 14, color: AppColors.neonGreen),
+                Icon(Icons.timer_outlined,
+                    size: 14, color: AppColors.neonGreen),
                 const SizedBox(width: 4),
                 Obx(() => Text(
-                  upcomingController.remainingTimes[car.id] ?? "--",
-                  style: TextStyle(color: AppColors.neonGreen, fontSize: 11, fontWeight: FontWeight.bold),
-                )),
+                      upcomingController.remainingTimes[car.id] ?? "--",
+                      style: TextStyle(
+                          color: AppColors.neonGreen,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold),
+                    )),
               ],
             ),
           ),
@@ -243,7 +285,8 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _buildMiniChip(Icons.speed, '${NumberFormat.compact().format(car.odometerReadingInKms)} km'),
+                _buildMiniChip(Icons.speed,
+                    '${NumberFormat.compact().format(car.odometerReadingInKms)} km'),
                 const SizedBox(width: 8),
                 _buildMiniChip(Icons.settings, car.commentsOnTransmission),
               ],
@@ -257,13 +300,19 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
   Widget _buildMiniChip(IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(8)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 12, color: Colors.white70),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w500)),
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -272,9 +321,14 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
   Widget _buildSpecsRow(CarsListModel car) {
     return Row(
       children: [
-        _buildSpecItem(Icons.local_gas_station, car.fuelType.isNotEmpty ? car.fuelType : 'N/A'),
+        _buildSpecItem(Icons.local_gas_station,
+            car.fuelType.isNotEmpty ? car.fuelType : 'N/A'),
         const SizedBox(width: 8),
-        _buildSpecItem(Icons.person, car.ownerSerialNumber == 1 ? '1st Owner' : '${car.ownerSerialNumber} Owners'),
+        _buildSpecItem(
+            Icons.person,
+            car.ownerSerialNumber == 1
+                ? '1st Owner'
+                : '${car.ownerSerialNumber} Owners'),
         const SizedBox(width: 8),
         _buildSpecItem(Icons.location_on, car.inspectionLocation),
       ],
@@ -296,7 +350,13 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
             Icon(icon, size: 14, color: Colors.orange.withOpacity(0.8)),
             const SizedBox(width: 4),
             Expanded(
-              child: Text(value, style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.7), fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+              child: Text(value,
+                  style: TextStyle(
+                      fontSize: 9,
+                      color: Colors.white.withOpacity(0.7),
+                      fontWeight: FontWeight.w500),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
@@ -307,31 +367,50 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
   Widget _buildBottomRow(CarsListModel car) {
     return Container(
       padding: const EdgeInsets.only(top: 12),
-      decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.white.withOpacity(0.06)))),
+      decoration: BoxDecoration(
+          border:
+              Border(top: BorderSide(color: Colors.white.withOpacity(0.06)))),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('FMV Price', style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.4))),
+              Text('FMV Price',
+                  style: TextStyle(
+                      fontSize: 10, color: Colors.white.withOpacity(0.4))),
               const SizedBox(height: 2),
-              Text('₹${NumberFormat.decimalPattern('en_IN').format(car.priceDiscovery)}', style: TextStyle(fontSize: 18, color: AppColors.neonGreen, fontWeight: FontWeight.bold)),
+              Text(
+                  '₹${NumberFormat.decimalPattern('en_IN').format(car.priceDiscovery)}',
+                  style: TextStyle(
+                      fontSize: 18,
+                      color: AppColors.neonGreen,
+                      fontWeight: FontWeight.bold)),
             ],
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Colors.orange, Color(0xFFFF9800)]),
+              gradient: const LinearGradient(
+                  colors: [Colors.orange, Color(0xFFFF9800)]),
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.orange.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.schedule, size: 16, color: Colors.white),
                 SizedBox(width: 6),
-                Text('Schedule', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                Text('Schedule',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
               ],
             ),
           ),
@@ -343,12 +422,18 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
   Widget _buildLoadingGrid() {
     return GridView.builder(
       padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 20, mainAxisSpacing: 20, childAspectRatio: 0.72),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 20,
+          mainAxisSpacing: 20,
+          childAspectRatio: 0.72),
       itemCount: 6,
       itemBuilder: (context, index) => ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: Container(
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(24)),
+          decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(24)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -366,8 +451,15 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [ShimmerWidget(height: 10, width: 60), const SizedBox(height: 4), ShimmerWidget(height: 18, width: 80)]),
-                          ShimmerWidget(height: 36, width: 100, borderRadius: 12),
+                          Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ShimmerWidget(height: 10, width: 60),
+                                const SizedBox(height: 4),
+                                ShimmerWidget(height: 18, width: 80)
+                              ]),
+                          ShimmerWidget(
+                              height: 36, width: 100, borderRadius: 12),
                         ],
                       ),
                     ],
@@ -382,10 +474,18 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
   }
 
   void _showAuctionDialog(final CarsListModel car) {
-    int goLiveNowOrScheduleIndex = 0;
+    int topTabIndex = 0; // 0=Go Live Now, 1=Schedule, 2=Set Margin
+
     DateTime now = DateTime.now();
     DateTime? startAt = (car.auctionStartTime ?? now);
-    int durationHrs = (car.auctionDuration is int && car.auctionDuration > 0) ? car.auctionDuration : 2;
+    int durationHrs = (car.auctionDuration is int && car.auctionDuration > 0)
+        ? car.auctionDuration
+        : 2;
+
+    // Margin dropdown state
+    final List<double> marginOptions =
+        List.generate(33, (i) => i * 0.5); // 0..16 step 0.5
+    double selectedMargin = 0.0; // default
 
     showDialog(
       context: Get.context!,
@@ -398,41 +498,114 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
             child: StatefulBuilder(
               builder: (context, setState) {
                 DateTime getEnd(DateTime s, int h) => s.add(Duration(hours: h));
-                final effectiveStart = (goLiveNowOrScheduleIndex == 0 ? now : startAt!);
+                final effectiveStart = (topTabIndex == 0 ? now : startAt!);
                 final endAt = getEnd(effectiveStart, durationHrs);
-                String fmt(DateTime d) => DateFormat('EEE, dd MMM yyyy • hh:mm a').format(d.toLocal());
+                String fmt(DateTime d) =>
+                    DateFormat('EEE, dd MMM yyyy • hh:mm a')
+                        .format(d.toLocal());
 
                 Future<void> pickDateTime() async {
-                  final date = await showDatePicker(context: context, initialDate: startAt!, firstDate: DateTime(now.year - 1), lastDate: DateTime(now.year + 2));
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: startAt!,
+                    firstDate: DateTime(now.year - 1),
+                    lastDate: DateTime(now.year + 2),
+                  );
                   if (date == null) return;
-                  final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(startAt!));
+
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.fromDateTime(startAt!),
+                  );
                   if (time == null) return;
-                  startAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+
+                  startAt = DateTime(
+                      date.year, date.month, date.day, time.hour, time.minute);
                   setState(() {});
                 }
 
-                Future<void> submit() async {
+                Future<void> submitAuction() async {
                   try {
                     final DateTime currentTime = DateTime.now();
-                    final DateTime auctionStartTimeLocal = (goLiveNowOrScheduleIndex == 0) ? currentTime : (startAt ?? currentTime);
-                    final DateTime auctionEndTimeLocal = auctionStartTimeLocal.add(Duration(hours: durationHrs));
+                    final DateTime auctionStartTimeLocal = (topTabIndex == 0)
+                        ? currentTime
+                        : (startAt ?? currentTime);
+                    final DateTime auctionEndTimeLocal =
+                        auctionStartTimeLocal.add(Duration(hours: durationHrs));
+
                     final body = {
                       'carId': car.id,
-                      'auctionStartTime': auctionStartTimeLocal.toUtc().toIso8601String(),
+                      'auctionStartTime':
+                          auctionStartTimeLocal.toUtc().toIso8601String(),
                       'auctionDuration': durationHrs,
-                      'auctionEndTime': auctionEndTimeLocal.toUtc().toIso8601String(),
-                      'auctionMode': goLiveNowOrScheduleIndex == 0 ? 'makeLiveNow' : 'scheduledForLater',
+                      'auctionEndTime':
+                          auctionEndTimeLocal.toUtc().toIso8601String(),
+                      'auctionMode': topTabIndex == 0
+                          ? 'makeLiveNow'
+                          : 'scheduledForLater',
                     };
-                    final response = await ApiService.post(endpoint: AppUrls.schedulAuction, body: body);
+
+                    final response = await ApiService.post(
+                        endpoint: AppUrls.schedulAuction, body: body);
+
                     if (response.statusCode == 200) {
-                      ToastWidget.show(context: Get.context!, title: goLiveNowOrScheduleIndex == 0 ? 'Car is live now' : 'Auction scheduled', type: ToastType.success);
+                      ToastWidget.show(
+                        context: Get.context!,
+                        title: topTabIndex == 0
+                            ? 'Car is live now'
+                            : 'Auction scheduled',
+                        type: ToastType.success,
+                      );
                       Get.back();
                     } else {
-                      ToastWidget.show(context: Get.context!, title: 'Failed to update', type: ToastType.error);
+                      ToastWidget.show(
+                        context: Get.context!,
+                        title: 'Failed to update',
+                        type: ToastType.error,
+                      );
                     }
                   } catch (e) {
                     debugPrint(e.toString());
-                    ToastWidget.show(context: Get.context!, title: 'Something went wrong', type: ToastType.error);
+                    ToastWidget.show(
+                      context: Get.context!,
+                      title: 'Something went wrong',
+                      type: ToastType.error,
+                    );
+                  }
+                }
+
+                Future<void> submitMargin() async {
+                  try {
+                    final body = {
+                      'carId': car.id,
+                      'marginType': 'percent',
+                      'marginValue': selectedMargin,
+                    };
+
+                    final response = await ApiService.post(
+                        endpoint: AppUrls.setMargin, body: body);
+
+                    if (response.statusCode == 200) {
+                      ToastWidget.show(
+                        context: Get.context!,
+                        title: 'Margin saved',
+                        type: ToastType.success,
+                      );
+                      Get.back();
+                    } else {
+                      ToastWidget.show(
+                        context: Get.context!,
+                        title: 'Failed to save margin',
+                        type: ToastType.error,
+                      );
+                    }
+                  } catch (e) {
+                    debugPrint(e.toString());
+                    ToastWidget.show(
+                      context: Get.context!,
+                      title: 'Something went wrong',
+                      type: ToastType.error,
+                    );
                   }
                 }
 
@@ -447,97 +620,293 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Header
-                      Container(
+                      SizedBox(
                         height: 120,
                         width: double.infinity,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
                             ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                              child: CachedNetworkImage(imageUrl: car.imageUrl, fit: BoxFit.cover, errorWidget: (_, __, ___) => Container(color: Colors.grey[900])),
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(24)),
+                              child: CachedNetworkImage(
+                                imageUrl: car.imageUrl,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, __, ___) =>
+                                    Container(color: Colors.grey[900]),
+                              ),
                             ),
                             Container(
                               decoration: BoxDecoration(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                                gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.8)]),
+                                borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(24)),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.8)
+                                  ],
+                                ),
                               ),
                             ),
                             Positioned(
                               bottom: 16,
                               left: 20,
                               right: 20,
-                              child: Text('${car.make} ${car.model} ${car.variant}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                              child: Text(
+                                '${car.make} ${car.model} ${car.variant}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                             Positioned(
                               top: 12,
                               right: 12,
                               child: GestureDetector(
                                 onTap: () => Get.back(),
-                                child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), shape: BoxShape.circle), child: const Icon(Icons.close, color: Colors.white, size: 18)),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.close,
+                                      color: Colors.white, size: 18),
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
+
                       Padding(
                         padding: const EdgeInsets.all(24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Mode switcher
+                            // Top tabs (3 tabs)
                             Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () => setState(() => goLiveNowOrScheduleIndex = 0),
+                                      onTap: () =>
+                                          setState(() => topTabIndex = 0),
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 12),
                                         decoration: BoxDecoration(
-                                          color: goLiveNowOrScheduleIndex == 0 ? Colors.orange : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(10),
+                                          color: topTabIndex == 0
+                                              ? Colors.orange
+                                              : Colors.transparent,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
                                         ),
-                                        child: Center(child: Text('Go Live Now', style: TextStyle(color: goLiveNowOrScheduleIndex == 0 ? Colors.white : Colors.white54, fontWeight: FontWeight.w600))),
+                                        child: Center(
+                                          child: Text(
+                                            'Go Live Now',
+                                            style: TextStyle(
+                                              color: topTabIndex == 0
+                                                  ? Colors.white
+                                                  : Colors.white54,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () => setState(() => goLiveNowOrScheduleIndex = 1),
+                                      onTap: () =>
+                                          setState(() => topTabIndex = 1),
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 12),
                                         decoration: BoxDecoration(
-                                          color: goLiveNowOrScheduleIndex == 1 ? Colors.orange : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(10),
+                                          color: topTabIndex == 1
+                                              ? Colors.orange
+                                              : Colors.transparent,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
                                         ),
-                                        child: Center(child: Text('Schedule', style: TextStyle(color: goLiveNowOrScheduleIndex == 1 ? Colors.white : Colors.white54, fontWeight: FontWeight.w600))),
+                                        child: Center(
+                                          child: Text(
+                                            'Schedule',
+                                            style: TextStyle(
+                                              color: topTabIndex == 1
+                                                  ? Colors.white
+                                                  : Colors.white54,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () =>
+                                          setState(() => topTabIndex = 2),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: topTabIndex == 2
+                                              ? Colors.orange
+                                              : Colors.transparent,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            'Set Margin',
+                                            style: TextStyle(
+                                              color: topTabIndex == 2
+                                                  ? Colors.white
+                                                  : Colors.white54,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+
                             const SizedBox(height: 20),
-                            // Start time
-                            _buildDialogTile(
-                              icon: Icons.access_time,
-                              title: goLiveNowOrScheduleIndex == 0 ? 'Live start' : 'Scheduled start',
-                              subtitle: fmt(effectiveStart),
-                              trailing: goLiveNowOrScheduleIndex == 1 ? Icons.edit_calendar : Icons.lock_clock,
-                              enabled: goLiveNowOrScheduleIndex == 1,
-                              onTap: goLiveNowOrScheduleIndex == 1 ? pickDateTime : null,
-                            ),
-                            const SizedBox(height: 12),
-                            // Duration
-                            _buildDurationTile(durationHrs, (val) => setState(() => durationHrs = val)),
-                            const SizedBox(height: 12),
-                            // End time
-                            _buildDialogTile(icon: Icons.flag, title: 'Ends at', subtitle: fmt(endAt), trailing: Icons.info_outline, enabled: false),
+
+                            if (topTabIndex != 2) ...[
+                              _buildDialogTile(
+                                icon: Icons.access_time,
+                                title: topTabIndex == 0
+                                    ? 'Live start'
+                                    : 'Scheduled start',
+                                subtitle: fmt(effectiveStart),
+                                trailing: topTabIndex == 1
+                                    ? Icons.edit_calendar
+                                    : Icons.lock_clock,
+                                enabled: topTabIndex == 1,
+                                onTap: topTabIndex == 1 ? pickDateTime : null,
+                              ),
+                              const SizedBox(height: 12),
+                              _buildDurationTile(durationHrs,
+                                  (val) => setState(() => durationHrs = val)),
+                              const SizedBox(height: 12),
+                              _buildDialogTile(
+                                icon: Icons.flag,
+                                title: 'Ends at',
+                                subtitle: fmt(endAt),
+                                trailing: Icons.info_outline,
+                                enabled: false,
+                              ),
+                            ] else ...[
+                              // ✅ Set Margin UI (3 lines + dropdown)
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: Colors.white.withOpacity(0.1)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // 3 lines text
+                                    Text(
+                                      'Customer expected price = 3000',
+                                      style: TextStyle(
+                                          color: Colors.white.withOpacity(0.85),
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Highest bid = 2100',
+                                      style: TextStyle(
+                                          color: Colors.white.withOpacity(0.75),
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Highest bid with margin = 1800',
+                                      style: TextStyle(
+                                          color: Colors.white.withOpacity(0.75),
+                                          fontWeight: FontWeight.w500),
+                                    ),
+
+                                    const SizedBox(height: 14),
+
+                                    const Text(
+                                      'Set Margin',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+
+                                    // Dropdown (same style as TextField)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.04),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color:
+                                                Colors.white.withOpacity(0.12)),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<double>(
+                                          value: selectedMargin,
+                                          isExpanded: true,
+                                          dropdownColor:
+                                              const Color(0xFF1A1F2A),
+                                          iconEnabledColor: Colors.white70,
+                                          style: const TextStyle(
+                                              color: Colors.white),
+                                          items: marginOptions.map((v) {
+                                            final label = (v % 1 == 0)
+                                                ? v.toInt().toString()
+                                                : v.toString();
+                                            return DropdownMenuItem<double>(
+                                              value: v,
+                                              child: Text('$label%'),
+                                            );
+                                          }).toList(),
+                                          onChanged: (val) {
+                                            if (val == null) return;
+                                            setState(
+                                                () => selectedMargin = val);
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(
+                                height: 10,
+                              ),
+                              Text(
+                                  "New System Bid with Margin ${selectedMargin}"),
+                            ],
+
                             const SizedBox(height: 24),
-                            // Buttons
+
                             Row(
                               children: [
                                 Expanded(
@@ -545,19 +914,55 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
                                     onTap: () => Get.back(),
                                     child: Container(
                                       height: 48,
-                                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withOpacity(0.1))),
-                                      child: Center(child: Text('Cancel', style: TextStyle(color: Colors.white.withOpacity(0.7), fontWeight: FontWeight.w500))),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.05),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color:
+                                                Colors.white.withOpacity(0.1)),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'Cancel',
+                                          style: TextStyle(
+                                            color:
+                                                Colors.white.withOpacity(0.7),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: GestureDetector(
-                                    onTap: submit,
+                                    onTap: () {
+                                      if (topTabIndex == 2) {
+                                        submitMargin();
+                                      } else {
+                                        submitAuction();
+                                      }
+                                    },
                                     child: Container(
                                       height: 48,
-                                      decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12)),
-                                      child: Center(child: Text(goLiveNowOrScheduleIndex == 0 ? 'Make Live Now' : 'Save Schedule', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          topTabIndex == 2
+                                              ? 'Save Margin'
+                                              : (topTabIndex == 0
+                                                  ? 'Make Live Now'
+                                                  : 'Save Schedule'),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -577,13 +982,21 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDialogTile({required IconData icon, required String title, required String subtitle, required IconData trailing, bool enabled = true, VoidCallback? onTap}) {
+  Widget _buildDialogTile(
+      {required IconData icon,
+      required String title,
+      required String subtitle,
+      required IconData trailing,
+      bool enabled = true,
+      VoidCallback? onTap}) {
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: enabled ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.02),
+          color: enabled
+              ? Colors.white.withOpacity(0.05)
+              : Colors.white.withOpacity(0.02),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white.withOpacity(0.08)),
         ),
@@ -591,7 +1004,9 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10)),
               child: Icon(icon, size: 20, color: Colors.orange),
             ),
             const SizedBox(width: 16),
@@ -599,9 +1014,15 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(color: enabled ? Colors.white : Colors.white54, fontWeight: FontWeight.w600, fontSize: 13)),
+                  Text(title,
+                      style: TextStyle(
+                          color: enabled ? Colors.white : Colors.white54,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13)),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                  Text(subtitle,
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.5), fontSize: 12)),
                 ],
               ),
             ),
@@ -624,7 +1045,9 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10)),
             child: const Icon(Icons.timer, size: 20, color: Colors.orange),
           ),
           const SizedBox(width: 16),
@@ -632,9 +1055,15 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Duration (hours)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                const Text('Duration (hours)',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13)),
                 const SizedBox(height: 2),
-                Text('$durationHrs hour${durationHrs == 1 ? '' : 's'}', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                Text('$durationHrs hour${durationHrs == 1 ? '' : 's'}',
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.5), fontSize: 12)),
               ],
             ),
           ),
@@ -642,22 +1071,33 @@ class AdminDesktopUpcomingCarsListPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               GestureDetector(
-                onTap: () { if (durationHrs > 1) onChanged(durationHrs - 1); },
+                onTap: () {
+                  if (durationHrs > 1) onChanged(durationHrs - 1);
+                },
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.remove, color: Colors.white, size: 18),
+                  decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8)),
+                  child:
+                      const Icon(Icons.remove, color: Colors.white, size: 18),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text('$durationHrs', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                child: Text('$durationHrs',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18)),
               ),
               GestureDetector(
                 onTap: () => onChanged(durationHrs + 1),
                 child: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(8)),
                   child: const Icon(Icons.add, color: Colors.white, size: 18),
                 ),
               ),

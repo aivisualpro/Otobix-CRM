@@ -7,6 +7,44 @@ class AppConstants {
   static final BannerStatus bannerStatus = BannerStatus();
   static final BannerTypes bannerTypes = BannerTypes();
   static final BannerViews bannerViews = BannerViews();
+  static const List<String> indianStates = [
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+    "Andaman and Nicobar Islands",
+    "Chandigarh",
+    "Dadra and Nagar Haveli",
+    "Delhi",
+    "Jammu and Kashmir",
+    "Ladakh",
+    "Lakshadweep",
+    "Puducherry",
+  ];
 }
 
 // User roles class
@@ -16,6 +54,8 @@ class Roles {
   final String customer = 'Customer';
   final String salesManager = 'Sales Manager';
   final String admin = 'Admin';
+  final String leads = 'Leads';
+  final String Inspection = 'Inspection';
 
   final String userStatusPending = 'Pending';
   final String userStatusApproved = 'Approved';

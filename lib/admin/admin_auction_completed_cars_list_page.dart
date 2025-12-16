@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:otobix_crm/admin/controller/admin_auction_completed_cars_list_controller.dart';
 import 'package:otobix_crm/admin/controller/admin_cars_list_controller.dart';
 import 'package:otobix_crm/models/cars_list_model.dart';
 import 'package:otobix_crm/network/api_service.dart';
@@ -15,15 +16,15 @@ import 'package:otobix_crm/widgets/empty_data_widget.dart';
 import 'package:otobix_crm/widgets/shimmer_widget.dart';
 import 'package:otobix_crm/widgets/tab_bar_widget.dart';
 import 'package:otobix_crm/widgets/toast_widget.dart';
-import 'package:otobix_crm/admin/controller/admin_auction_completed_cars_list_controller.dart';
 
 class AdminAuctionCompletedCarsListPage extends StatelessWidget {
   AdminAuctionCompletedCarsListPage({super.key});
 
-// Main controller
+  // Main controller
   final AdminCarsListController carsListController =
       Get.find<AdminCarsListController>();
-// Current page controller
+
+  // Current page controller
   final AdminAuctionCompletedCarsListController auctionCompletedController =
       Get.find<AdminAuctionCompletedCarsListController>();
 
@@ -36,10 +37,12 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
             if (auctionCompletedController.isLoading.value) {
               return _buildLoadingWidget();
             }
+
             final carsList = carsListController.searchCar(
               carsList:
                   auctionCompletedController.filteredAuctionCompletedCarsList,
             );
+
             if (carsList.isEmpty) {
               return Expanded(
                 child: Center(
@@ -67,7 +70,6 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 5),
         itemBuilder: (context, index) {
           final car = carsList[index];
-          // InkWell for car card
           return _buildCarCard(car);
         },
       ),
@@ -77,7 +79,7 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
   Widget _buildCarCard(CarsListModel car) {
     final String yearMonthOfManufacture =
         '${GlobalFunctions.getFormattedDate(date: car.yearMonthOfManufacture, type: GlobalFunctions.year)} ';
-    // InkWell for car card
+
     return GestureDetector(
       onTap: () => _showAuctionCompletedCarsBottomSheet(car),
       child: Card(
@@ -94,14 +96,12 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      // Car details
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                // Car Image
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: CachedNetworkImage(
@@ -139,7 +139,7 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
                                     },
                                   ),
                                 ),
-                                SizedBox(width: 10),
+                                const SizedBox(width: 10),
                                 Flexible(
                                   child: Column(
                                     crossAxisAlignment:
@@ -156,11 +156,11 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
                                       ),
                                       Row(
                                         children: [
-                                          Text(
+                                          const Text(
                                             'HB: ',
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -201,10 +201,6 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
                                           ) ??
                                           'N/A',
                                     ),
-                                    // _buildIconAndTextWidget(
-                                    //   icon: Icons.local_gas_station,
-                                    //   text: car.fuelType,
-                                    // ),
                                     _buildIconAndTextWidget(
                                       icon: Icons.numbers,
                                       text: car.appointmentId,
@@ -295,9 +291,8 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
   Widget _buildBottomSheetContent(final CarsListModel car) {
     return Column(
       children: [
-        // SizedBox(height: 20),
-        // _buildSearchBar(context),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
+
         // Grab handle
         Center(
           child: Container(
@@ -360,8 +355,8 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
 
         Expanded(
           child: TabBarWidget(
-            titles: ['Move to Otobuy', 'Make Live Again', 'Remove Car'],
-            counts: [0, 0, 0],
+            titles: const ['Move to Otobuy', 'Make Live Again', 'Remove Car'],
+            counts: const [0, 0, 0],
             showCount: false,
             screens: [
               _buildMoveToOtobuyWidget(car),
@@ -381,7 +376,6 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
   // Remove screen
   Widget _buildRemoveScreen(final CarsListModel car) {
     return GetX<AdminAuctionCompletedCarsListController>(
-      init: AdminAuctionCompletedCarsListController(),
       builder: (completedController) {
         final canRemove =
             completedController.reasonText.value.trim().isNotEmpty &&
@@ -390,8 +384,6 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
         return Column(
           children: [
             const SizedBox(height: 20),
-
-            // Remove Car Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15),
               child: Column(
@@ -417,7 +409,7 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
                     children: [
                       Expanded(
                         child: AbsorbPointer(
-                          absorbing: !canRemove, // block taps when not allowed
+                          absorbing: !canRemove,
                           child: Opacity(
                             opacity: canRemove ? 1 : 0.6,
                             child: ButtonWidget(
@@ -458,9 +450,9 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
                                       ),
                                     ) ??
                                     false;
+
                                 if (!ok) return;
 
-                                // 👇 call your API / controller method
                                 await completedController.removeCar(
                                   carId: car.id,
                                 );
@@ -481,20 +473,32 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
     );
   }
 
-  // ===================== MAKE LIVE AGAIN =====================
+// ===================== MAKE LIVE AGAIN (UI like screenshot + Set Margin) =====================
   Widget _buildMakeLiveWidget(CarsListModel car, BuildContext context) {
-    // Local sheet state
-    int goLiveNowOrScheduleIndex = 0; // 0 = Go Live Now, 1 = Schedule
-    DateTime now = DateTime.now();
-    DateTime? startAt = (car.auctionStartTime ?? now);
-    int durationHrs = (car.auctionDuration > 0) ? car.auctionDuration : 2;
+    int modeIndex = 0; // 0 = Go Live Now, 1 = Schedule, 2 = Set Margin
+
+    final now = DateTime.now();
+    DateTime startAt = (car.auctionStartTime ?? now);
+    int durationHrs = (car.auctionDuration > 0) ? car.auctionDuration : 24;
+
+    // margin (%)
+    double marginPercentage = 0.0;
 
     DateTime getEnd(DateTime s, int h) => s.add(Duration(hours: h));
 
-    Future<void> _pickDateTime() async {
+    // ---- colors (match screenshot vibe) ----
+    const bgCard = Color(0xFF1E2430);
+    const bgTile = Color(0xFF242B38);
+    const orange = Color(0xFFFFA300);
+    const textDim = Color(0xFFB8C0CC);
+
+    String fmt(DateTime d) =>
+        DateFormat('EEE, dd MMM yyyy • hh:mm a').format(d);
+
+    Future<void> pickDateTime(StateSetter setState) async {
       final date = await showDatePicker(
         context: context,
-        initialDate: startAt!,
+        initialDate: startAt,
         firstDate: DateTime(now.year - 1),
         lastDate: DateTime(now.year + 2),
       );
@@ -502,71 +506,81 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
 
       final time = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.fromDateTime(startAt!),
+        initialTime: TimeOfDay.fromDateTime(startAt),
       );
       if (time == null) return;
 
-      startAt = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
-      );
+      setState(() {
+        startAt =
+            DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      });
     }
 
-    Future<void> _submit({
-      required String carId,
-      required DateTime? auctionStartTime,
-      required int auctionDuration,
-      required int goLiveNowOrScheduleIndex,
-    }) async {
+    Future<void> submit() async {
       try {
-        // final pickedStart =
-        //     (goLiveNowOrScheduleIndex == 0 ? DateTime.now() : startAt)!
-        //         .toUtc();
+        // ===== Set Margin =====
+        if (modeIndex == 2) {
+          if (marginPercentage <= 0) {
+            ToastWidget.show(
+              context: Get.context!,
+              title: 'Please set margin',
+              subtitle: 'Margin must be greater than 0%',
+              type: ToastType.error,
+            );
+            return;
+          }
 
-        // Current time for go live now tab
-        final DateTime currentTime = DateTime.now();
+          final body = {
+            "carId": car.id,
+            "marginPercentage": marginPercentage,
+          };
 
-        // Decide start time from the selected tab
-        final DateTime auctionStartTimeLocal = (goLiveNowOrScheduleIndex == 0)
-            ? currentTime
-            : (auctionStartTime ?? currentTime);
+          final res = await ApiService.post(
+            endpoint: AppUrls.setMargin, // <-- apni API constant yahan
+            body: body,
+          );
 
-        // Get auction duration in hours
-        final auctionDurationLocal = auctionDuration;
+          if (res.statusCode == 200) {
+            ToastWidget.show(
+              context: Get.context!,
+              title: 'Margin set successfully',
+              type: ToastType.success,
+            );
+            Get.back();
+          } else {
+            ToastWidget.show(
+              context: Get.context!,
+              title: 'Failed to set margin',
+              type: ToastType.error,
+            );
+          }
+          return;
+        }
 
-        // Compute end time from duration
-        final DateTime auctionEndTimeLocal = auctionStartTimeLocal.add(
-          Duration(hours: auctionDuration),
-        );
+        // ===== Go Live / Schedule =====
+        final start = (modeIndex == 0) ? DateTime.now() : startAt;
+        final end = start.add(Duration(hours: durationHrs));
 
         final body = {
-          'carId': carId,
-          'auctionStartTime': auctionStartTimeLocal.toUtc().toIso8601String(),
-          'auctionDuration': auctionDurationLocal,
-          'auctionEndTime': auctionEndTimeLocal.toUtc().toIso8601String(),
-          'auctionMode': goLiveNowOrScheduleIndex == 0
-              ? 'makeLiveNow'
-              : 'scheduledForLater',
+          "carId": car.id,
+          "auctionStartTime": start.toUtc().toIso8601String(),
+          "auctionDuration": durationHrs,
+          "auctionEndTime": end.toUtc().toIso8601String(),
+          "auctionMode": modeIndex == 0 ? "makeLiveNow" : "scheduledForLater",
         };
 
-        final response = await ApiService.post(
-          // endpoint: AppUrls.updateCarAuctionTime,
+        final res = await ApiService.post(
           endpoint: AppUrls.schedulAuction,
           body: body,
         );
 
-        if (response.statusCode == 200) {
+        if (res.statusCode == 200) {
           ToastWidget.show(
             context: Get.context!,
-            title: goLiveNowOrScheduleIndex == 0
-                ? 'Car is live now'
-                : 'Auction scheduled',
+            title: modeIndex == 0 ? 'Car is live now' : 'Auction scheduled',
             type: ToastType.success,
           );
-          Get.back(); // close sheet
+          Get.back();
         } else {
           ToastWidget.show(
             context: Get.context!,
@@ -584,230 +598,307 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
       }
     }
 
-    return StatefulBuilder(
-      builder: (context, setState) {
-        final effectiveStart = (goLiveNowOrScheduleIndex == 0 ? now : startAt!);
-        final endAt = getEnd(effectiveStart, durationHrs);
-
-        Widget _chip(String label, int value) {
-          final selected = goLiveNowOrScheduleIndex == value;
-          return ChoiceChip(
-            label: Text(label),
-            selected: selected,
-            onSelected: (_) => setState(() => goLiveNowOrScheduleIndex = value),
-            backgroundColor: AppColors.grey.withValues(alpha: .1),
-            selectedColor: AppColors.green.withValues(alpha: .15),
-            labelStyle: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: selected ? AppColors.green : AppColors.black,
+    Widget pillButton({
+      required String text,
+      required bool selected,
+      required VoidCallback onTap,
+    }) {
+      return Expanded(
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selected ? orange : bgTile,
+              borderRadius: BorderRadius.circular(14),
             ),
-            // shape & border
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(50), // radius
-              side: BorderSide.none, // no border
-            ),
-
-            side: BorderSide.none,
-          );
-        }
-
-        Widget _tile({
-          required IconData icon,
-          required String title,
-          required String subtitle,
-          Widget? trailing,
-          VoidCallback? onTap,
-          bool enabled = true,
-        }) {
-          return InkWell(
-            onTap: enabled ? onTap : null,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.withValues(alpha: .2)),
-                color:
-                    enabled ? Colors.white : Colors.grey.withValues(alpha: .05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.grey.withValues(alpha: .12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(icon, size: 18, color: AppColors.grey),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                            color: enabled ? AppColors.black : Colors.black54,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (trailing != null) trailing,
-                ],
+            child: Text(
+              text,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: selected ? Colors.white : textDim,
               ),
             ),
-          );
-        }
+          ),
+        ),
+      );
+    }
 
-        String fmt(DateTime d) =>
-            DateFormat('EEE, dd MMM yyyy • hh:mm a').format(d.toLocal());
-
-        return SingleChildScrollView(
-          // controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    Widget tile({
+      required IconData icon,
+      required String title,
+      required String sub,
+      Widget? trailing,
+      VoidCallback? onTap,
+      bool enabled = true,
+    }) {
+      return GestureDetector(
+        onTap: enabled ? onTap : null,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: bgTile,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
             children: [
-              // Mode switch
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                width: double.infinity,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(50),
-                  color: AppColors.grey.withValues(alpha: .1),
+                  color: const Color(0x33222222),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Row(
+                child: Icon(icon, color: orange, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _chip('Go live now', 0)),
-                    const SizedBox(width: 10), // space between
-                    Expanded(child: _chip('Schedule', 1)),
+                    Text(title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        )),
+                    const SizedBox(height: 4),
+                    Text(
+                      sub,
+                      style: const TextStyle(
+                        color: textDim,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
+              if (trailing != null) trailing,
+            ],
+          ),
+        ),
+      );
+    }
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        final effectiveStart = (modeIndex == 0) ? now : startAt;
+        final endAt = getEnd(effectiveStart, durationHrs);
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          decoration: BoxDecoration(
+            color: bgCard,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ===== TOP 3 BUTTONS (this is the missing part in your UI) =====
+              // Row(
+              //   children: [
+              //     // pillButton(
+              //     //   text: "Go Live Now",
+              //     //   selected: modeIndex == 0,
+              //     //   onTap: () => setState(() => modeIndex = 0),
+              //     // ),
+              //     const SizedBox(width: 12),
+              //     pillButton(
+              //       text: "Schedule",
+              //       selected: modeIndex == 1,
+              //       onTap: () => setState(() => modeIndex = 1),
+              //     ),
+              //     const SizedBox(width: 12),
+              //     pillButton(
+              //       text: "Set Margin",
+              //       selected: modeIndex == 2,
+              //       onTap: () => setState(() => modeIndex = 2),
+              //     ),
+              //   ],
+              // ),
+
+              const SizedBox(height: 14),
+
+              // ===== CONTENT =====
+              if (modeIndex != 2) ...[
+                tile(
+                  icon: Icons.access_time,
+                  title: modeIndex == 0 ? "Live start" : "Scheduled start",
+                  sub: fmt(effectiveStart),
+                  enabled: modeIndex == 1,
+                  onTap: modeIndex == 1 ? () => pickDateTime(setState) : null,
+                  trailing: Icon(
+                    Icons.edit_calendar,
+                    color: modeIndex == 1 ? textDim : Colors.transparent,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                tile(
+                  icon: Icons.timer,
+                  title: "Duration (hours)",
+                  sub: "$durationHrs hours",
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _miniBtn(
+                        icon: Icons.remove,
+                        onTap: () => setState(() {
+                          if (durationHrs > 1) durationHrs--;
+                        }),
+                        bg: bgCard,
+                        fg: textDim,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        "$durationHrs",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      _miniBtn(
+                        icon: Icons.add,
+                        onTap: () => setState(() => durationHrs++),
+                        bg: orange,
+                        fg: Colors.white,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                tile(
+                  icon: Icons.flag,
+                  title: "Ends at",
+                  sub: fmt(endAt),
+                  trailing: const Icon(Icons.info_outline, color: textDim),
+                  enabled: false,
+                ),
+              ] else ...[
+                tile(
+                  icon: Icons.percent,
+                  title: "Margin (%)",
+                  sub: "Profit margin for this car",
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _miniBtn(
+                        icon: Icons.remove,
+                        onTap: () => setState(() {
+                          if (marginPercentage > 0) marginPercentage -= 0.5;
+                        }),
+                        bg: bgCard,
+                        fg: textDim,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        "${marginPercentage.toStringAsFixed(1)}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text("%",
+                          style: TextStyle(
+                            color: textDim,
+                            fontWeight: FontWeight.w700,
+                          )),
+                      const SizedBox(width: 10),
+                      _miniBtn(
+                        icon: Icons.add,
+                        onTap: () => setState(() => marginPercentage += 0.5),
+                        bg: orange,
+                        fg: Colors.white,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 16),
 
-              // Start time
-              _tile(
-                icon: Icons.access_time,
-                title: goLiveNowOrScheduleIndex == 0
-                    ? 'Live start'
-                    : 'Scheduled start',
-                subtitle: fmt(effectiveStart),
-                onTap: goLiveNowOrScheduleIndex == 1
-                    ? () async {
-                        await _pickDateTime();
-                        setState(() {});
-                      }
-                    : null,
-                enabled: goLiveNowOrScheduleIndex == 1,
-                trailing: Icon(
-                  goLiveNowOrScheduleIndex == 1
-                      ? Icons.edit_calendar
-                      : Icons.lock_clock,
-                  color: AppColors.grey,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Duration picker
-              _tile(
-                icon: Icons.timer,
-                title: 'Duration (hours)',
-                subtitle: '$durationHrs hour${durationHrs == 1 ? '' : 's'}',
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: () => setState(() {
-                        if (durationHrs > 1) durationHrs--;
-                      }),
-                      icon: const Icon(Icons.remove),
-                      splashRadius: 18,
-                    ),
-                    Text(
-                      '$durationHrs',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => setState(() => durationHrs++),
-                      icon: const Icon(Icons.add),
-                      splashRadius: 18,
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // End time (computed)
-              _tile(
-                icon: Icons.flag,
-                title: 'Ends at',
-                subtitle: fmt(endAt),
-                trailing: const Icon(Icons.info_outline, color: AppColors.grey),
-                enabled: false,
-              ),
-
-              const SizedBox(height: 20),
-
-              const SizedBox(height: 10),
-
-              // Buttons
+              // ===== BOTTOM BUTTONS =====
               Row(
                 children: [
                   Expanded(
-                    child: ButtonWidget(
-                      text: 'Cancel',
-                      isLoading: false.obs,
-                      backgroundColor: AppColors.grey.withValues(alpha: .1),
-                      textColor: AppColors.black,
-                      fontSize: 13,
-                      onTap: () => Get.back(),
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: bgTile,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: TextButton(
+                        onPressed: () => Get.back(),
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(
+                            color: textDim,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ButtonWidget(
-                      text: goLiveNowOrScheduleIndex == 0
-                          ? 'Make Live Now'
-                          : 'Save Schedule',
-                      isLoading: false.obs,
-                      fontSize: 13,
-                      onTap: () => _submit(
-                        carId: car.id,
-                        auctionStartTime: startAt,
-                        auctionDuration: durationHrs,
-                        goLiveNowOrScheduleIndex: goLiveNowOrScheduleIndex,
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: orange,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: TextButton(
+                        onPressed: submit,
+                        child: Text(
+                          modeIndex == 0
+                              ? "Make Live Now"
+                              : modeIndex == 1
+                                  ? "Save Schedule"
+                                  : "Set Margin",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 12),
             ],
           ),
         );
       },
+    );
+  }
+
+// small square button (used in duration + margin)
+  Widget _miniBtn({
+    required IconData icon,
+    required VoidCallback onTap,
+    required Color bg,
+    required Color fg,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: fg),
+      ),
     );
   }
 
@@ -827,23 +918,16 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Image shimmer
                 const ShimmerWidget(height: 160, borderRadius: 12),
-
                 Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
-                      // Title shimmer
                       ShimmerWidget(height: 14, width: 150),
                       SizedBox(height: 10),
-
-                      // Bid row shimmer
                       ShimmerWidget(height: 12, width: 100),
                       SizedBox(height: 6),
-
-                      // Year and KM
                       Row(
                         children: [
                           ShimmerWidget(height: 10, width: 60),
@@ -852,8 +936,6 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 6),
-
-                      // Fuel and Location
                       Row(
                         children: [
                           ShimmerWidget(height: 10, width: 60),
@@ -862,8 +944,6 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 8),
-
-                      // Inspection badge
                       ShimmerWidget(height: 10, width: 100),
                     ],
                   ),
@@ -891,7 +971,7 @@ class AdminAuctionCompletedCarsListPage extends StatelessWidget {
   }
 }
 
-// ===================== MOVE TO OTOBUY (final, fixes applied) =====================
+// ===================== MOVE TO OTOBUY =====================
 Widget _buildMoveToOtobuyWidget(CarsListModel car) {
   return _MoveToOtobuyTab(key: ValueKey('otobuy-${car.id}'), car: car);
 }
@@ -909,6 +989,7 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
   final FocusNode priceFocus = FocusNode();
   final ScrollController scrollCtrl = ScrollController();
   final GlobalKey _fieldKey = GlobalKey();
+
   final AdminAuctionCompletedCarsListController auctionCompletedController =
       Get.find<AdminAuctionCompletedCarsListController>();
 
@@ -922,7 +1003,6 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
     nf = NumberFormat.decimalPattern('en_IN');
     final fmv = widget.car.priceDiscovery.toInt();
 
-    // Chips (100%, 110%, 120%, 130%) or fallbacks
     suggested = (fmv <= 0)
         ? [100000, 150000, 200000, 250000]
         : [
@@ -932,7 +1012,6 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
             (fmv * 1.30).round(),
           ];
 
-    // When field gets focus, scroll it into view (after keyboard animates)
     priceFocus.addListener(() {
       if (priceFocus.hasFocus) {
         Future.delayed(const Duration(milliseconds: 100), _scrollFieldIntoView);
@@ -965,7 +1044,6 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
       selectedPrice = v.toDouble();
       priceCtrl.text = nf.format(v);
     });
-    // make sure chip/field are visible
     _scrollFieldIntoView();
   }
 
@@ -976,33 +1054,6 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
     });
   }
 
-  // Future<void> _moveToOtobuy() async {
-  //   if (selectedPrice == null || selectedPrice! <= 0) {
-  //     ToastWidget.show(
-  //       context: context,
-  //       title: 'Missing price',
-  //       subtitle: 'Please select or enter a valid one-click price.',
-  //       type: ToastType.error,
-  //     );
-  //     return;
-  //   }
-
-  //   // TODO: call your API here if needed
-  //   // await ApiService.post(endpoint: AppUrls.moveToOtobuy, body: {
-  //   //   "carId": widget.car.id,
-  //   //   "oneClickPrice": selectedPrice!.round(),
-  //   // });
-
-  //   ToastWidget.show(
-  //     context: context,
-  //     title: 'Moved to Otobuy',
-  //     subtitle:
-  //         'Car moved to otobuy at Rs. ${nf.format(selectedPrice!.round())}.',
-  //     type: ToastType.success,
-  //   );
-  // }
-
-  // local tile matching your style (so this widget is self-contained)
   Widget _tile({
     required IconData icon,
     required String title,
@@ -1063,7 +1114,6 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
 
   @override
   Widget build(BuildContext context) {
-    // Lift content above keyboard smoothly
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return AnimatedPadding(
@@ -1083,8 +1133,6 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
-
-            // Suggested price chips
             Wrap(
               spacing: 10,
               runSpacing: 10,
@@ -1120,10 +1168,7 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
                 );
               }).toList(),
             ),
-
             const SizedBox(height: 14),
-
-            // Custom price
             _tile(
               icon: Icons.sell_outlined,
               title: 'Custom price',
@@ -1131,7 +1176,7 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
                   ? 'Enter amount'
                   : 'Selected: Rs. ${nf.format(selectedPrice!.round())}/-',
               trailing: SizedBox(
-                key: _fieldKey, // for ensureVisible
+                key: _fieldKey,
                 width: 160,
                 child: TextField(
                   controller: priceCtrl,
@@ -1148,22 +1193,14 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
                       vertical: 8,
                     ),
                   ),
-                  onTap: _scrollFieldIntoView, // scroll immediately on tap
-                  onChanged: _onPriceChanged, // keep selectedPrice synced
-                  onEditingComplete: () {
-                    // Don’t mutate text; just dismiss keyboard
-                    FocusScope.of(context).unfocus();
-                  },
-                  onSubmitted: (_) {
-                    FocusScope.of(context).unfocus();
-                  },
+                  onTap: _scrollFieldIntoView,
+                  onChanged: _onPriceChanged,
+                  onEditingComplete: () => FocusScope.of(context).unfocus(),
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                 ),
               ),
             ),
-
             const SizedBox(height: 30),
-
-            // Action
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -1171,7 +1208,6 @@ class _MoveToOtobuyTabState extends State<_MoveToOtobuyTab> {
                   child: ButtonWidget(
                     text: 'Move to Otobuy',
                     isLoading: false.obs,
-                    // onTap: _moveToOtobuy,
                     onTap: () => auctionCompletedController.moveCarToOtobuy(
                       carId: widget.car.id,
                       oneClickPrice: selectedPrice?.round() ?? 0,
