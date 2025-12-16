@@ -35,6 +35,7 @@ class AdminApprovedUsersListPage extends StatelessWidget {
         }
 
         // search + role filter
+        // new search is omved from desktoop to deshboard
         final filteredUsers = getxController.approvedUsersList.where((user) {
           final query = (searchQuery.value).toLowerCase().trim();
 
