@@ -1,95 +1,101 @@
-import 'package:get/get.dart';
 import 'package:flutter/widgets.dart';
+import 'package:get/get.dart';
 import 'package:otobix_crm/utils/url_helper_web.dart';
 
 class AdminDesktopShellController extends GetxController {
   final RxBool inAdminPanel = false.obs;
   final RxInt hubIndex = 0.obs;
+
   final RxInt adminIndex = (-1).obs;
   final RxString adminOrigin = "".obs;
 
-  // ***************** LEADS PANEL STATE *****************
   final RxBool inLeadsPanel = false.obs;
   final RxInt leadsIndex = (-1).obs;
-  // *****************************************************
+
+  final RxInt dashboardTab = 0.obs;
+
   @override
   void onInit() {
     super.onInit();
 
     final p = UrlHelper.getPath();
 
+    // ✅ If URL is empty or '/', force Home
     if (p == '/' || p.isEmpty) {
-      // default
-      selectHub(0);
+      _applyPath('/home');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        UrlHelper.replacePath('/home');
+      });
     } else {
-      // restore state
+      // ✅ Restore state from URL
       _applyPath(p);
 
-      // ✅ important: after first frame, force URL back to /#/...
+      // ✅ After first frame, force URL back to /#/... (prevents reset to '/')
       WidgetsBinding.instance.addPostFrameCallback((_) {
         UrlHelper.replacePath(p);
       });
     }
 
+    // ✅ Handle browser back/forward
     UrlHelper.onPop(_applyPath);
   }
 
+  /* ---------------- HUB ---------------- */
+
   void selectHub(int i) {
     inAdminPanel.value = false;
-    inLeadsPanel.value = false; // ✅ Added
+    inLeadsPanel.value = false;
     adminIndex.value = -1;
-    leadsIndex.value = -1; // ✅ Added
+    leadsIndex.value = -1;
     adminOrigin.value = "";
     hubIndex.value = i;
+
     UrlHelper.setPath(_hubToPath(i));
   }
 
-  void backToHome() {
-    selectHub(0);
-  }
+  void backToHome() => selectHub(0);
 
   /* ---------------- ADMIN ---------------- */
 
   void openAdminPanel() {
     inAdminPanel.value = true;
-    inLeadsPanel.value = false; // ✅ Added
+    inLeadsPanel.value = false;
     adminIndex.value = -1;
-    leadsIndex.value = -1; // ✅ Added
+    leadsIndex.value = -1;
     adminOrigin.value = "admin";
+
     UrlHelper.setPath('/admin');
   }
 
   void openAdminFromHome(int pageIndex) {
+    hubIndex.value = 0; // ✅ keep Home active
     inAdminPanel.value = true;
-    inLeadsPanel.value = false; // ✅ Added
+    inLeadsPanel.value = false;
     adminIndex.value = pageIndex;
-    leadsIndex.value = -1; // ✅ Added
+    leadsIndex.value = -1;
     adminOrigin.value = "home";
+
     UrlHelper.setPath('${_adminToPath(pageIndex)}?origin=home');
   }
 
   void selectAdmin(int i, {String? origin}) {
     inAdminPanel.value = true;
-    inLeadsPanel.value = false; // ✅ Added
+    inLeadsPanel.value = false;
     adminIndex.value = i;
-    leadsIndex.value = -1; // ✅ Added
+    leadsIndex.value = -1;
 
     adminOrigin.value = origin ?? adminOrigin.value;
-    if (adminOrigin.value.isEmpty) {
-      adminOrigin.value = "admin";
-    }
+    if (adminOrigin.value.isEmpty) adminOrigin.value = "admin";
 
     if (i == -1) {
       UrlHelper.setPath('/admin');
       return;
     }
 
-    UrlHelper.setPath(
-      '${_adminToPath(i)}?origin=${adminOrigin.value}',
-    );
+    UrlHelper.setPath('${_adminToPath(i)}?origin=${adminOrigin.value}');
   }
 
-  /* ***************** LEADS PANEL ***************** */
+  /* ---------------- LEADS ---------------- */
 
   void openLeadsPanel() {
     inLeadsPanel.value = true;
@@ -97,6 +103,7 @@ class AdminDesktopShellController extends GetxController {
     leadsIndex.value = -1;
     adminIndex.value = -1;
     adminOrigin.value = "";
+
     UrlHelper.setPath('/leads');
   }
 
@@ -114,8 +121,6 @@ class AdminDesktopShellController extends GetxController {
 
     UrlHelper.setPath(_leadsToPath(i));
   }
-
-  /* ************************************************ */
 
   /* ---------------- PATHS ---------------- */
 
@@ -161,7 +166,6 @@ class AdminDesktopShellController extends GetxController {
     }
   }
 
-  // ***************** LEADS PATHS *****************
   String _leadsToPath(int i) {
     switch (i) {
       case 0:
@@ -174,7 +178,6 @@ class AdminDesktopShellController extends GetxController {
         return '/leads';
     }
   }
-  // ***********************************************
 
   /* ---------------- URL RESTORE ---------------- */
 
@@ -184,18 +187,19 @@ class AdminDesktopShellController extends GetxController {
     final query =
         parts.length > 1 ? Uri.splitQueryString(parts[1]) : <String, String>{};
 
+    // reset
     inAdminPanel.value = false;
-    inLeadsPanel.value = false; // ✅ Added
+    inLeadsPanel.value = false;
     hubIndex.value = 0;
     adminIndex.value = -1;
-    leadsIndex.value = -1; // ✅ Added
+    leadsIndex.value = -1;
     adminOrigin.value = "";
 
     // ADMIN
     if (path.startsWith('/admin')) {
       inAdminPanel.value = true;
 
-      final adminRoutes = {
+      final adminRoutes = <String, int>{
         '/admin/dashboard': 0,
         '/admin/users': 1,
         '/admin/customers': 2,
@@ -209,35 +213,33 @@ class AdminDesktopShellController extends GetxController {
 
       if (adminRoutes.containsKey(path)) {
         adminIndex.value = adminRoutes[path]!;
-        adminOrigin.value = query['origin'] ?? "admin";
+        adminOrigin.value = query['origin'] ?? 'admin';
+
+        // ✅ if opened from home, keep hub as Home
+        if (adminOrigin.value == 'home') hubIndex.value = 0;
       } else {
         adminIndex.value = -1;
-        adminOrigin.value = "admin";
+        adminOrigin.value = 'admin';
       }
       return;
     }
 
-    // ***************** LEADS ROUTES *****************
+    // LEADS
     if (path.startsWith('/leads')) {
       inLeadsPanel.value = true;
 
-      final leadsRoutes = {
+      final leadsRoutes = <String, int>{
         '/leads/telecalling': 0,
         '/leads/customer-request': 1,
         '/leads/allocation': 2,
       };
 
-      if (leadsRoutes.containsKey(path)) {
-        leadsIndex.value = leadsRoutes[path]!;
-      } else {
-        leadsIndex.value = -1;
-      }
+      leadsIndex.value = leadsRoutes[path] ?? -1;
       return;
     }
-    // ************************************************
 
     // HUB
-    final hubRoutes = {
+    final hubRoutes = <String, int>{
       '/home': 0,
       '/leads': 1,
       '/inspection': 2,
@@ -247,6 +249,9 @@ class AdminDesktopShellController extends GetxController {
 
     if (hubRoutes.containsKey(path)) {
       hubIndex.value = hubRoutes[path]!;
+    } else {
+      // fallback
+      hubIndex.value = 0;
     }
   }
 }
