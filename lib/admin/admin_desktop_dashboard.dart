@@ -51,9 +51,6 @@ class AdminDesktopDashboard extends StatelessWidget {
               padding: const EdgeInsets.only(left: 18, right: 18),
               child: _BreadcrumbBar(shell: shell),
             ),
-            SizedBox(
-              height: 10,
-            ),
             Expanded(
               child: Container(
                 margin: const EdgeInsets.only(left: 18, right: 18, bottom: 18),
@@ -225,7 +222,6 @@ class _BreadcrumbBar extends StatelessWidget {
   final AdminDesktopShellController shell;
   const _BreadcrumbBar({required this.shell});
 
-  // ✅ FIXED: Added missing helper methods
   String _hubLabel(int i) {
     switch (i) {
       case 0:
@@ -281,7 +277,6 @@ class _BreadcrumbBar extends StatelessWidget {
     }
   }
 
-  // ✅ FIXED: Added missing _buildCrumbs method
   List<_Crumb> _buildCrumbs() {
     final crumbs = <_Crumb>[];
 
@@ -316,11 +311,9 @@ class _BreadcrumbBar extends StatelessWidget {
       final showTopDashboardTabs =
           shell.inAdminPanel.value && shell.adminIndex.value == 0;
 
-      // ✅ Show Users controls only when Users selected
       final showUsersControls =
           shell.inAdminPanel.value && shell.adminIndex.value == 1;
 
-      // ✅ Users controller (only when needed)
       AdminHomeController? usersCtrl;
       if (showUsersControls) {
         usersCtrl = Get.isRegistered<AdminHomeController>()
@@ -821,10 +814,14 @@ class _HubBody extends StatelessWidget {
     return Obx(() {
       final idx = shell.hubIndex.value;
 
+      // Leads panel already handles its own view
       if (shell.inLeadsPanel.value) return _LeadsPanelBody(shell: shell);
 
-      if (idx == 0) return const AdminHomeView();
+      // ✅ Home par ab "Home" text center me nahi
+      // ✅ Admin jaise center me tiles/grid show hoga
+      if (idx == 0) return HomeHubView(shell: shell);
 
+      // baqi hubs same
       return Center(
         child: GlassContainer(
           padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 26),
@@ -856,6 +853,69 @@ class _HubBody extends StatelessWidget {
       default:
         return "Home";
     }
+  }
+}
+
+/* ----------------------- HOME HUB VIEW (CENTER TILES) ----------------------- */
+
+class HomeHubView extends StatelessWidget {
+  final AdminDesktopShellController shell;
+  const HomeHubView({super.key, required this.shell});
+
+  @override
+  Widget build(BuildContext context) {
+    final tiles = <_HubTile>[
+      _HubTile(
+        title: "Dashboard",
+        icon: Icons.dashboard_customize_rounded,
+        onTap: () => shell.openAdminFromHome(0),
+      ),
+      _HubTile(
+        title: "Users",
+        icon: Icons.group_outlined,
+        onTap: () => shell.openAdminFromHome(1),
+      ),
+      _HubTile(
+        title: "Cars",
+        icon: Icons.directions_car_outlined,
+        onTap: () => shell.openAdminFromHome(3),
+      ),
+      _HubTile(
+        title: "Profile",
+        icon: Icons.person_outline,
+        onTap: () => shell.openAdminFromHome(4),
+      ),
+      _HubTile(
+        title: "KAM Management",
+        icon: Icons.manage_accounts_outlined,
+        onTap: () => shell.openAdminFromHome(5),
+      ),
+    ];
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1050),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final w = c.maxWidth;
+            final cross = w >= 900 ? 3 : (w >= 600 ? 2 : 1);
+
+            return GridView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.all(12),
+              itemCount: tiles.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cross,
+                crossAxisSpacing: 18,
+                mainAxisSpacing: 18,
+                childAspectRatio: 2.3,
+              ),
+              itemBuilder: (context, i) => _HubTileCard(tile: tiles[i]),
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 
@@ -1148,6 +1208,8 @@ class _AdminPlaceholderPage extends StatelessWidget {
     );
   }
 }
+
+/* ----------------------- USERS HEADER CONTROLS ----------------------- */
 
 class _UsersHeaderControls extends StatelessWidget {
   final AdminHomeController controller;
