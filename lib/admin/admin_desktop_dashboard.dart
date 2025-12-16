@@ -1075,7 +1075,7 @@ class AdminPanelHomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final tiles = <_HubTile>[
       _HubTile(
-        title: "Users",
+        title: "Staff",
         icon: Icons.group_outlined,
         onTap: () => shell.selectAdmin(1, origin: "admin"),
       ),
