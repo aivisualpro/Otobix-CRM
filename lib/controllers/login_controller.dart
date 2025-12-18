@@ -24,13 +24,13 @@ class LoginController extends GetxController {
   final userNameController = TextEditingController();
   final phoneNumberController = TextEditingController();
   final passwordController = TextEditingController();
-
   Future<void> loginUser() async {
     isLoading.value = true;
     try {
       String dealerName = userNameController.text.trim();
       String contactNumber = phoneNumberController.text.trim();
       String password = passwordController.text.trim();
+
       final requestBody = {
         "userName": dealerName,
         "phoneNumber": contactNumber,
@@ -55,66 +55,52 @@ class LoginController extends GetxController {
         final userEmail = user['email'];
         final userPhone = user['phoneNumber'];
 
-        if (approvalStatus == 'Approved' &&
-            userRole == AppConstants.roles.admin) {
-          await SharedPrefsHelper.saveString(SharedPrefsHelper.tokenKey, token);
-        }
-        if (approvalStatus == 'Approved' &&
-            userRole == AppConstants.roles.salesManager) {
-          await SharedPrefsHelper.saveString(SharedPrefsHelper.tokenKey, token);
-        }
-
+        // Permissions field
+        final permissions = user['permissions'] as List<dynamic>? ?? [];
+        print("permission after response $permissions");
+        // ✅ Store all user data
         await SharedPrefsHelper.saveString(
-          SharedPrefsHelper.userKey,
-          jsonEncode(user),
+          SharedPrefsHelper.permissionsKey,
+          jsonEncode(permissions),
         );
-
+        print(token);
+        await SharedPrefsHelper.saveString(SharedPrefsHelper.tokenKey, token);
+        print("token saved in preference");
+        await SharedPrefsHelper.saveString(
+            SharedPrefsHelper.userKey, jsonEncode(user));
         await SharedPrefsHelper.saveString(SharedPrefsHelper.userIdKey, userId);
-
         await SharedPrefsHelper.saveString(
-          SharedPrefsHelper.userNameKey,
-          userName,
-        );
-
+            SharedPrefsHelper.userNameKey, userName);
         await SharedPrefsHelper.saveString(
-          SharedPrefsHelper.userEmailKey,
-          userEmail,
-        );
-
+            SharedPrefsHelper.userEmailKey, userEmail);
         await SharedPrefsHelper.saveString(
-          SharedPrefsHelper.userPhoneKey,
-          userPhone,
-        );
-
+            SharedPrefsHelper.userPhoneKey, userPhone);
         await SharedPrefsHelper.saveString(
-          SharedPrefsHelper.userRoleKey,
-          userRole,
-        );
-
+            SharedPrefsHelper.userRoleKey, userRole);
         await SharedPrefsHelper.saveString(
           SharedPrefsHelper.userImageUrlKey,
           userImageUrl ?? "",
         );
+        await SharedPrefsHelper.saveString(
+            SharedPrefsHelper.approvalStatusKey, approvalStatus);
 
-        if (userRole == AppConstants.roles.admin) {
+        // ✅ SIMPLE NAVIGATION: All approved users go to AdminDashboard
+        if (approvalStatus == 'Approved') {
           Get.offAll(
-            () => ResponsiveLayout(
-              mobile: AdminDashboard(),
-              desktop: AdminDesktopDashboard(),
-            ),
+            () => AdminDesktopDashboard(),
           );
-        } else if (userRole == AppConstants.roles.salesManager) {
-          Get.offAll(
-            () => ResponsiveLayout(
-              mobile: DesktopHomepage(),
-              desktop: DesktopHomepage(),
-            ),
+        } else if (approvalStatus == 'Pending') {
+          ToastWidget.show(
+            context: Get.context!,
+            title: "Your account is pending approval.",
+            subtitle: "Please wait for administrator approval.",
+            type: ToastType.warning,
           );
         } else {
           ToastWidget.show(
             context: Get.context!,
-            title: "You are not authorized to visit this site.",
-            subtitle: "Please try again later.",
+            title: "Account not approved.",
+            subtitle: "Please contact administrator.",
             type: ToastType.error,
           );
         }

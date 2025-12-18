@@ -32,19 +32,19 @@ class AdminDesktopApprovedUsersListPage extends StatelessWidget {
       // ✅ Overlay button (Always visible)
       body: Stack(
         children: [
-          Positioned(
-            top: 16,
-            right: 16,
-            child: _AddUserTopButton(
-              onTap: () => _showAddUserDialog(context),
-            ),
-          ),
+          // Positioned(
+          //   top: 16,
+          //   right: 16,
+          //   child: _AddUserTopButton(
+          //     onTap: () => _showAddUserDialog(context),
+          //   ),
+          // ),
           Padding(
-            padding: const EdgeInsets.only(top: 72),
+            padding: const EdgeInsets.only(top: 12),
             child: Obx(() {
               if (getxController.isLoading.value) {
                 return GridView.builder(
-                  padding: const EdgeInsets.all(16),
+                  // padding: const EdgeInsets.all(16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     crossAxisSpacing: 16,

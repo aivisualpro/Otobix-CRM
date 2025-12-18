@@ -1,17 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:otobix_crm/admin/admin_dasktop_tellicalling_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:otobix_crm/admin/Admin_Home_View.dart';
-
 import 'package:otobix_crm/admin/admin_desktop_customers_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_home_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_profile_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_kam_page.dart';
 import 'package:otobix_crm/admin/admin_new_dashboard_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_cars_list_page.dart';
+import 'package:otobix_crm/admin/admin_desktop_staff_page.dart';
 import 'package:otobix_crm/admin/controller/admin_home_controller.dart';
 import 'package:otobix_crm/admin/controller/admin_shell_controller.dart';
-
 import 'package:otobix_crm/utils/app_colors.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
 import 'package:otobix_crm/widgets/glass_container.dart';
@@ -22,8 +24,12 @@ class AdminDesktopDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ CRITICAL FIX: Initialize shell controller IMMEDIATELY
+    // This ensures permissions are loaded before any widget builds
     final AdminDesktopShellController shell =
         Get.put(AdminDesktopShellController(), permanent: true);
+
+    print("🏗️ Building dashboard with shell controller initialized");
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -75,120 +81,218 @@ class _TopTabsBar extends StatelessWidget {
   final AdminDesktopShellController shell;
   const _TopTabsBar({required this.shell});
 
+  List<_TopTab> _getAvailableTabs() {
+    print("🔄 Getting available tabs...");
+    final List<_TopTab> tabs = [];
+    final isAdmin = shell.isAdmin;
+    final hasLeads = shell.hasLeads;
+    final hasInspection = shell.hasInspection;
+    final hasPriceDiscovery = shell.hasPriceDiscovery;
+    final hasAuction = shell.hasAuction;
+
+    print("📊 Tab permissions:");
+    print("  👑 Is Admin: $isAdmin");
+    print("  📞 Has Leads: $hasLeads");
+    print("  🔍 Has Inspection: $hasInspection");
+    print("  💰 Has Price Discovery: $hasPriceDiscovery");
+    print("  🔨 Has Auction: $hasAuction");
+
+    // Home tab - always available
+    tabs.add(_TopTab(
+      label: "Home",
+      icon: Icons.dashboard_customize_outlined,
+      isActive: !shell.inLeadsPanel.value &&
+          !shell.inAdminPanel.value &&
+          shell.hubIndex.value == 0,
+      onTap: () {
+        print("🏠 Home tab clicked");
+        shell.selectHub(0);
+      },
+      hoverItems: isAdmin
+          ? [
+              _HoverMenuItem(
+                label: "Dashboard",
+                icon: Icons.dashboard_customize_rounded,
+                onTap: () {
+                  print("📊 Dashboard menu clicked");
+                  shell.openAdminFromHome(0);
+                },
+              ),
+              _HoverMenuItem(
+                label: "Users",
+                icon: Icons.group_outlined,
+                onTap: () {
+                  print("👥 Users menu clicked");
+                  shell.openAdminFromHome(1);
+                },
+              ),
+              _HoverMenuItem(
+                label: "Cars",
+                icon: Icons.directions_car_outlined,
+                onTap: () {
+                  print("🚗 Cars menu clicked");
+                  shell.openAdminFromHome(3);
+                },
+              ),
+              _HoverMenuItem(
+                label: "Profile",
+                icon: Icons.person_outline,
+                onTap: () {
+                  print("👤 Profile menu clicked");
+                  shell.openAdminFromHome(4);
+                },
+              ),
+              _HoverMenuItem(
+                label: "KAM Management",
+                icon: Icons.manage_accounts_outlined,
+                onTap: () {
+                  print("👔 KAM Management menu clicked");
+                  shell.openAdminFromHome(5);
+                },
+              ),
+            ]
+          : null,
+    ));
+
+    // Admin tab - only for admin users
+    if (isAdmin) {
+      tabs.add(_TopTab(
+        label: "Admin",
+        icon: Icons.admin_panel_settings_outlined,
+        isActive: shell.inAdminPanel.value && shell.adminOrigin.value != "home",
+        onTap: () {
+          print("👑 Admin tab clicked");
+          shell.openAdminPanel();
+        },
+        hoverItems: [
+          _HoverMenuItem(
+            label: "Staff",
+            icon: Icons.badge_outlined,
+            onTap: () {
+              print("👥 Staff menu clicked");
+              shell.selectAdmin(9, origin: "admin");
+            },
+          ),
+          _HoverMenuItem(
+            label: "Dropdowns",
+            icon: Icons.arrow_drop_down_circle_outlined,
+            onTap: () {
+              print("📋 Dropdowns menu clicked");
+              shell.selectAdmin(6, origin: "admin");
+            },
+          ),
+          _HoverMenuItem(
+            label: "Banners",
+            icon: Icons.photo_library_outlined,
+            onTap: () {
+              print("🖼️ Banners menu clicked");
+              shell.selectAdmin(7, origin: "admin");
+            },
+          ),
+          _HoverMenuItem(
+            label: "Settings",
+            icon: Icons.settings_outlined,
+            onTap: () {
+              print("⚙️ Settings menu clicked");
+              shell.selectAdmin(8, origin: "admin");
+            },
+          ),
+        ],
+      ));
+    }
+
+    // Leads tab - for admin or Leads permission users
+    if (hasLeads) {
+      tabs.add(_TopTab(
+        label: "Leads",
+        icon: Icons.leaderboard_outlined,
+        isActive: shell.inLeadsPanel.value,
+        onTap: () {
+          print("📞 Leads tab clicked");
+          shell.openLeadsPanel();
+        },
+        hoverItems: [
+          _HoverMenuItem(
+            label: "Telecalling",
+            icon: Icons.call_outlined,
+            onTap: () {
+              print("📱 Telecalling menu clicked");
+              shell.selectLeads(0);
+            },
+          ),
+          _HoverMenuItem(
+            label: "Customer Request",
+            icon: Icons.request_page_outlined,
+            onTap: () {
+              print("📄 Customer Request menu clicked");
+              shell.selectLeads(1);
+            },
+          ),
+          _HoverMenuItem(
+            label: "Allocation",
+            icon: Icons.assignment_turned_in_outlined,
+            onTap: () {
+              print("📋 Allocation menu clicked");
+              shell.selectLeads(2);
+            },
+          ),
+        ],
+      ));
+    }
+
+    // Inspection tab - for admin or Inspection permission users
+    if (hasInspection) {
+      tabs.add(_TopTab(
+        label: "Inspection",
+        icon: Icons.fact_check_outlined,
+        isActive: !shell.inAdminPanel.value &&
+            !shell.inLeadsPanel.value &&
+            shell.hubIndex.value == 2,
+        onTap: () {
+          print("🔍 Inspection tab clicked");
+          shell.selectHub(2);
+        },
+      ));
+    }
+
+    // Price Discovery tab - for admin or PriceDiscovery permission users
+    if (hasPriceDiscovery) {
+      tabs.add(_TopTab(
+        label: "Price Discovery",
+        icon: Icons.price_change_outlined,
+        isActive: !shell.inAdminPanel.value &&
+            !shell.inLeadsPanel.value &&
+            shell.hubIndex.value == 3,
+        onTap: () {
+          print("💰 Price Discovery tab clicked");
+          shell.selectHub(3);
+        },
+      ));
+    }
+
+    // Auction tab - for admin or Auction permission users
+    if (hasAuction) {
+      tabs.add(_TopTab(
+        label: "Auction",
+        icon: Icons.gavel_outlined,
+        isActive: !shell.inAdminPanel.value &&
+            !shell.inLeadsPanel.value &&
+            shell.hubIndex.value == 4,
+        onTap: () {
+          print("🔨 Auction tab clicked");
+          shell.selectHub(4);
+        },
+      ));
+    }
+
+    print("✅ Final tabs count: ${tabs.length}");
+    return tabs;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final inAdmin = shell.inAdminPanel.value;
-      final inLeads = shell.inLeadsPanel.value;
-
-      // ✅ If admin opened from Home dropdown, Home should remain active
-      final openedFromHome = inAdmin && shell.adminOrigin.value == "home";
-
-      final fixedTabs = <_TopTab>[
-        _TopTab(
-          label: "Home",
-          icon: Icons.dashboard_customize_outlined,
-          isActive: !inLeads &&
-              (((!inAdmin) && shell.hubIndex.value == 0) || openedFromHome),
-          onTap: () => shell.selectHub(0),
-          hoverItems: [
-            _HoverMenuItem(
-              label: "Dashboard",
-              icon: Icons.dashboard_customize_rounded,
-              onTap: () => shell.openAdminFromHome(0),
-            ),
-            _HoverMenuItem(
-              label: "Users",
-              icon: Icons.group_outlined,
-              onTap: () => shell.openAdminFromHome(1),
-            ),
-            _HoverMenuItem(
-              label: "Cars",
-              icon: Icons.directions_car_outlined,
-              onTap: () => shell.openAdminFromHome(3),
-            ),
-            _HoverMenuItem(
-              label: "Profile",
-              icon: Icons.person_outline,
-              onTap: () => shell.openAdminFromHome(4),
-            ),
-            _HoverMenuItem(
-              label: "KAM Management",
-              icon: Icons.manage_accounts_outlined,
-              onTap: () => shell.openAdminFromHome(5),
-            ),
-          ],
-        ),
-        _TopTab(
-          label: "Admin",
-          icon: Icons.admin_panel_settings_outlined,
-          isActive: inAdmin && !openedFromHome,
-          onTap: () => shell.openAdminPanel(),
-          hoverItems: [
-            _HoverMenuItem(
-              label: "Staff",
-              icon: Icons.grid_view_outlined,
-              onTap: () => shell.selectAdmin(1, origin: "admin"),
-            ),
-            _HoverMenuItem(
-              label: "Dropdowns",
-              icon: Icons.arrow_drop_down_circle_outlined,
-              onTap: () => shell.selectAdmin(6, origin: "admin"),
-            ),
-            _HoverMenuItem(
-              label: "Banners",
-              icon: Icons.photo_library_outlined,
-              onTap: () => shell.selectAdmin(7, origin: "admin"),
-            ),
-            _HoverMenuItem(
-              label: "Settings",
-              icon: Icons.settings_outlined,
-              onTap: () => shell.selectAdmin(8, origin: "admin"),
-            ),
-          ],
-        ),
-        _TopTab(
-          label: "Leads",
-          icon: Icons.leaderboard_outlined,
-          isActive: inLeads,
-          onTap: () => shell.openLeadsPanel(),
-          hoverItems: [
-            _HoverMenuItem(
-              label: "Telecalling",
-              icon: Icons.call_outlined,
-              onTap: () => shell.selectLeads(0),
-            ),
-            _HoverMenuItem(
-              label: "Customer Request",
-              icon: Icons.request_page_outlined,
-              onTap: () => shell.selectLeads(1),
-            ),
-            _HoverMenuItem(
-              label: "Allocation",
-              icon: Icons.assignment_turned_in_outlined,
-              onTap: () => shell.selectLeads(2),
-            ),
-          ],
-        ),
-        _TopTab(
-          label: "Inspection",
-          icon: Icons.fact_check_outlined,
-          isActive: !inAdmin && !inLeads && shell.hubIndex.value == 2,
-          onTap: () => shell.selectHub(2),
-        ),
-        _TopTab(
-          label: "Price Discovery",
-          icon: Icons.price_change_outlined,
-          isActive: !inAdmin && !inLeads && shell.hubIndex.value == 3,
-          onTap: () => shell.selectHub(3),
-        ),
-        _TopTab(
-          label: "Auction",
-          icon: Icons.gavel_outlined,
-          isActive: !inAdmin && !inLeads && shell.hubIndex.value == 4,
-          onTap: () => shell.selectHub(4),
-        ),
-      ];
+      final availableTabs = _getAvailableTabs();
 
       return GlassContainer(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -199,7 +303,7 @@ class _TopTabsBar extends StatelessWidget {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: fixedTabs
+                  children: availableTabs
                       .map(
                         (t) => Padding(
                           padding: const EdgeInsets.only(right: 10),
@@ -273,6 +377,8 @@ class _BreadcrumbBar extends StatelessWidget {
         return "Banners";
       case 8:
         return "Settings";
+      case 9:
+        return "Staff";
       default:
         return "Admin";
     }
@@ -659,7 +765,6 @@ class _TopTabChipState extends State<_TopTabChip> {
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 280),
                       child: _SimpleDropdownContainer(
-                        // Changed from _LiquidDropReveal to _SimpleDropdownContainer
                         child: GlassContainer(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 10),
@@ -778,13 +883,18 @@ class _HubBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final idx = shell.hubIndex.value;
+      print("🏗️ Building hub body for index: $idx");
 
       // Leads panel already handles its own view
       if (shell.inLeadsPanel.value) return _LeadsPanelBody(shell: shell);
 
-      // ✅ Home par ab "Home" text center me nahi
-      // ✅ Admin jaise center me tiles/grid show hoga
       if (idx == 0) return HomeHubView(shell: shell);
+
+      // Check permission for other hubs
+      if (idx == 1 && !shell.hasLeads) return _NoPermissionView();
+      if (idx == 2 && !shell.hasInspection) return _NoPermissionView();
+      if (idx == 3 && !shell.hasPriceDiscovery) return _NoPermissionView();
+      if (idx == 4 && !shell.hasAuction) return _NoPermissionView();
 
       // baqi hubs same
       return Center(
@@ -821,6 +931,47 @@ class _HubBody extends StatelessWidget {
   }
 }
 
+/* ----------------------- NO PERMISSION VIEW ----------------------- */
+
+class _NoPermissionView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GlassContainer(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.lock_outline,
+              color: AppColors.neonGreen,
+              size: 60,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "Access Denied",
+              style: TextStyle(
+                color: AppColors.textWhite,
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "You don't have permission to access this section",
+              style: TextStyle(
+                color: AppColors.textGrey,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /* ----------------------- HOME HUB VIEW (CENTER TILES) ----------------------- */
 
 class HomeHubView extends StatelessWidget {
@@ -829,33 +980,92 @@ class HomeHubView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tiles = <_HubTile>[
-      _HubTile(
+    final List<_HubTile> tiles = [];
+
+    // Always add Dashboard and Profile tiles for admin
+    if (shell.isAdmin) {
+      tiles.add(_HubTile(
         title: "Dashboard",
         icon: Icons.dashboard_customize_rounded,
-        onTap: () => shell.openAdminFromHome(0),
-      ),
-      _HubTile(
+        onTap: () {
+          print("📊 Home Dashboard tile clicked");
+          shell.openAdminFromHome(0);
+        },
+      ));
+
+      tiles.add(_HubTile(
         title: "Users",
         icon: Icons.group_outlined,
-        onTap: () => shell.openAdminFromHome(1),
-      ),
-      _HubTile(
+        onTap: () {
+          print("👥 Home Users tile clicked");
+          shell.openAdminFromHome(1);
+        },
+      ));
+
+      tiles.add(_HubTile(
         title: "Cars",
         icon: Icons.directions_car_outlined,
-        onTap: () => shell.openAdminFromHome(3),
-      ),
-      _HubTile(
+        onTap: () {
+          print("🚗 Home Cars tile clicked");
+          shell.openAdminFromHome(3);
+        },
+      ));
+
+      tiles.add(_HubTile(
         title: "Profile",
         icon: Icons.person_outline,
-        onTap: () => shell.openAdminFromHome(4),
-      ),
-      _HubTile(
+        onTap: () {
+          print("👤 Home Profile tile clicked");
+          shell.openAdminFromHome(4);
+        },
+      ));
+
+      tiles.add(_HubTile(
         title: "KAM Management",
         icon: Icons.manage_accounts_outlined,
-        onTap: () => shell.openAdminFromHome(5),
-      ),
-    ];
+        onTap: () {
+          print("👔 Home KAM Management tile clicked");
+          shell.openAdminFromHome(5);
+        },
+      ));
+    }
+
+    // If no admin tiles, show welcome message
+    if (tiles.isEmpty) {
+      return Center(
+        child: GlassContainer(
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 26),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.home_outlined,
+                color: AppColors.neonGreen,
+                size: 60,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Welcome to Dashboard",
+                style: TextStyle(
+                  color: AppColors.textWhite,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "Use the navigation tabs above to access your sections",
+                style: TextStyle(
+                  color: AppColors.textGrey,
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Center(
       child: ConstrainedBox(
@@ -893,6 +1103,10 @@ class _LeadsPanelBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      if (!shell.hasLeads && !shell.isAdmin) {
+        return _NoPermissionView();
+      }
+
       final idx = shell.leadsIndex.value;
 
       if (idx == -1) return LeadsPanelHomeView(shell: shell);
@@ -959,12 +1173,18 @@ class LeadsPanelHomeView extends StatelessWidget {
   }
 }
 
+// Is section mein changes karein (line 808 ke around)
 class _LeadsPlaceholderPage extends StatelessWidget {
   final String title;
   const _LeadsPlaceholderPage({required this.title});
 
   @override
   Widget build(BuildContext context) {
+    // Agar title "Telecalling Page" hai to TelecallingScreen return karein
+    if (title == "Telecalling Page") {
+      return TelecallingScreen();
+    }
+
     return Center(
       child: GlassContainer(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 26),
@@ -981,8 +1201,6 @@ class _LeadsPlaceholderPage extends StatelessWidget {
   }
 }
 
-/* ----------------------- ADMIN PANEL BODY ----------------------- */
-
 class _AdminPanelBody extends StatelessWidget {
   final AdminDesktopShellController shell;
   const _AdminPanelBody({required this.shell});
@@ -990,6 +1208,10 @@ class _AdminPanelBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      if (!shell.isAdmin) {
+        return _NoPermissionView();
+      }
+
       final idx = shell.adminIndex.value;
 
       if (idx == -1) return AdminPanelHomeView(shell: shell);
@@ -1022,6 +1244,7 @@ class _AdminPanelBody extends StatelessWidget {
         6: const _AdminPlaceholderPage(title: "Dropdowns"),
         7: const _AdminPlaceholderPage(title: "Banners"),
         8: const _AdminPlaceholderPage(title: "Settings"),
+        9: const AdminDesktopStaffPage(),
       };
 
       return pages[idx] ?? AdminPanelHomeView(shell: shell);
@@ -1040,8 +1263,8 @@ class AdminPanelHomeView extends StatelessWidget {
     final tiles = <_HubTile>[
       _HubTile(
         title: "Staff",
-        icon: Icons.group_outlined,
-        onTap: () => shell.selectAdmin(1, origin: "admin"),
+        icon: Icons.badge_outlined,
+        onTap: () => shell.selectAdmin(9, origin: "admin"),
       ),
       _HubTile(
         title: "Dropdowns",
@@ -1484,6 +1707,54 @@ class _UsersTabSelector extends StatelessWidget {
                 color: isSelected ? Colors.black : AppColors.textWhite,
                 fontWeight: FontWeight.w700,
                 fontSize: 13.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddUserTopButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddUserTopButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.neonGreen,
+              AppColors.neonGreen.withOpacity(0.8),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.neonGreen.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add, color: Colors.black, size: 20),
+            SizedBox(width: 8),
+            Text(
+              'Add User',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
               ),
             ),
           ],

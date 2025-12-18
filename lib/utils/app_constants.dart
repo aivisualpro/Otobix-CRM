@@ -54,9 +54,11 @@ class Roles {
   final String customer = 'Customer';
   final String salesManager = 'Sales Manager';
   final String admin = 'Admin';
-  final String leads = 'Leads';
+  final String leads = 'Lead';
   final String Inspection = 'Inspection';
 
+  final String LEAD = 'Lead';
+  final String INSPECTION = 'Inspection';
   final String userStatusPending = 'Pending';
   final String userStatusApproved = 'Approved';
   final String userStatusRejected = 'Rejected';
