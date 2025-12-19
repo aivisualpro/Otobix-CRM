@@ -10,6 +10,10 @@ class SharedPrefsHelper {
   static const String userKey = 'user';
   static const String userIdKey = 'userId';
   static const String entityTypeKey = 'entityType';
+  static const String approvalStatusKey = 'approvalStatus'; // ✅ Add this
+
+  // New key for permissions
+  static const String permissionsKey = 'permissions';
 
   static SharedPreferences? _prefs;
 
@@ -36,6 +40,16 @@ class SharedPrefsHelper {
   /// Get boolean
   static bool getBool(String key) {
     return _prefs?.getBool(key) ?? false;
+  }
+
+  /// Save list of strings (for permissions)
+  static Future<void> saveStringList(String key, List<String> value) async {
+    await _prefs?.setStringList(key, value);
+  }
+
+  /// Get list of strings (for permissions)
+  static List<String> getStringList(String key) {
+    return _prefs?.getStringList(key) ?? [];
   }
 
   /// Remove value
