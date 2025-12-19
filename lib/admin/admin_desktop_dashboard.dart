@@ -14,6 +14,7 @@ import 'package:otobix_crm/admin/admin_desktop_cars_list_page.dart';
 import 'package:otobix_crm/admin/admin_desktop_staff_page.dart';
 import 'package:otobix_crm/admin/controller/admin_home_controller.dart';
 import 'package:otobix_crm/admin/controller/admin_shell_controller.dart';
+import 'package:otobix_crm/admin/controller/admin_staff_controller.dart';
 import 'package:otobix_crm/utils/app_colors.dart';
 import 'package:otobix_crm/utils/responsive_layout.dart';
 import 'package:otobix_crm/widgets/glass_container.dart';
@@ -28,6 +29,9 @@ class AdminDesktopDashboard extends StatelessWidget {
     // This ensures permissions are loaded before any widget builds
     final AdminDesktopShellController shell =
         Get.put(AdminDesktopShellController(), permanent: true);
+
+    // ✅ Initialize Staff Controller for Add Staff functionality
+    Get.put(AdminStaffController(), permanent: true);
 
     print("🏗️ Building dashboard with shell controller initialized");
 
@@ -101,9 +105,13 @@ class _TopTabsBar extends StatelessWidget {
     tabs.add(_TopTab(
       label: "Home",
       icon: Icons.dashboard_customize_outlined,
+      // FIX: Home tab active ho jab:
+      // 1. Na to inLeadsPanel ho
+      // 2. Na to inAdminPanel ho (admin panel se alag)
+      // 3. Ya to hubIndex 0 ho (regular Home)
+      // 4. Ya phir adminOrigin "home" ho (Home se admin panel open kiya ho)
       isActive: !shell.inLeadsPanel.value &&
-          !shell.inAdminPanel.value &&
-          shell.hubIndex.value == 0,
+          (!shell.inAdminPanel.value || shell.adminOrigin.value == "home"),
       onTap: () {
         print("🏠 Home tab clicked");
         shell.selectHub(0);
@@ -159,6 +167,9 @@ class _TopTabsBar extends StatelessWidget {
       tabs.add(_TopTab(
         label: "Admin",
         icon: Icons.admin_panel_settings_outlined,
+        // FIX: Admin tab active ho jab:
+        // 1. inAdminPanel ho AUR
+        // 2. adminOrigin "home" na ho
         isActive: shell.inAdminPanel.value && shell.adminOrigin.value != "home",
         onTap: () {
           print("👑 Admin tab clicked");
@@ -421,6 +432,10 @@ class _BreadcrumbBar extends StatelessWidget {
       final showUsersControls =
           shell.inAdminPanel.value && shell.adminIndex.value == 1;
 
+      // ✅ NEW: Check if current page is Staff page
+      final isStaffPage =
+          shell.inAdminPanel.value && shell.adminIndex.value == 9;
+
       AdminHomeController? usersCtrl;
       if (showUsersControls) {
         usersCtrl = Get.isRegistered<AdminHomeController>()
@@ -504,7 +519,7 @@ class _BreadcrumbBar extends StatelessWidget {
 
             const SizedBox(width: 14),
 
-            // RIGHT : Dashboard pill tabs OR Users controls
+            // RIGHT : Dashboard pill tabs OR Users controls OR Add Staff button
             Expanded(
               flex: 1,
               child: Align(
@@ -516,13 +531,35 @@ class _BreadcrumbBar extends StatelessWidget {
                       )
                     : (showUsersControls
                         ? _UsersHeaderControls(controller: usersCtrl!)
-                        : const SizedBox.shrink()),
+                        : (isStaffPage
+                            ? _AddStaffButton()
+                            : const SizedBox.shrink())),
               ),
             ),
           ],
         ),
       );
     });
+  }
+}
+
+/* ----------------------- Add Staff Button (Right side of breadcrumb bar) ----------------------- */
+class _AddStaffButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: () => AdminDesktopStaffPage.showAddStaffDialog(),
+      icon: const Icon(Icons.add, size: 18),
+      label: const Text('Add Staff'),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.neonGreen,
+        foregroundColor: Colors.black,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
   }
 }
 
