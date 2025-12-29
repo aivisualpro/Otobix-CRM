@@ -1,10 +1,9 @@
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import GlobalHeader from '@/components/GlobalHeader';
-import Header from '@/components/Header';
 import { HeaderProvider } from '@/context/HeaderContext';
 import { ReactNode } from 'react';
 import { Metadata } from 'next';
+import ClientLayout from '@/components/ClientLayout';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -33,11 +32,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         suppressHydrationWarning
       >
         <HeaderProvider>
-          <div className="grid grid-rows-[var(--global-header-height)_var(--route-header-height)_1fr] h-screen overflow-hidden">
-            <GlobalHeader />
-            <Header />
-            <main className="overflow-hidden bg-gray-50">{children}</main>
-          </div>
+          <ClientLayout>{children}</ClientLayout>
         </HeaderProvider>
       </body>
     </html>
