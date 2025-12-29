@@ -11,16 +11,19 @@ export interface IDropdown extends Document {
   updatedAt: Date;
 }
 
-const DropdownSchema = new Schema<IDropdown>({
-  description: { type: String, required: true, trim: true },
-  type: { type: String, required: true, trim: true },
-  icon: { type: String },
-  color: { type: String },
-  isActive: { type: Boolean, default: true },
-  sortOrder: { type: Number, default: 0 }
-}, {
-  timestamps: true
-});
+const DropdownSchema = new Schema<IDropdown>(
+  {
+    description: { type: String, required: true, trim: true },
+    type: { type: String, required: true, trim: true },
+    icon: { type: String },
+    color: { type: String },
+    isActive: { type: Boolean, default: true },
+    sortOrder: { type: Number, default: 0 },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 // Index for faster queries by type
 DropdownSchema.index({ type: 1, sortOrder: 1 });

@@ -2,8 +2,19 @@
 
 import { useState, useEffect, useMemo, FormEvent, useRef } from 'react';
 import {
-  Search, Plus, Filter, Download, Edit2, Trash2,
-  Phone, Calendar, Clock, X, User, AlertCircle, Car
+  Search,
+  Plus,
+  Filter,
+  Download,
+  Edit2,
+  Trash2,
+  Phone,
+  Calendar,
+  Clock,
+  X,
+  User,
+  AlertCircle,
+  Car,
 } from 'lucide-react';
 import { useHeader } from '@/context/HeaderContext';
 import Table from '@/components/Table';
@@ -65,10 +76,16 @@ interface TabItem {
 
 // --- Components ---
 
-const StatusBadge = ({ status, dropdownOptions = [] }: { status: string; dropdownOptions?: DropdownOption[] }) => {
+const StatusBadge = ({
+  status,
+  dropdownOptions = [],
+}: {
+  status: string;
+  dropdownOptions?: DropdownOption[];
+}) => {
   // Find matching dropdown option for dynamic color
   const matchedOption = dropdownOptions.find(
-    d => d.description.toLowerCase() === status.toLowerCase()
+    (d) => d.description.toLowerCase() === status.toLowerCase()
   );
 
   // If we have a color from dropdown, use it
@@ -76,17 +93,19 @@ const StatusBadge = ({ status, dropdownOptions = [] }: { status: string; dropdow
     // Convert hex to rgba for lighter background
     const hexToRgb = (hex: string) => {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-      } : null;
+      return result
+        ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16),
+          }
+        : null;
     };
     const rgb = hexToRgb(matchedOption.color);
     const bgColor = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)` : matchedOption.color;
-    
+
     return (
-      <span 
+      <span
         className="px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide rounded"
         style={{ backgroundColor: bgColor, color: matchedOption.color }}
       >
@@ -103,7 +122,9 @@ const StatusBadge = ({ status, dropdownOptions = [] }: { status: string; dropdow
   if (status === 'Cancelled') colors = 'bg-red-100 text-red-700';
 
   return (
-    <span className={`px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide rounded ${colors}`}>
+    <span
+      className={`px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide rounded ${colors}`}
+    >
       {status}
     </span>
   );
@@ -130,19 +151,25 @@ interface SearchableUserSelectProps {
   placeholder?: string;
 }
 
-const SearchableUserSelect = ({ name, users, defaultValue = '', placeholder = 'Search users...' }: SearchableUserSelectProps) => {
+const SearchableUserSelect = ({
+  name,
+  users,
+  defaultValue = '',
+  placeholder = 'Search users...',
+}: SearchableUserSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedValue, setSelectedValue] = useState(defaultValue);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Find selected user display name
-  const selectedUser = users.find(u => u.userName === selectedValue || u.email === selectedValue);
+  const selectedUser = users.find((u) => u.userName === selectedValue || u.email === selectedValue);
   const displayValue = selectedUser?.userName || selectedValue || '';
 
-  const filteredUsers = users.filter(u =>
-    u.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter(
+    (u) =>
+      u.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Close on click outside
@@ -167,7 +194,12 @@ const SearchableUserSelect = ({ name, users, defaultValue = '', placeholder = 'S
         <span className={displayValue ? 'text-slate-900' : 'text-slate-400'}>
           {displayValue || 'Select User'}
         </span>
-        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-4 h-4 text-slate-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -196,7 +228,7 @@ const SearchableUserSelect = ({ name, users, defaultValue = '', placeholder = 'S
             >
               -- Clear Selection --
             </button>
-            {filteredUsers.map(u => (
+            {filteredUsers.map((u) => (
               <button
                 key={u._id}
                 type="button"
@@ -229,20 +261,29 @@ interface SearchableDropdownSelectProps {
   placeholder?: string;
 }
 
-const SearchableDropdownSelect = ({ name, options, defaultValue = '', placeholder = 'Search...' }: SearchableDropdownSelectProps) => {
+const SearchableDropdownSelect = ({
+  name,
+  options,
+  defaultValue = '',
+  placeholder = 'Search...',
+}: SearchableDropdownSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedValue, setSelectedValue] = useState(defaultValue);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const selectedOption = options.find(o => o.description === selectedValue);
-  const filteredOptions = options.filter(o => o.description.toLowerCase().includes(searchTerm.toLowerCase()));
+  const selectedOption = options.find((o) => o.description === selectedValue);
+  const filteredOptions = options.filter((o) =>
+    o.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const showAddNew = searchTerm && !options.some(o => o.description.toLowerCase() === searchTerm.toLowerCase());
+  const showAddNew =
+    searchTerm && !options.some((o) => o.description.toLowerCase() === searchTerm.toLowerCase());
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setIsOpen(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node))
+        setIsOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -251,7 +292,11 @@ const SearchableDropdownSelect = ({ name, options, defaultValue = '', placeholde
   return (
     <div className="relative" ref={dropdownRef}>
       <input type="hidden" name={name} value={selectedValue} />
-      <button type="button" onClick={() => setIsOpen(!isOpen)} className="form-input w-full text-left flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="form-input w-full text-left flex items-center gap-2"
+      >
         {selectedOption?.color && (
           <div className="w-4 h-4 rounded" style={{ backgroundColor: selectedOption.color }} />
         )}
@@ -261,7 +306,12 @@ const SearchableDropdownSelect = ({ name, options, defaultValue = '', placeholde
         <span className={selectedValue ? 'text-slate-900 flex-1' : 'text-slate-400 flex-1'}>
           {selectedValue || 'Select...'}
         </span>
-        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="w-4 h-4 text-slate-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -279,22 +329,44 @@ const SearchableDropdownSelect = ({ name, options, defaultValue = '', placeholde
             />
           </div>
           <div className="max-h-44 overflow-y-auto">
-            <button type="button" onClick={() => { setSelectedValue(''); setIsOpen(false); setSearchTerm(''); }} className="w-full px-3 py-2 text-left text-sm text-slate-500 hover:bg-gray-50">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedValue('');
+                setIsOpen(false);
+                setSearchTerm('');
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-slate-500 hover:bg-gray-50"
+            >
               -- Clear --
             </button>
             {showAddNew && (
-              <button type="button" onClick={() => { setSelectedValue(searchTerm); setIsOpen(false); setSearchTerm(''); }} className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2">
-                <Plus className="w-4 h-4" /> Add "{searchTerm}"
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedValue(searchTerm);
+                  setIsOpen(false);
+                  setSearchTerm('');
+                }}
+                className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" /> Add &quot;{searchTerm}&quot;
               </button>
             )}
-            {filteredOptions.map(opt => (
+            {filteredOptions.map((opt) => (
               <button
                 key={opt._id}
                 type="button"
-                onClick={() => { setSelectedValue(opt.description); setIsOpen(false); setSearchTerm(''); }}
+                onClick={() => {
+                  setSelectedValue(opt.description);
+                  setIsOpen(false);
+                  setSearchTerm('');
+                }}
                 className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50 flex items-center gap-2 ${selectedValue === opt.description ? 'bg-blue-50 text-blue-700' : 'text-slate-700'}`}
               >
-                {opt.color && <div className="w-4 h-4 rounded" style={{ backgroundColor: opt.color }} />}
+                {opt.color && (
+                  <div className="w-4 h-4 rounded" style={{ backgroundColor: opt.color }} />
+                )}
                 {opt.icon && <img src={opt.icon} alt="" className="w-4 h-4 object-contain" />}
                 <span>{opt.description}</span>
               </button>
@@ -320,7 +392,16 @@ interface CallModalProps {
   inspectionStatuses?: DropdownOption[];
 }
 
-const CallModal = ({ isOpen, onClose, onSubmit, editRecord, title, users = [], appointmentSources = [], inspectionStatuses = [] }: CallModalProps) => {
+const CallModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  editRecord,
+  title,
+  users = [],
+  appointmentSources = [],
+  inspectionStatuses = [],
+}: CallModalProps) => {
   if (!isOpen) return null;
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -362,8 +443,14 @@ const CallModal = ({ isOpen, onClose, onSubmit, editRecord, title, users = [], a
       <div className="bg-white shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-100 rounded-xl">
         <div className="sticky top-0 bg-white/95 backdrop-blur-sm px-6 py-4 border-b border-gray-100 flex justify-between items-center z-10">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">{title || (editRecord ? 'Edit Record' : 'Add Lead Call Record')}</h2>
-            <p className="text-xs text-slate-500 mt-0.5">{editRecord ? 'Update the record details' : 'Enter details for the new appointment call'}</p>
+            <h2 className="text-xl font-bold text-slate-900">
+              {title || (editRecord ? 'Edit Record' : 'Add Lead Call Record')}
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {editRecord
+                ? 'Update the record details'
+                : 'Enter details for the new appointment call'}
+            </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 transition-colors rounded-lg">
             <X className="w-5 h-5 text-slate-500" />
@@ -378,22 +465,28 @@ const CallModal = ({ isOpen, onClose, onSubmit, editRecord, title, users = [], a
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
-                <label className="text-[10px] font-bold text-slate-400 absolute -top-2 left-2 bg-white px-1">Appt ID</label>
-                <input 
-                  name="appointmentId" 
-                  type="text" 
-                  readOnly 
-                  className="form-input bg-gray-50 text-slate-500 cursor-not-allowed font-mono italic" 
-                  defaultValue={editRecord?.appointmentId || 'Auto-generated'} 
+                <label className="text-[10px] font-bold text-slate-400 absolute -top-2 left-2 bg-white px-1">
+                  Appt ID
+                </label>
+                <input
+                  name="appointmentId"
+                  type="text"
+                  readOnly
+                  className="form-input bg-gray-50 text-slate-500 cursor-not-allowed font-mono italic"
+                  defaultValue={editRecord?.appointmentId || 'Auto-generated'}
                 />
               </div>
-              <select name="priority" className="form-input" defaultValue={editRecord?.priority || 'Medium'}>
+              <select
+                name="priority"
+                className="form-input"
+                defaultValue={editRecord?.priority || 'Medium'}
+              >
                 <option value="">Select Priority</option>
                 <option value="High">High</option>
                 <option value="Medium">Medium</option>
                 <option value="Low">Low</option>
               </select>
-               <SearchableUserSelect
+              <SearchableUserSelect
                 name="allocatedTo"
                 users={users}
                 defaultValue={editRecord?.allocatedTo || ''}
@@ -422,13 +515,50 @@ const CallModal = ({ isOpen, onClose, onSubmit, editRecord, title, users = [], a
               <User className="w-4 h-4" /> Customer Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <input name="customerName" type="text" placeholder="Customer Name" required className="form-input" defaultValue={editRecord?.customerName || ''} />
-              <input name="customerContactNumber" type="tel" placeholder="Contact Number" className="form-input" defaultValue={editRecord?.customerContactNumber || ''} />
-              <input name="emailAddress" type="email" placeholder="Email Address" className="form-input" defaultValue={editRecord?.emailAddress || ''} />
-              <input name="city" type="text" placeholder="City" className="form-input" defaultValue={editRecord?.city || ''} />
-              <input name="zipCode" type="text" placeholder="Zip Code" className="form-input" defaultValue={editRecord?.zipCode || ''} />
+              <input
+                name="customerName"
+                type="text"
+                placeholder="Customer Name"
+                required
+                className="form-input"
+                defaultValue={editRecord?.customerName || ''}
+              />
+              <input
+                name="customerContactNumber"
+                type="tel"
+                placeholder="Contact Number"
+                className="form-input"
+                defaultValue={editRecord?.customerContactNumber || ''}
+              />
+              <input
+                name="emailAddress"
+                type="email"
+                placeholder="Email Address"
+                className="form-input"
+                defaultValue={editRecord?.emailAddress || ''}
+              />
+              <input
+                name="city"
+                type="text"
+                placeholder="City"
+                className="form-input"
+                defaultValue={editRecord?.city || ''}
+              />
+              <input
+                name="zipCode"
+                type="text"
+                placeholder="Zip Code"
+                className="form-input"
+                defaultValue={editRecord?.zipCode || ''}
+              />
               <div className="md:col-span-3">
-                <input name="addressForInspection" type="text" placeholder="Address for Inspection" className="form-input w-full" defaultValue={editRecord?.addressForInspection || ''} />
+                <input
+                  name="addressForInspection"
+                  type="text"
+                  placeholder="Address for Inspection"
+                  className="form-input w-full"
+                  defaultValue={editRecord?.addressForInspection || ''}
+                />
               </div>
             </div>
           </div>
@@ -441,13 +571,55 @@ const CallModal = ({ isOpen, onClose, onSubmit, editRecord, title, users = [], a
               <Car className="w-4 h-4" /> Vehicle Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <input name="make" type="text" placeholder="Make" className="form-input" defaultValue={editRecord?.make || ''} />
-              <input name="vehicleModel" type="text" placeholder="Model" className="form-input" defaultValue={editRecord?.vehicleModel || ''} />
-              <input name="variant" type="text" placeholder="Variant" className="form-input" defaultValue={editRecord?.variant || ''} />
-              <input name="yearOfManufacture" type="number" placeholder="Year" className="form-input" defaultValue={editRecord?.yearOfManufacture || ''} />
-              <input name="odometerReading" type="text" placeholder="Odometer" className="form-input" defaultValue={editRecord?.odometerReading || ''} />
-              <input name="serialNum" type="text" placeholder="Serial Num" className="form-input" defaultValue={editRecord?.serialNum || ''} />
-              <input name="vehicleStatus" type="text" placeholder="Vehicle Status" className="form-input" defaultValue={editRecord?.vehicleStatus || ''} />
+              <input
+                name="make"
+                type="text"
+                placeholder="Make"
+                className="form-input"
+                defaultValue={editRecord?.make || ''}
+              />
+              <input
+                name="vehicleModel"
+                type="text"
+                placeholder="Model"
+                className="form-input"
+                defaultValue={editRecord?.vehicleModel || ''}
+              />
+              <input
+                name="variant"
+                type="text"
+                placeholder="Variant"
+                className="form-input"
+                defaultValue={editRecord?.variant || ''}
+              />
+              <input
+                name="yearOfManufacture"
+                type="number"
+                placeholder="Year"
+                className="form-input"
+                defaultValue={editRecord?.yearOfManufacture || ''}
+              />
+              <input
+                name="odometerReading"
+                type="text"
+                placeholder="Odometer"
+                className="form-input"
+                defaultValue={editRecord?.odometerReading || ''}
+              />
+              <input
+                name="serialNum"
+                type="text"
+                placeholder="Serial Num"
+                className="form-input"
+                defaultValue={editRecord?.serialNum || ''}
+              />
+              <input
+                name="vehicleStatus"
+                type="text"
+                placeholder="Vehicle Status"
+                className="form-input"
+                defaultValue={editRecord?.vehicleStatus || ''}
+              />
             </div>
           </div>
 
@@ -459,27 +631,81 @@ const CallModal = ({ isOpen, onClose, onSubmit, editRecord, title, users = [], a
               <AlertCircle className="w-4 h-4" /> Additional Info
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input name="requestedInspectionDate" type="date" placeholder="Req. Inspection Date" className="form-input" defaultValue={editRecord?.requestedInspectionDate || ''} />
-              <input name="requestedInspectionTime" type="time" placeholder="Req. Inspection Time" className="form-input" defaultValue={editRecord?.requestedInspectionTime || ''} />
-              <input name="ncdUcdName" type="text" placeholder="NCD/UCD Name" className="form-input" defaultValue={editRecord?.ncdUcdName || ''} />
-              <input name="repName" type="text" placeholder="Rep Name" className="form-input" defaultValue={editRecord?.repName || ''} />
-              <input name="repContact" type="text" placeholder="Rep Contact" className="form-input" defaultValue={editRecord?.repContact || ''} />
-              <input name="bankSource" type="text" placeholder="Bank Source" className="form-input" defaultValue={editRecord?.bankSource || ''} />
-              <input name="referenceName" type="text" placeholder="Reference Name" className="form-input" defaultValue={editRecord?.referenceName || ''} />
+              <input
+                name="requestedInspectionDate"
+                type="date"
+                placeholder="Req. Inspection Date"
+                className="form-input"
+                defaultValue={editRecord?.requestedInspectionDate || ''}
+              />
+              <input
+                name="requestedInspectionTime"
+                type="time"
+                placeholder="Req. Inspection Time"
+                className="form-input"
+                defaultValue={editRecord?.requestedInspectionTime || ''}
+              />
+              <input
+                name="ncdUcdName"
+                type="text"
+                placeholder="NCD/UCD Name"
+                className="form-input"
+                defaultValue={editRecord?.ncdUcdName || ''}
+              />
+              <input
+                name="repName"
+                type="text"
+                placeholder="Rep Name"
+                className="form-input"
+                defaultValue={editRecord?.repName || ''}
+              />
+              <input
+                name="repContact"
+                type="text"
+                placeholder="Rep Contact"
+                className="form-input"
+                defaultValue={editRecord?.repContact || ''}
+              />
+              <input
+                name="bankSource"
+                type="text"
+                placeholder="Bank Source"
+                className="form-input"
+                defaultValue={editRecord?.bankSource || ''}
+              />
+              <input
+                name="referenceName"
+                type="text"
+                placeholder="Reference Name"
+                className="form-input"
+                defaultValue={editRecord?.referenceName || ''}
+              />
             </div>
           </div>
 
           {/* Remarks */}
           <div className="md:col-span-3">
             <label className="text-xs font-semibold text-slate-500 mb-1 block">Remarks</label>
-            <textarea name="remarks" className="form-input w-full h-24 resize-none" placeholder="Enter remarks..." defaultValue={editRecord?.remarks || ''}></textarea>
+            <textarea
+              name="remarks"
+              className="form-input w-full h-24 resize-none"
+              placeholder="Enter remarks..."
+              defaultValue={editRecord?.remarks || ''}
+            ></textarea>
           </div>
 
           <div className="md:col-span-3 flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="px-5 py-2.5 border border-gray-300 text-slate-700 font-medium hover:bg-gray-100 transition-colors text-sm rounded-lg">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 border border-gray-300 text-slate-700 font-medium hover:bg-gray-100 transition-colors text-sm rounded-lg"
+            >
               Cancel
             </button>
-            <button type="submit" className="px-5 py-2.5 bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors text-sm rounded-lg">
+            <button
+              type="submit"
+              className="px-5 py-2.5 bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors text-sm rounded-lg"
+            >
               {editRecord ? 'Update Record' : 'Save Record'}
             </button>
           </div>
@@ -512,16 +738,23 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, recordName }: DeleteModalProp
             <p className="text-xs text-slate-500">This action cannot be undone</p>
           </div>
         </div>
-        
+
         <p className="text-sm text-slate-600 mb-6">
-          Are you sure you want to delete the record for <span className="font-semibold">{recordName || 'this customer'}</span>?
+          Are you sure you want to delete the record for{' '}
+          <span className="font-semibold">{recordName || 'this customer'}</span>?
         </p>
-        
+
         <div className="flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 border border-gray-300 text-slate-700 font-medium hover:bg-gray-100 transition-colors text-sm rounded-lg">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 text-slate-700 font-medium hover:bg-gray-100 transition-colors text-sm rounded-lg"
+          >
             Cancel
           </button>
-          <button onClick={onConfirm} className="px-4 py-2 bg-red-500 text-white font-medium hover:bg-red-600 transition-colors text-sm rounded-lg">
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-500 text-white font-medium hover:bg-red-600 transition-colors text-sm rounded-lg"
+          >
             Delete
           </button>
         </div>
@@ -553,7 +786,7 @@ export default function TelecallingPage() {
   const [currentPage, setCurrentPage] = useState(1);
   // removed generatedId state
   const itemsPerPage = 20;
-  
+
   // Ref for debounced save timeout
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -564,7 +797,7 @@ export default function TelecallingPage() {
         fetch('/api/telecalling'),
         fetch('/api/users'),
         fetch('/api/dropdowns?type=Appointment Source'),
-        fetch('/api/dropdowns?type=Inspection Status')
+        fetch('/api/dropdowns?type=Inspection Status'),
       ]);
 
       const teleData = await teleRes.json();
@@ -574,10 +807,18 @@ export default function TelecallingPage() {
 
       setAllLeadCalls(Array.isArray(teleData) ? teleData : []);
       setUsers(Array.isArray(usersData) ? usersData : []);
-      setAppointmentSources(Array.isArray(apptSourcesData) ? apptSourcesData.filter((d: DropdownOption) => d.isActive) : []);
-      setInspectionStatuses(Array.isArray(inspStatusesData) ? inspStatusesData.filter((d: DropdownOption) => d.isActive) : []);
+      setAppointmentSources(
+        Array.isArray(apptSourcesData)
+          ? apptSourcesData.filter((d: DropdownOption) => d.isActive)
+          : []
+      );
+      setInspectionStatuses(
+        Array.isArray(inspStatusesData)
+          ? inspStatusesData.filter((d: DropdownOption) => d.isActive)
+          : []
+      );
     } catch (error) {
-      console.error("Failed to fetch data", error);
+      console.error('Failed to fetch data', error);
       setAllLeadCalls([]);
     } finally {
       setLoading(false);
@@ -608,101 +849,94 @@ export default function TelecallingPage() {
     // Generate temporary ID for optimistic update
     const tempId = `temp-${Date.now()}`;
     const optimisticRecord = { ...newCall, _id: tempId } as TelecallingRecord;
-    
+
     // Update UI immediately
-    setAllLeadCalls(prev => [optimisticRecord, ...prev]);
+    setAllLeadCalls((prev) => [optimisticRecord, ...prev]);
     setIsModalOpen(false);
-    
+
     // Save to backend immediately
     try {
       const res = await fetch('/api/telecalling', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCall)
+        body: JSON.stringify(newCall),
       });
       if (res.ok) {
         const savedRecord = await res.json();
         // Replace temp record with actual saved record
-        setAllLeadCalls(prev => prev.map(r => r._id === tempId ? savedRecord : r));
+        setAllLeadCalls((prev) => prev.map((r) => (r._id === tempId ? savedRecord : r)));
       } else {
         // Revert on failure
-        setAllLeadCalls(prev => prev.filter(r => r._id !== tempId));
+        setAllLeadCalls((prev) => prev.filter((r) => r._id !== tempId));
         const err = await res.json();
-        alert("Failed to save: " + err.error);
+        alert('Failed to save: ' + err.error);
       }
     } catch (error) {
-      setAllLeadCalls(prev => prev.filter(r => r._id !== tempId));
-      alert("Failed to save call: " + (error as Error).message);
+      setAllLeadCalls((prev) => prev.filter((r) => r._id !== tempId));
+      alert('Failed to save call: ' + (error as Error).message);
     }
   };
 
   // Optimistic Edit - update UI immediately, save to backend after delay
   const handleEditCall = async (updatedData: Partial<TelecallingRecord>) => {
     if (!editingRecord) return;
-    
+
     const recordId = editingRecord._id;
     const previousRecord = { ...editingRecord };
-    
+
     // Update UI immediately
-    setAllLeadCalls(prev => prev.map(r => 
-      r._id === recordId ? { ...r, ...updatedData } : r
-    ));
+    setAllLeadCalls((prev) => prev.map((r) => (r._id === recordId ? { ...r, ...updatedData } : r)));
     setEditingRecord(null);
     setIsModalOpen(false);
-    
+
     // Save to backend immediately
     try {
       const res = await fetch(`/api/telecalling/${recordId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedData)
+        body: JSON.stringify(updatedData),
       });
       if (!res.ok) {
         // Revert on failure
-        setAllLeadCalls(prev => prev.map(r => 
-          r._id === recordId ? previousRecord : r
-        ));
+        setAllLeadCalls((prev) => prev.map((r) => (r._id === recordId ? previousRecord : r)));
         const err = await res.json();
-        alert("Failed to update: " + err.error);
+        alert('Failed to update: ' + err.error);
       }
     } catch (error) {
-      setAllLeadCalls(prev => prev.map(r => 
-        r._id === recordId ? previousRecord : r
-      ));
-      alert("Failed to update: " + (error as Error).message);
+      setAllLeadCalls((prev) => prev.map((r) => (r._id === recordId ? previousRecord : r)));
+      alert('Failed to update: ' + (error as Error).message);
     }
   };
 
   // Optimistic Delete - update UI immediately, delete from backend after delay
   const handleDeleteCall = async () => {
     if (!deletingRecord) return;
-    
+
     const recordId = deletingRecord._id;
     const previousRecord = { ...deletingRecord };
-    
+
     // Update UI immediately
-    setAllLeadCalls(prev => prev.filter(r => r._id !== recordId));
+    setAllLeadCalls((prev) => prev.filter((r) => r._id !== recordId));
     setDeletingRecord(null);
     setIsDeleteModalOpen(false);
-    
+
     // Delete from backend immediately
     try {
       const res = await fetch(`/api/telecalling/${recordId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
       if (!res.ok) {
         // Revert on failure
-        setAllLeadCalls(prev => [...prev, previousRecord]);
+        setAllLeadCalls((prev) => [...prev, previousRecord]);
         const err = await res.json();
-        alert("Failed to delete: " + err.error);
+        alert('Failed to delete: ' + err.error);
       }
     } catch (error) {
-      setAllLeadCalls(prev => [...prev, previousRecord]);
-      alert("Failed to delete: " + (error as Error).message);
+      setAllLeadCalls((prev) => [...prev, previousRecord]);
+      alert('Failed to delete: ' + (error as Error).message);
     }
   };
 
-  
   const handleOpenAddModal = () => {
     setEditingRecord(null);
     setIsModalOpen(true);
@@ -720,8 +954,8 @@ export default function TelecallingPage() {
 
   // Tab Counts - Dynamic based on data
   const tabCounts = useMemo(() => {
-    const counts: Record<string, number> = { 'All': allLeadCalls.length };
-    allLeadCalls.forEach(call => {
+    const counts: Record<string, number> = { All: allLeadCalls.length };
+    allLeadCalls.forEach((call) => {
       const status = call.inspectionStatus || 'Pending';
       counts[status] = (counts[status] || 0) + 1;
     });
@@ -731,20 +965,20 @@ export default function TelecallingPage() {
   const tabs: TabItem[] = useMemo(() => {
     const preferredOrder = ['All', 'Scheduled', 'Pending', 'Completed', 'Cancelled'];
     const allStatuses = Object.keys(tabCounts);
-    
+
     const sortedStatuses = allStatuses.sort((a, b) => {
       const indexA = preferredOrder.indexOf(a);
       const indexB = preferredOrder.indexOf(b);
-      
+
       if (indexA !== -1 && indexB !== -1) return indexA - indexB;
       if (indexA !== -1) return -1;
       if (indexB !== -1) return 1;
       return a.localeCompare(b);
     });
 
-    return sortedStatuses.map(status => ({
+    return sortedStatuses.map((status) => ({
       label: status,
-      count: tabCounts[status]
+      count: tabCounts[status],
     }));
   }, [tabCounts]);
 
@@ -784,10 +1018,10 @@ export default function TelecallingPage() {
         >
           <Download className="w-4 h-4" />
         </button>
-        
+
         {/* Filter Dropdown */}
         <div className="relative" ref={filterRef}>
-          <button 
+          <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className={`flex items-center justify-center w-8 h-8 transition-colors border border-gray-200 rounded-lg ${isFilterOpen ? 'bg-blue-50 text-blue-600 border-blue-200' : 'text-slate-600 hover:bg-gray-100'}`}
           >
@@ -798,11 +1032,19 @@ export default function TelecallingPage() {
               <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-gray-50 mb-1">
                 Filter by Status
               </div>
-              {tabs.map(tab => {
-                const matchedOption = inspectionStatuses.find(d => d.description.toLowerCase() === tab.label.toLowerCase());
+              {tabs.map((tab) => {
+                const matchedOption = inspectionStatuses.find(
+                  (d) => d.description.toLowerCase() === tab.label.toLowerCase()
+                );
                 const hexToRgb = (hex: string) => {
                   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-                  return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+                  return result
+                    ? {
+                        r: parseInt(result[1], 16),
+                        g: parseInt(result[2], 16),
+                        b: parseInt(result[3], 16),
+                      }
+                    : null;
                 };
                 const rgb = matchedOption?.color ? hexToRgb(matchedOption.color) : null;
                 const bgColor = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)` : undefined;
@@ -818,12 +1060,27 @@ export default function TelecallingPage() {
                     }}
                     className={`w-full text-left px-4 py-2 text-xs flex items-center justify-between hover:bg-slate-50 transition-colors
                       ${activeTab === tab.label ? 'font-bold' : ''}`}
-                    style={activeTab === tab.label && textColor ? { backgroundColor: bgColor, color: textColor } : undefined}
+                    style={
+                      activeTab === tab.label && textColor
+                        ? { backgroundColor: bgColor, color: textColor }
+                        : undefined
+                    }
                   >
-                    <span style={textColor && tab.label !== 'All' ? { color: textColor } : undefined}>{tab.label}</span>
-                    <span 
+                    <span
+                      style={textColor && tab.label !== 'All' ? { color: textColor } : undefined}
+                    >
+                      {tab.label}
+                    </span>
+                    <span
                       className="text-[10px] px-1.5 py-0.5 rounded-full"
-                      style={textColor && tab.label !== 'All' ? { backgroundColor: bgColor, color: textColor } : { backgroundColor: activeTab === tab.label ? '#3b82f6' : '#f1f5f9', color: activeTab === tab.label ? 'white' : '#64748b' }}
+                      style={
+                        textColor && tab.label !== 'All'
+                          ? { backgroundColor: bgColor, color: textColor }
+                          : {
+                              backgroundColor: activeTab === tab.label ? '#3b82f6' : '#f1f5f9',
+                              color: activeTab === tab.label ? 'white' : '#64748b',
+                            }
+                      }
                     >
                       {tab.count}
                     </span>
@@ -843,11 +1100,20 @@ export default function TelecallingPage() {
         </button>
       </div>
     );
-  }, [setTitle, setSearchContent, setActionsContent, searchTerm, activeTab, tabs, isFilterOpen, inspectionStatuses]);
+  }, [
+    setTitle,
+    setSearchContent,
+    setActionsContent,
+    searchTerm,
+    activeTab,
+    tabs,
+    isFilterOpen,
+    inspectionStatuses,
+  ]);
 
   // Filtering Logic
   const { currentCalls, pagination } = useMemo(() => {
-    const filtered = allLeadCalls.filter(call => {
+    const filtered = allLeadCalls.filter((call) => {
       const matchesSearch =
         (call.customerName || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         (call._id || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
@@ -871,12 +1137,12 @@ export default function TelecallingPage() {
         totalPages: Math.ceil(total / itemsPerPage),
         startIndex: start,
         endIndex: Math.min(end, total),
-        onNext: () => setCurrentPage(p => p + 1),
-        onPrev: () => setCurrentPage(p => p - 1),
+        onNext: () => setCurrentPage((p) => p + 1),
+        onPrev: () => setCurrentPage((p) => p - 1),
         onSetPage: (p: number) => setCurrentPage(p),
         canNext: start + itemsPerPage < total,
-        canPrev: currentPage > 1
-      }
+        canPrev: currentPage > 1,
+      },
     };
   }, [allLeadCalls, debouncedSearch, activeTab, currentPage, itemsPerPage]);
 
@@ -886,117 +1152,129 @@ export default function TelecallingPage() {
       header: 'Appt ID',
       accessor: 'appointmentId' as keyof TelecallingRecord,
       className: 'font-mono text-xs text-slate-500 whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'City',
       accessor: 'city' as keyof TelecallingRecord,
       className: 'text-slate-600 whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Allocated To',
       render: (row: TelecallingRecord) => {
         // Try to find userName from the users list (match by email or userName)
-        const user = users.find(u => u.email === row.allocatedTo || u.userName === row.allocatedTo);
-        return <span className="text-slate-600 whitespace-nowrap">{user?.userName || row.allocatedTo || '-'}</span>;
+        const user = users.find(
+          (u) => u.email === row.allocatedTo || u.userName === row.allocatedTo
+        );
+        return (
+          <span className="text-slate-600 whitespace-nowrap">
+            {user?.userName || row.allocatedTo || '-'}
+          </span>
+        );
       },
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Status',
-      render: (row: TelecallingRecord) => <StatusBadge status={row.inspectionStatus || 'Pending'} dropdownOptions={inspectionStatuses} />,
-      width: 'auto'
+      render: (row: TelecallingRecord) => (
+        <StatusBadge
+          status={row.inspectionStatus || 'Pending'}
+          dropdownOptions={inspectionStatuses}
+        />
+      ),
+      width: 'auto',
     },
     {
       header: 'Req. Date',
       accessor: 'requestedInspectionDate' as keyof TelecallingRecord,
       className: 'text-slate-600 whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Req. Time',
       accessor: 'requestedInspectionTime' as keyof TelecallingRecord,
       className: 'text-slate-600 whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Priority',
       render: (row: TelecallingRecord) => <PriorityBadge priority={row.priority || 'Medium'} />,
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Make',
       accessor: 'make' as keyof TelecallingRecord,
       className: 'text-slate-700 whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Model',
       accessor: 'vehicleModel' as keyof TelecallingRecord,
       className: 'text-slate-700 whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Variant',
       accessor: 'variant' as keyof TelecallingRecord,
       className: 'text-slate-600 whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Mfg Year',
       accessor: 'yearOfManufacture' as keyof TelecallingRecord,
       className: 'text-slate-600 whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Customer',
       accessor: 'customerName' as keyof TelecallingRecord,
       className: 'font-semibold text-slate-900 whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Address',
       accessor: 'addressForInspection' as keyof TelecallingRecord,
       className: 'text-slate-600 text-xs whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Contact',
       accessor: 'customerContactNumber' as keyof TelecallingRecord,
       className: 'text-slate-600 font-mono text-xs whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Source',
       accessor: 'appointmentSource' as keyof TelecallingRecord,
       className: 'text-slate-600 whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Remarks',
       accessor: 'remarks' as keyof TelecallingRecord,
       className: 'text-slate-500 text-xs whitespace-normal min-w-[250px]',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Created By',
       accessor: 'createdBy' as keyof TelecallingRecord,
       className: 'text-slate-500 text-xs whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Created At',
-      render: (row: TelecallingRecord) => row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '-',
+      render: (row: TelecallingRecord) =>
+        row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '-',
       className: 'text-slate-500 text-xs whitespace-nowrap',
-      width: 'auto'
+      width: 'auto',
     },
     {
       header: 'Actions',
       align: 'right' as const,
       render: (row: TelecallingRecord) => (
         <div className="flex items-center justify-end gap-1">
-          <button 
+          <button
             onClick={(e) => {
               e.stopPropagation();
               openEditModal(row);
@@ -1006,7 +1284,7 @@ export default function TelecallingPage() {
           >
             <Edit2 className="w-3.5 h-3.5" />
           </button>
-          <button 
+          <button
             onClick={(e) => {
               e.stopPropagation();
               openDeleteModal(row);
@@ -1018,8 +1296,8 @@ export default function TelecallingPage() {
           </button>
         </div>
       ),
-      width: '80px'
-    }
+      width: '80px',
+    },
   ];
 
   return (
@@ -1028,34 +1306,30 @@ export default function TelecallingPage() {
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading...</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Loading...
+            </span>
           </div>
         </div>
       ) : (
         <>
           <div className="flex-1 overflow-hidden">
-            <Table
-              columns={columns}
-              data={currentCalls}
-              pagination={pagination}
-              keyField="_id"
-            />
+            <Table columns={columns} data={currentCalls} pagination={pagination} keyField="_id" />
           </div>
 
-
-          <CallModal 
-            isOpen={isModalOpen} 
+          <CallModal
+            isOpen={isModalOpen}
             onClose={() => {
               setIsModalOpen(false);
               setEditingRecord(null);
-            }} 
+            }}
             onSubmit={editingRecord ? handleEditCall : handleAddCall}
             editRecord={editingRecord}
             users={users}
             appointmentSources={appointmentSources}
             inspectionStatuses={inspectionStatuses}
           />
-          
+
           <DeleteModal
             isOpen={isDeleteModalOpen}
             onClose={() => {
@@ -1065,10 +1339,10 @@ export default function TelecallingPage() {
             onConfirm={handleDeleteCall}
             recordName={deletingRecord?.customerName}
           />
-          
-          <GlobalImportModal 
-            isOpen={isImportModalOpen} 
-            onClose={() => setIsImportModalOpen(false)} 
+
+          <GlobalImportModal
+            isOpen={isImportModalOpen}
+            onClose={() => setIsImportModalOpen(false)}
             endpoint="/api/telecalling/import"
             onSuccess={() => {
               handleRefresh();

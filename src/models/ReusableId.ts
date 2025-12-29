@@ -7,7 +7,7 @@ export interface IReusableId extends Omit<Document, '_id'> {
 
 const ReusableIdSchema = new Schema<IReusableId>({
   _id: { type: String, required: true },
-  year: { type: Number, required: true, index: true }
+  year: { type: Number, required: true, index: true },
 });
 
 // Delete cached model

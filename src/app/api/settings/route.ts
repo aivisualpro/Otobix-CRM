@@ -47,11 +47,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Key is required' }, { status: 400 });
     }
 
-    const updated = await Settings.findOneAndUpdate(
-      { key },
-      { value },
-      { new: true }
-    );
+    const updated = await Settings.findOneAndUpdate({ key }, { value }, { new: true });
 
     if (!updated) {
       return NextResponse.json({ error: 'Setting not found' }, { status: 404 });

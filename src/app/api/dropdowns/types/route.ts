@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await dbConnect();
-    
+
     const types = await Dropdown.distinct('type');
     return NextResponse.json(types.sort());
   } catch (error) {

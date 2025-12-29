@@ -3,10 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import Dropdown from '@/models/Dropdown';
 
 // GET single dropdown
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await dbConnect();
     const { id } = await params;
@@ -24,10 +21,7 @@ export async function GET(
 }
 
 // PUT - Update dropdown
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await dbConnect();
     const { id } = await params;

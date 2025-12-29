@@ -23,11 +23,16 @@ export function HeaderProvider({ children }: HeaderProviderProps) {
   const [actionsContent, setActionsContent] = useState<ReactNode | null>(null);
 
   return (
-    <HeaderContext.Provider value={{
-      title, setTitle,
-      searchContent, setSearchContent,
-      actionsContent, setActionsContent
-    }}>
+    <HeaderContext.Provider
+      value={{
+        title,
+        setTitle,
+        searchContent,
+        setSearchContent,
+        actionsContent,
+        setActionsContent,
+      }}
+    >
       {children}
     </HeaderContext.Provider>
   );

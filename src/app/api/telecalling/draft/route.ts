@@ -14,17 +14,17 @@ export async function POST(request: NextRequest) {
 
     // 1. Check for recycled ID first
     const recycled = await ReusableId.findOneAndDelete({}, { sort: { _id: 1 } });
-    
+
     let newAppointmentId: string;
 
     if (recycled) {
       newAppointmentId = recycled._id;
     } else {
       // 2. No recycled ID, generate new one
-      
+
       // Ensure counter exists and starts at least at 10000000
       let counter = await Counter.findById(counterId);
-      
+
       if (!counter) {
         // Create new counter
         counter = await Counter.create({ _id: counterId, seq: 10000000 });
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (!updatedCounter) {
-        throw new Error("Failed to increment counter");
+        throw new Error('Failed to increment counter');
       }
 
       newAppointmentId = `${yearShort}-${updatedCounter.seq}`;
@@ -52,17 +52,13 @@ export async function POST(request: NextRequest) {
     const newRecord = await Telecalling.create({
       appointmentId: newAppointmentId,
       customerName: 'New Applicant', // Placeholder to be visible
-      inspectionStatus: 'Pending',   // Default status
+      inspectionStatus: 'Pending', // Default status
       createdAt: new Date(),
     });
 
     return NextResponse.json(newRecord);
-
   } catch (error) {
     console.error('Error creating draft record:', error);
-    return NextResponse.json(
-      { error: 'Failed to create draft record' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to create draft record' }, { status: 500 });
   }
 }

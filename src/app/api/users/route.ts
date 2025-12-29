@@ -11,7 +11,10 @@ export async function GET() {
     console.log('--- GET /api/users ---');
     console.log('Total users in DB:', users.length);
     if (users.length > 0) {
-      console.log('Sample user emails:', users.slice(0, 5).map((u: any) => u.email));
+      console.log(
+        'Sample user emails:',
+        users.slice(0, 5).map((u: any) => u.email)
+      );
     }
     return NextResponse.json(users);
   } catch (error) {

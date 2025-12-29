@@ -10,12 +10,8 @@ export default function Header() {
       <div className="flex items-center gap-4 shrink-0">
         {title && <h1 className="text-lg font-bold text-slate-800 tracking-tight">{title}</h1>}
       </div>
-      <div className="flex-1 flex justify-center">
-        {searchContent}
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        {actionsContent}
-      </div>
+      <div className="flex-1 flex justify-center">{searchContent}</div>
+      <div className="flex items-center gap-2 shrink-0">{actionsContent}</div>
     </header>
   );
 }

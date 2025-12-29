@@ -15,72 +15,72 @@ const normalizeFieldName = (key: string): string => {
   // Convert various formats to camelCase
   const normalized = key
     .trim()
-    .replace(/[\s_-]+(.)?/g, (_, c) => c ? c.toUpperCase() : '')
-    .replace(/^./, c => c.toLowerCase());
-  
+    .replace(/[\s_-]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''))
+    .replace(/^./, (c) => c.toLowerCase());
+
   // Map common variations
   const fieldMappings: Record<string, string> = {
-    'appointmentid': 'appointmentId',
-    'customername': 'customerName',
-    'customer_name': 'customerName',
-    'customercontactnumber': 'customerContactNumber',
-    'customer_contact_number': 'customerContactNumber',
-    'phonenumber': 'customerContactNumber',
-    'phone': 'customerContactNumber',
-    'contact': 'customerContactNumber',
-    'emailaddress': 'emailAddress',
-    'email_address': 'emailAddress',
-    'email': 'emailAddress',
-    'model': 'vehicleModel',
-    'vehiclemodel': 'vehicleModel',
-    'vehicle_model': 'vehicleModel',
-    'yearofmanufacture': 'yearOfManufacture',
-    'year_of_manufacture': 'yearOfManufacture',
-    'year': 'yearOfManufacture',
-    'odometerreading': 'odometerReading',
-    'odometer_reading': 'odometerReading',
-    'odometer': 'odometerReading',
-    'serialnum': 'serialNum',
-    'serial_num': 'serialNum',
-    'serialnumber': 'serialNum',
-    'vin': 'serialNum',
-    'addressforinspection': 'addressForInspection',
-    'address_for_inspection': 'addressForInspection',
-    'address': 'addressForInspection',
-    'zipcode': 'zipCode',
-    'zip_code': 'zipCode',
-    'zip': 'zipCode',
-    'requestedinspectiondate': 'requestedInspectionDate',
-    'requested_inspection_date': 'requestedInspectionDate',
-    'inspectiondate': 'requestedInspectionDate',
-    'requestedinspectiontime': 'requestedInspectionTime',
-    'requested_inspection_time': 'requestedInspectionTime',
-    'inspectiontime': 'requestedInspectionTime',
-    'allocatedto': 'allocatedTo',
-    'allocated_to': 'allocatedTo',
-    'assignedto': 'allocatedTo',
-    'inspectionstatus': 'inspectionStatus',
-    'inspection_status': 'inspectionStatus',
-    'status': 'inspectionStatus',
-    'vehiclestatus': 'vehicleStatus',
-    'vehicle_status': 'vehicleStatus',
-    'appointmentsource': 'appointmentSource',
-    'appointment_source': 'appointmentSource',
-    'source': 'appointmentSource',
-    'ncducdname': 'ncdUcdName',
-    'ncd_ucd_name': 'ncdUcdName',
-    'repname': 'repName',
-    'rep_name': 'repName',
-    'repcontact': 'repContact',
-    'rep_contact': 'repContact',
-    'banksource': 'bankSource',
-    'bank_source': 'bankSource',
-    'referencename': 'referenceName',
-    'reference_name': 'referenceName',
-    'createdat': 'createdAt',
-    'created_at': 'createdAt',
+    appointmentid: 'appointmentId',
+    customername: 'customerName',
+    customer_name: 'customerName',
+    customercontactnumber: 'customerContactNumber',
+    customer_contact_number: 'customerContactNumber',
+    phonenumber: 'customerContactNumber',
+    phone: 'customerContactNumber',
+    contact: 'customerContactNumber',
+    emailaddress: 'emailAddress',
+    email_address: 'emailAddress',
+    email: 'emailAddress',
+    model: 'vehicleModel',
+    vehiclemodel: 'vehicleModel',
+    vehicle_model: 'vehicleModel',
+    yearofmanufacture: 'yearOfManufacture',
+    year_of_manufacture: 'yearOfManufacture',
+    year: 'yearOfManufacture',
+    odometerreading: 'odometerReading',
+    odometer_reading: 'odometerReading',
+    odometer: 'odometerReading',
+    serialnum: 'serialNum',
+    serial_num: 'serialNum',
+    serialnumber: 'serialNum',
+    vin: 'serialNum',
+    addressforinspection: 'addressForInspection',
+    address_for_inspection: 'addressForInspection',
+    address: 'addressForInspection',
+    zipcode: 'zipCode',
+    zip_code: 'zipCode',
+    zip: 'zipCode',
+    requestedinspectiondate: 'requestedInspectionDate',
+    requested_inspection_date: 'requestedInspectionDate',
+    inspectiondate: 'requestedInspectionDate',
+    requestedinspectiontime: 'requestedInspectionTime',
+    requested_inspection_time: 'requestedInspectionTime',
+    inspectiontime: 'requestedInspectionTime',
+    allocatedto: 'allocatedTo',
+    allocated_to: 'allocatedTo',
+    assignedto: 'allocatedTo',
+    inspectionstatus: 'inspectionStatus',
+    inspection_status: 'inspectionStatus',
+    status: 'inspectionStatus',
+    vehiclestatus: 'vehicleStatus',
+    vehicle_status: 'vehicleStatus',
+    appointmentsource: 'appointmentSource',
+    appointment_source: 'appointmentSource',
+    source: 'appointmentSource',
+    ncducdname: 'ncdUcdName',
+    ncd_ucd_name: 'ncdUcdName',
+    repname: 'repName',
+    rep_name: 'repName',
+    repcontact: 'repContact',
+    rep_contact: 'repContact',
+    banksource: 'bankSource',
+    bank_source: 'bankSource',
+    referencename: 'referenceName',
+    reference_name: 'referenceName',
+    createdat: 'createdAt',
+    created_at: 'createdAt',
   };
-  
+
   return fieldMappings[normalized.toLowerCase()] || normalized;
 };
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     await dbConnect();
     const { records }: ImportRequestBody = await request.json();
-    
+
     if (!records || !Array.isArray(records) || records.length === 0) {
       return NextResponse.json({ error: 'No records to process' }, { status: 400 });
     }
@@ -115,28 +115,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Prepare documents for insert
     const docsToInsert = records.map((record, index) => {
       const doc: Record<string, unknown> = {};
-      
+
       // Normalize all field names from CSV and sanitize values
       for (const [key, value] of Object.entries(record)) {
         if (value !== undefined && value !== null && value !== '') {
           const normalizedKey = normalizeFieldName(key);
           const sanitizedVal = sanitizeValue(value);
-          
+
           if (sanitizedVal !== undefined && sanitizedVal !== '') {
             doc[normalizedKey] = sanitizedVal;
           }
         }
       }
-      
+
       // Store original appointmentId/id as appointmentId field
       if (record.appointmentId || record._id || record.id) {
         doc.appointmentId = String(record.appointmentId || record._id || record.id);
       }
-      
+
       // Remove _id and id to let MongoDB generate ObjectId
       delete doc._id;
       delete doc.id;
-      
+
       // Handle createdAt date parsing
       if (doc.createdAt && typeof doc.createdAt === 'string') {
         const parsedDate = new Date(doc.createdAt as string);
@@ -146,17 +146,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           delete doc.createdAt;
         }
       }
-      
+
       // Ensure customerName has a value
       if (!doc.customerName) {
         doc.customerName = doc.name || doc.customer || `Record ${index + 1}`;
       }
-      
+
       // Clean up helper fields
       delete doc.name;
       delete doc.customer;
       delete doc.__v;
-      
+
       // Parse yearOfManufacture as number
       if (doc.yearOfManufacture) {
         const year = parseInt(String(doc.yearOfManufacture));
@@ -170,38 +170,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log('[Import] Sample document:', JSON.stringify(docsToInsert[0], null, 2));
 
     // Use insertMany with ordered: false to continue even if some fail
-    const result = await Telecalling.insertMany(docsToInsert, { 
+    const result = await Telecalling.insertMany(docsToInsert, {
       ordered: false,
-      rawResult: true 
+      rawResult: true,
     });
 
     console.log(`[Import] Result:`, result);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Import completed successfully',
       inserted: result.insertedCount || docsToInsert.length,
-      total: records.length
+      total: records.length,
     });
-
   } catch (error: unknown) {
     console.error('POST /api/telecalling/import error:', error);
-    
+
     // Handle bulk write errors (some documents may have been inserted)
     if (error && typeof error === 'object' && 'insertedDocs' in error) {
       const bulkError = error as { insertedDocs: unknown[]; message: string };
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: 'Import partially completed',
         inserted: bulkError.insertedDocs?.length || 0,
-        error: bulkError.message
+        error: bulkError.message,
       });
     }
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Import failed';
-    return NextResponse.json({ 
-      error: 'Import failed', 
-      details: errorMessage 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Import failed',
+        details: errorMessage,
+      },
+      { status: 500 }
+    );
   }
 }
-
-

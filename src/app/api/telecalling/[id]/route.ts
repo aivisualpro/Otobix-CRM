@@ -8,20 +8,17 @@ interface RouteParams {
 }
 
 // GET single telecalling record
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-): Promise<NextResponse> {
+export async function GET(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
     await dbConnect();
     const { id } = await params;
-    
+
     const record = await Telecalling.findById(id).lean();
-    
+
     if (!record) {
       return NextResponse.json({ error: 'Record not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json(record);
   } catch (error) {
     console.error('GET /api/telecalling/[id] error:', error);
@@ -30,35 +27,32 @@ export async function GET(
 }
 
 // PUT update telecalling record
-export async function PUT(
-  request: NextRequest,
-  { params }: RouteParams
-): Promise<NextResponse> {
+export async function PUT(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
     await dbConnect();
     const { id } = await params;
     const body = await request.json();
-    
+
     // Map 'model' to 'vehicleModel' to avoid Document conflicts
     if (body.model) {
       body.vehicleModel = body.model;
       delete body.model;
     }
-    
+
     // Remove _id from body to prevent update errors
     delete body._id;
     delete body.id;
-    
+
     const record = await Telecalling.findByIdAndUpdate(
       id,
       { $set: body },
       { new: true, runValidators: true }
     ).lean();
-    
+
     if (!record) {
       return NextResponse.json({ error: 'Record not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json(record);
   } catch (error) {
     console.error('PUT /api/telecalling/[id] error:', error);
@@ -68,17 +62,13 @@ export async function PUT(
 }
 
 // DELETE telecalling record
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-): Promise<NextResponse> {
+export async function DELETE(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
     await dbConnect();
     const { id } = await params;
-    
+
     const record = await Telecalling.findByIdAndDelete(id).lean();
-    
-    
+
     if (!record) {
       return NextResponse.json({ error: 'Record not found' }, { status: 404 });
     }
@@ -96,14 +86,14 @@ export async function DELETE(
         // Save to reusable pool
         await ReusableId.create({
           _id: record.appointmentId,
-          year: year
+          year: year,
         });
       } catch (e) {
         // Ignore duplicates (if already in pool)
         console.warn('Could not recycle ID:', e);
       }
     }
-    
+
     return NextResponse.json({ message: 'Record deleted successfully', id });
   } catch (error) {
     console.error('DELETE /api/telecalling/[id] error:', error);

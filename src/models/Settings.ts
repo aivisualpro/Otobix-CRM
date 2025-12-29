@@ -12,21 +12,24 @@ export interface ISettings extends Document {
   updatedAt: Date;
 }
 
-const SettingsSchema = new Schema<ISettings>({
-  key: { type: String, required: true, unique: true, trim: true },
-  value: { type: Schema.Types.Mixed, required: true },
-  category: { type: String, required: true, default: 'General' },
-  label: { type: String, required: true },
-  description: { type: String },
-  type: { 
-    type: String, 
-    enum: ['text', 'number', 'boolean', 'select', 'json', 'date'], 
-    default: 'text' 
+const SettingsSchema = new Schema<ISettings>(
+  {
+    key: { type: String, required: true, unique: true, trim: true },
+    value: { type: Schema.Types.Mixed, required: true },
+    category: { type: String, required: true, default: 'General' },
+    label: { type: String, required: true },
+    description: { type: String },
+    type: {
+      type: String,
+      enum: ['text', 'number', 'boolean', 'select', 'json', 'date'],
+      default: 'text',
+    },
+    options: { type: [String], default: [] },
   },
-  options: { type: [String], default: [] }
-}, {
-  timestamps: true
-});
+  {
+    timestamps: true,
+  }
+);
 
 // Clear cached models
 if (mongoose.models.Settings) {

@@ -4,33 +4,36 @@ import User from '@/models/User';
 
 // Helper to normalize keys (remove spaces, lowercase)
 const normalizeFieldName = (key: string): string => {
-  const normalized = key.trim().replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-  
+  const normalized = key
+    .trim()
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toLowerCase();
+
   const fieldMappings: Record<string, string> = {
-    'firstname': 'firstName', // Temp, will combine
-    'lastname': 'lastName',   // Temp, will combine
-    'name': 'userName',
-    'username': 'userName',
-    'fullname': 'userName',
-    'emailaddress': 'email',
-    'email': 'email',
-    'role': 'userRole',
-    'userrole': 'userRole',
-    'password': 'password',
-    'phone': 'phoneNumber',
-    'phonenumber': 'phoneNumber',
-    'mobile': 'phoneNumber',
-    'contact': 'phoneNumber',
-    'city': 'location',
-    'location': 'location',
-    'allowedcities': 'allowedCities',
-    'address': 'addressList',
-    'addresslist': 'addressList',
-    'status': 'approvalStatus',
-    'approvalstatus': 'approvalStatus',
-    'isstaff': 'isStaff'
+    firstname: 'firstName', // Temp, will combine
+    lastname: 'lastName', // Temp, will combine
+    name: 'userName',
+    username: 'userName',
+    fullname: 'userName',
+    emailaddress: 'email',
+    email: 'email',
+    role: 'userRole',
+    userrole: 'userRole',
+    password: 'password',
+    phone: 'phoneNumber',
+    phonenumber: 'phoneNumber',
+    mobile: 'phoneNumber',
+    contact: 'phoneNumber',
+    city: 'location',
+    location: 'location',
+    allowedcities: 'allowedCities',
+    address: 'addressList',
+    addresslist: 'addressList',
+    status: 'approvalStatus',
+    approvalstatus: 'approvalStatus',
+    isstaff: 'isStaff',
   };
-  
+
   return fieldMappings[normalized] || key;
 };
 
@@ -51,7 +54,7 @@ export async function POST(request: NextRequest) {
       for (const [key, value] of Object.entries(record)) {
         if (value !== undefined && value !== null && value !== '') {
           const normalizedKey = normalizeFieldName(key);
-          
+
           if (normalizedKey === 'firstName') {
             tempFirstName = String(value);
           } else if (normalizedKey === 'lastName') {
@@ -59,9 +62,12 @@ export async function POST(request: NextRequest) {
           } else if (normalizedKey === 'addressList' || normalizedKey === 'allowedCities') {
             // Ensure it's an array (split by comma if string)
             if (typeof value === 'string') {
-               doc[normalizedKey] = value.split(',').map(s => s.trim()).filter(Boolean);
+              doc[normalizedKey] = value
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
             } else if (Array.isArray(value)) {
-               doc[normalizedKey] = value;
+              doc[normalizedKey] = value;
             }
           } else if (normalizedKey === 'isStaff') {
             // Convert string to boolean
@@ -78,16 +84,16 @@ export async function POST(request: NextRequest) {
         if (tempFirstName || tempLastName) {
           doc.userName = `${tempFirstName} ${tempLastName}`.trim();
         } else {
-             // Fallback from email
-             doc.userName = String(doc.email || 'User').split('@')[0];
+          // Fallback from email
+          doc.userName = String(doc.email || 'User').split('@')[0];
         }
       }
-      
+
       // Default password if missing
       if (!doc.password) {
         doc.password = 'password123';
       }
-      
+
       // Default role
       if (!doc.userRole) {
         doc.userRole = 'User';
@@ -102,7 +108,7 @@ export async function POST(request: NextRequest) {
     // Use insertMany with ordered: false to skip duplicates (by email)
     // When ordered: false, operation continues even if some fail.
     // However, Mongoose throws an error if ANY fail, but the error object contains info about successes.
-    
+
     let insertedCount = 0;
     let errorCount = 0;
     let errors: string[] = [];
@@ -114,9 +120,9 @@ export async function POST(request: NextRequest) {
       console.log('--- Import Error Log Start ---');
       // detailed logging to debug
       if (error.writeErrors) {
-         console.log('Write Errors Sample:', JSON.stringify(error.writeErrors.slice(0, 1), null, 2));
+        console.log('Write Errors Sample:', JSON.stringify(error.writeErrors.slice(0, 1), null, 2));
       } else {
-         console.log('Full Error:', JSON.stringify(error, null, 2));
+        console.log('Full Error:', JSON.stringify(error, null, 2));
       }
       console.log('--- Import Error Log End ---');
 
@@ -144,14 +150,16 @@ export async function POST(request: NextRequest) {
       message: `Import processed. Added: ${insertedCount}, Skipped: ${errorCount}`,
       inserted: insertedCount,
       failed: errorCount,
-      errors: errors.slice(0, 5) // Return first 5 errors as sample
+      errors: errors.slice(0, 5), // Return first 5 errors as sample
     });
-
   } catch (error: any) {
     console.error('Import fatal error:', error);
-    return NextResponse.json({ 
-      error: 'Import failed completely', 
-      details: error.message 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Import failed completely',
+        details: error.message,
+      },
+      { status: 500 }
+    );
   }
 }

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     // Ensure counter starts at 10000001 (8 digits)
     // If it exists and is less than 10000000, update it.
     // We use two atomic operations to be safe or one if possible.
-    
+
     // First, ensure it's at least the baseline
     await Counter.findOneAndUpdate(
       { _id: counterId, seq: { $lt: 10000000 } },
@@ -36,9 +36,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ id: newId });
   } catch (error) {
     console.error('Error generating appointment ID:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate appointment ID' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to generate appointment ID' }, { status: 500 });
   }
 }

@@ -4,12 +4,16 @@ import Telecalling from '@/models/Telecalling';
 import Counter from '@/models/Counter';
 import ReusableId from '@/models/ReusableId';
 
+import { telecallingSchema } from '@/lib/validations/telecalling';
+
 // GET all telecalling records
 export async function GET(): Promise<NextResponse> {
   try {
     await dbConnect();
     const records = await Telecalling.find({})
-      .select('appointmentId customerName customerContactNumber city vehicleModel vehicleStatus requestedInspectionDate requestedInspectionTime appointmentSource remarks createdBy createdAt priority inspectionStatus allocatedTo')
+      .select(
+        'appointmentId customerName customerContactNumber city vehicleModel vehicleStatus requestedInspectionDate requestedInspectionTime appointmentSource remarks createdBy createdAt priority inspectionStatus allocatedTo'
+      )
       .sort({ createdAt: -1 })
       .lean();
     return NextResponse.json(records);
@@ -24,13 +28,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     await dbConnect();
     const body = await request.json();
-    
+
     // Map 'model' to 'vehicleModel' to avoid Document conflicts
     if (body.model) {
       body.vehicleModel = body.model;
       delete body.model;
     }
-    
+
+    // Validate request body
+    const validationResult = telecallingSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: 'Validation Failed', details: validationResult.error.format() },
+        { status: 400 }
+      );
+    }
+
+    const validatedData = validationResult.data;
+    const finalData = { ...validatedData } as any; // Cast to allowing adding appointmentId
+
     // Let MongoDB generate the _id automatically
     // Generate unique Appointment ID
     const date = new Date();
@@ -39,12 +55,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 1. Check for reusable ID first
     const recycled = await ReusableId.findOneAndDelete({}, { sort: { _id: 1 } });
-    
+
     if (recycled) {
-      body.appointmentId = recycled._id;
+      finalData.appointmentId = recycled._id;
     } else {
       // 2. Generate new ID
-      
+
       // Ensure counter exists and minimum value logic
       let counter = await Counter.findById(counterId);
       if (!counter) {
@@ -61,11 +77,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
 
       if (updatedCounter) {
-        body.appointmentId = `${yearShort}-${updatedCounter.seq}`;
+        finalData.appointmentId = `${yearShort}-${updatedCounter.seq}`;
       }
     }
-    
-    const record = await Telecalling.create(body);
+
+    // Explicitly cast to match Mongoose schema expected type if needed, or rely on flexible input
+    const record = await Telecalling.create(finalData);
     return NextResponse.json(record, { status: 201 });
   } catch (error) {
     console.error('POST /api/telecalling error:', error);
@@ -73,5 +90,3 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-
-

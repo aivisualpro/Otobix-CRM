@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   Settings,
@@ -23,8 +23,8 @@ import {
   X,
   Shield,
   ChevronDown,
-  LucideIcon
-} from "lucide-react";
+  LucideIcon,
+} from 'lucide-react';
 
 interface SubMenuItem {
   name: string;
@@ -51,42 +51,44 @@ const GlobalHeader = () => {
 
   const disabledCommon: MenuItem[] = useMemo(
     () => [
-      { name: "Retail", path: "/retail", icon: ShoppingBag, comingSoon: true },
-      { name: "Operations", path: "/operations", icon: Briefcase, comingSoon: true },
-      { name: "Accounts", path: "/accounts", icon: CreditCard, comingSoon: true },
-      { name: "Reports", path: "/reports", icon: BarChart2, comingSoon: true },
+      { name: 'Retail', path: '/retail', icon: ShoppingBag, comingSoon: true },
+      { name: 'Operations', path: '/operations', icon: Briefcase, comingSoon: true },
+      { name: 'Accounts', path: '/accounts', icon: CreditCard, comingSoon: true },
+      { name: 'Reports', path: '/reports', icon: BarChart2, comingSoon: true },
     ],
     []
   );
 
   const menuItems: MenuItem[] = useMemo(() => {
-    if (role === "admin") {
+    if (role === 'admin') {
       return [
-        { name: "Home", path: "/", icon: Home },
-        { 
-          name: "Admin", 
-          path: "/admin", // This might just be a trigger, or overview
+        { name: 'Home', path: '/', icon: Home },
+        {
+          name: 'Admin',
+          path: '/admin', // This might just be a trigger, or overview
           icon: Settings,
           subMenu: [
-            { name: "Users", path: "/admin/users", icon: Shield },
-            { name: "Settings", path: "/admin/settings", icon: Settings },
-          ]
+            { name: 'Users', path: '/admin/users', icon: Shield },
+            { name: 'Settings', path: '/admin/settings', icon: Settings },
+          ],
         },
-        { name: "Telecalling", path: "/telecalling", icon: PhoneCall },
-        { name: "Auctions", path: "/auctions", icon: Gavel },
-        { name: "Customers", path: "/customers", icon: Users },
-        { name: "Sales", path: "/sales", icon: BarChart2 },
+        { name: 'Telecalling', path: '/telecalling', icon: PhoneCall },
+        { name: 'Auctions', path: '/auctions', icon: Gavel },
+        { name: 'Customers', path: '/customers', icon: Users },
+        { name: 'Sales', path: '/sales', icon: BarChart2 },
         ...disabledCommon,
       ];
     }
-    return [{ name: "Home", path: "/", icon: Home }, ...disabledCommon];
+    return [{ name: 'Home', path: '/', icon: Home }, ...disabledCommon];
   }, [role, disabledCommon]);
 
   return (
     <header className="bg-[#f4f9ff] border-b border-gray-200 z-50 h-full flex items-center justify-between px-4 lg:px-6 shadow-sm shrink-0">
       {/* Logo */}
       <div className="flex items-center gap-3">
-        <Link href="/" className="text-xl font-bold text-blue-500">Otobix CRM</Link>
+        <Link href="/" className="text-xl font-bold text-blue-500">
+          Otobix CRM
+        </Link>
       </div>
 
       {/* Desktop Navigation */}
@@ -107,15 +109,15 @@ const GlobalHeader = () => {
               <button
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 whitespace-nowrap cursor-pointer ${
                   pathname.startsWith(item.path)
-                    ? "bg-blue-500 text-white shadow-md"
-                    : "text-slate-600 hover:bg-white/50 hover:text-blue-500"
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : 'text-slate-600 hover:bg-white/50 hover:text-blue-500'
                 }`}
               >
                 <item.icon className="w-3.5 h-3.5" />
                 <span className="text-xs font-medium">{item.name}</span>
                 <ChevronDown className="w-3 h-3 ml-0.5 opacity-70 group-hover:rotate-180 transition-transform duration-200" />
               </button>
-              
+
               {/* Dropdown Content */}
               <div className="absolute left-0 top-full pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="bg-white border border-gray-100 rounded-xl shadow-xl py-1 overflow-hidden">
@@ -125,8 +127,8 @@ const GlobalHeader = () => {
                       href={sub.path}
                       className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium transition-colors ${
                         pathname === sub.path
-                          ? "bg-blue-50 text-blue-600"
-                          : "text-slate-600 hover:bg-gray-50 hover:text-blue-600"
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-slate-600 hover:bg-gray-50 hover:text-blue-600'
                       }`}
                     >
                       <sub.icon className="w-3.5 h-3.5" />
@@ -142,8 +144,8 @@ const GlobalHeader = () => {
               href={item.path}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 whitespace-nowrap ${
                 pathname === item.path
-                  ? "bg-blue-500 text-white shadow-md"
-                  : "text-slate-600 hover:bg-white/50 hover:text-blue-500"
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'text-slate-600 hover:bg-white/50 hover:text-blue-500'
               }`}
             >
               <item.icon className="w-3.5 h-3.5" />
@@ -168,10 +170,7 @@ const GlobalHeader = () => {
 
           {isProfileMenuOpen && (
             <>
-              <div 
-                className="fixed inset-0 z-40" 
-                onClick={() => setIsProfileMenuOpen(false)} 
-              />
+              <div className="fixed inset-0 z-40" onClick={() => setIsProfileMenuOpen(false)} />
               <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg py-1 z-50 border border-gray-100">
                 <Link
                   href="/profile"
@@ -186,7 +185,7 @@ const GlobalHeader = () => {
                 <button
                   className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                   onClick={() => {
-                    window.location.href = "/login";
+                    window.location.href = '/login';
                   }}
                 >
                   <div className="w-3.5 h-3.5 flex items-center justify-center">
@@ -223,25 +222,27 @@ const GlobalHeader = () => {
               </div>
             ) : item.subMenu ? (
               <div key={item.name} className="space-y-1">
-                 <div className="flex items-center gap-3 px-4 py-3 text-gray-700 font-medium bg-gray-50 rounded-lg">
-                    <item.icon className="w-5 h-5" />
-                    {item.name}
-                 </div>
-                 <div className="pl-12 space-y-1">
-                    {item.subMenu.map(sub => (
-                      <Link
-                        key={sub.path}
-                        href={sub.path}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm ${
-                          pathname === sub.path ? "text-blue-600 bg-blue-50" : "text-slate-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        <sub.icon className="w-4 h-4" />
-                        {sub.name}
-                      </Link>
-                    ))}
-                 </div>
+                <div className="flex items-center gap-3 px-4 py-3 text-gray-700 font-medium bg-gray-50 rounded-lg">
+                  <item.icon className="w-5 h-5" />
+                  {item.name}
+                </div>
+                <div className="pl-12 space-y-1">
+                  {item.subMenu.map((sub) => (
+                    <Link
+                      key={sub.path}
+                      href={sub.path}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm ${
+                        pathname === sub.path
+                          ? 'text-blue-600 bg-blue-50'
+                          : 'text-slate-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <sub.icon className="w-4 h-4" />
+                      {sub.name}
+                    </Link>
+                  ))}
+                </div>
               </div>
             ) : (
               <Link
@@ -250,8 +251,8 @@ const GlobalHeader = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   pathname === item.path
-                    ? "bg-blue-500 text-white"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <item.icon className="w-5 h-5" />

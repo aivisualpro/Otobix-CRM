@@ -47,7 +47,9 @@ export default function Home() {
 
       <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Welcome to Otobix CRM</h2>
-        <p className="text-slate-500">Your Next.js powered CRM is ready. Navigate using the menu above.</p>
+        <p className="text-slate-500">
+          Your Next.js powered CRM is ready. Navigate using the menu above.
+        </p>
       </div>
     </div>
   );

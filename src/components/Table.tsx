@@ -43,18 +43,14 @@ function Table<T extends object>({
   isLoading = false,
   pagination,
   onRowClick,
-  emptyMessage = "No records found",
-  toolbar
+  emptyMessage = 'No records found',
+  toolbar,
 }: TableProps<T>) {
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Toolbar - Pinned at top */}
-      {toolbar && (
-        <div className="flex-none border-b border-gray-200 bg-white z-20">
-          {toolbar}
-        </div>
-      )}
-      
+      {toolbar && <div className="flex-none border-b border-gray-200 bg-white z-20">{toolbar}</div>}
+
       {/* Scrollable Table Area */}
       <div className="flex-1 overflow-auto bg-white custom-scrollbar">
         <table className="min-w-[1400px] w-full text-left border-collapse">
@@ -77,7 +73,10 @@ function Table<T extends object>({
           <tbody className="divide-y divide-gray-100">
             {isLoading ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-20 h-[calc(100vh-400px)] text-center text-slate-400">
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-20 h-[calc(100vh-400px)] text-center text-slate-400"
+                >
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
                     <span className="text-xs">Loading data...</span>
@@ -103,14 +102,21 @@ function Table<T extends object>({
                         ${col.className || ''} 
                         ${col.align === 'right' ? 'text-right' : 'text-left'}`}
                     >
-                      {col.render ? col.render(row) : col.accessor ? String((row as Record<string, unknown>)[col.accessor as string] ?? '') : ''}
+                      {col.render
+                        ? col.render(row)
+                        : col.accessor
+                          ? String((row as Record<string, unknown>)[col.accessor as string] ?? '')
+                          : ''}
                     </td>
                   ))}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-400 text-sm">
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-12 text-center text-slate-400 text-sm"
+                >
                   {emptyMessage}
                 </td>
               </tr>
@@ -123,7 +129,12 @@ function Table<T extends object>({
       {pagination && (
         <div className="flex-none flex flex-wrap items-center justify-between gap-4 py-1.5 px-2 border-t border-gray-200 text-[11px] text-slate-500 bg-slate-50">
           <div>
-            Showing <span className="font-medium text-slate-900">{pagination.startIndex + 1}</span> to <span className="font-medium text-slate-900">{Math.min(pagination.endIndex, pagination.totalItems)}</span> of <span className="font-medium text-slate-900">{pagination.totalItems}</span>
+            Showing <span className="font-medium text-slate-900">{pagination.startIndex + 1}</span>{' '}
+            to{' '}
+            <span className="font-medium text-slate-900">
+              {Math.min(pagination.endIndex, pagination.totalItems)}
+            </span>{' '}
+            of <span className="font-medium text-slate-900">{pagination.totalItems}</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -153,9 +164,10 @@ function Table<T extends object>({
                       <button
                         key={i}
                         onClick={() => onSetPage(i)}
-                        className={`w-7 h-7 flex items-center justify-center border transition-colors rounded ${currentPage === i
-                          ? 'bg-blue-500 text-white border-blue-500 font-bold'
-                          : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
+                        className={`w-7 h-7 flex items-center justify-center border transition-colors rounded ${
+                          currentPage === i
+                            ? 'bg-blue-500 text-white border-blue-500 font-bold'
+                            : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
                         }`}
                       >
                         {i}

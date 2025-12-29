@@ -6,10 +6,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: RouteParams
-): Promise<NextResponse> {
+export async function PUT(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
     await dbConnect();
     const { id } = await params;
@@ -33,10 +30,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-): Promise<NextResponse> {
+export async function DELETE(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
     await dbConnect();
     const { id } = await params;

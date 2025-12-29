@@ -7,7 +7,7 @@ export interface ICounter extends Omit<Document, '_id'> {
 
 const CounterSchema = new Schema<ICounter>({
   _id: { type: String, required: true },
-  seq: { type: Number, default: 10000001 }
+  seq: { type: Number, default: 10000001 },
 });
 
 // Delete cached model to handle schema changes in development

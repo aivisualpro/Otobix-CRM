@@ -8,13 +8,13 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     await dbConnect();
-    
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
-    
+
     const query = type ? { type } : {};
     const dropdowns = await Dropdown.find(query).sort({ type: 1, sortOrder: 1 }).lean();
-    
+
     return NextResponse.json(dropdowns);
   } catch (error) {
     console.error('Failed to fetch dropdowns:', error);
