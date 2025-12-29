@@ -36,6 +36,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Please set up your password');
         }
 
+        // Check for Approval Status
+        if (user.approvalStatus !== 'Approved') {
+          throw new Error('Your account is pending approval or has been rejected.');
+        }
+
         return {
           id: user._id.toString(),
           name: user.userName,
@@ -48,15 +53,15 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-        if (user) {
-            token.role = user.role;
-            token.id = user.id;
-        }
-        // Update session if needed
-        if (trigger === "update" && session) {
-            token = { ...token, ...session };
-        }
-        return token;
+      if (user) {
+        token.role = user.role;
+        token.id = user.id;
+      }
+      // Update session if needed
+      if (trigger === 'update' && session) {
+        token = { ...token, ...session };
+      }
+      return token;
     },
     async session({ session, token }) {
       if (session.user) {
