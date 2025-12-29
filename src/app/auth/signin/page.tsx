@@ -67,7 +67,7 @@ export default function SignInPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100"
+                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100"
                   placeholder="name@company.com"
                 />
               </div>
@@ -82,7 +82,7 @@ export default function SignInPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100"
+                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100"
                   placeholder="••••••••"
                 />
               </div>
