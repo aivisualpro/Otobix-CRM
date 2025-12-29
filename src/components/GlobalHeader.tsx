@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import {
   Home,
   Settings,
@@ -184,9 +185,7 @@ const GlobalHeader = () => {
                 </Link>
                 <button
                   className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                  onClick={() => {
-                    window.location.href = '/login';
-                  }}
+                  onClick={() => signOut({ callbackUrl: '/auth/signin' })}
                 >
                   <div className="w-3.5 h-3.5 flex items-center justify-center">
                     <LogOut className="w-4 h-4" />
