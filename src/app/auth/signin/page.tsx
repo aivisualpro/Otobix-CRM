@@ -1,197 +1,135 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { User, Phone, Lock, Loader2, AlertCircle, BadgeCheck, ChevronRight } from 'lucide-react';
-import Image from 'next/image';
-import { useEffect, Suspense } from 'react';
+import { User, Phone, Lock, Loader2, AlertCircle } from 'lucide-react';
 
-function SignInContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+export default function SignInPage() {
   const { data: session, status } = useSession();
-  
+
   const [userName, setUserName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
 
-  const addLog = (msg: string) => {
-    console.log(`[SignIn Debug] ${msg}`);
-    setDebugLogs(prev => [...prev.slice(-4), msg]);
-  };
-
-  // Log status changes
+  // 1. Initial cleanup and redirect Logic
   useEffect(() => {
-    addLog(`Status changed: ${status}`);
-  }, [status]);
-
-  // Auto-redirect if already authenticated
-  useEffect(() => {
+    // If already logged in, get out of here immediately
     if (status === 'authenticated') {
-      addLog('Authenticated - redirecting...');
-      const callbackUrl = searchParams.get('callbackUrl') || '/';
-      // Use router.replace for smoother transitions, fallback to href if it fails
-      router.replace(callbackUrl);
-      
-      // Safety timeout for redirection
-      const timeoutId = setTimeout(() => {
-        if (window.location.pathname.startsWith('/auth/signin')) {
-          addLog('Redirect taking too long, forcing with window.location');
-          window.location.href = callbackUrl;
-        }
-      }, 2000);
-      
-      return () => clearTimeout(timeoutId);
+      window.location.href = '/';
+      return;
     }
-  }, [status, router, searchParams]);
+
+    // Clean the URL visually to remove ugly callback params if present
+    if (typeof window !== 'undefined' && window.location.search.includes('callbackUrl')) {
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  }, [status]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    addLog('Starting sign in process...');
 
     try {
       const result = await signIn('credentials', {
         userName,
         phoneNumber,
         password,
-        redirect: false, // Handle redirect manually for better control
+        redirect: false,
       });
 
       if (result?.error) {
-        setError(result.error);
+        setError(result.error || 'Login failed');
         setLoading(false);
-        addLog(`Error: ${result.error}`);
       } else if (result?.ok) {
-        addLog('Login successful, waiting for session update...');
-        // router.replace will be handled by the useEffect above when status changes
+        // Successful login - hard redirect home
+        window.location.href = '/';
       }
     } catch (err: any) {
-      addLog(`Unexpected error: ${err.message}`);
-      setError(`An unexpected error occurred: ${err.message}`);
+      setError(`Login failed: ${err.message}`);
       setLoading(false);
     }
   };
 
-  // If status is loading, show a local loader instead of triggering Suspense fallback indefinitely
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 flex flex-col items-center text-center">
-          <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Verifying Session</h2>
-          <p className="text-slate-500">Please wait while we check your login status...</p>
-          <div className="mt-8 p-3 bg-slate-50 rounded-lg w-full">
-            <div className="text-[10px] font-mono text-slate-400 text-left">
-              &gt; Initializing NextAuth...<br/>
-              &gt; Checking credentials...<br/>
-              &gt; Status: {status}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // If authenticated, show a simple centering loader while window.location kicks in
   if (status === 'authenticated') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <BadgeCheck className="w-10 h-10 text-green-600" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Authenticated</h2>
-          <p className="text-slate-500 mb-6">Redirecting to your dashboard...</p>
-          <button 
-            onClick={() => window.location.href = '/'}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 rounded-xl transition-all flex items-center justify-center gap-2"
-          >
-            Go to Dashboard <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-        <div className="px-8 py-6 bg-white border-b border-gray-100 text-center">
-          <div className="relative w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-            <img
-              src="/logo-v2.png"
-              alt="Otobix CRM"
-              className="object-contain w-full h-full"
-            />
+        <div className="px-8 py-8 bg-white text-center">
+          <div className="relative w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+            <img src="/logo-v2.png" alt="Otobix CRM" className="object-contain w-full h-full" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">Welcome Back</h1>
-          <p className="text-slate-500 text-sm mt-1">Sign in to your account</p>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Welcome Back</h1>
+          <p className="text-slate-500 text-sm mt-1">Please enter your details to sign in</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="px-8 pb-8 pt-2 space-y-5">
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2 border border-red-100 animate-in fade-in slide-in-from-top-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm flex items-start gap-3 border border-red-100 animate-in fade-in zoom-in duration-200">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           <div className="space-y-4">
-            <div>
-              <label htmlFor="userName" className="block text-sm font-medium text-slate-700 mb-1.5">User Name</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase ml-1">
+                User Name
+              </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
-                  id="userName"
-                  name="userName"
-                  type="text"
                   required
+                  type="text"
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  className="!pl-12 w-full h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border border-slate-200"
-                  placeholder="Enter your user name"
-                  autoComplete="username"
+                  className="w-full h-11 pl-11 pr-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800"
+                  placeholder="amit_p"
                 />
               </div>
             </div>
 
-            <div>
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-slate-700 mb-1.5">Contact Number</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase ml-1">
+                Contact Number
+              </label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  type="tel"
                   required
+                  type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="!pl-12 w-full h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border border-slate-200"
-                  placeholder="Enter your contact number"
-                  autoComplete="tel"
+                  className="w-full h-11 pl-11 pr-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800"
+                  placeholder="9876543210"
                 />
               </div>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase ml-1">
+                Password
+              </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
-                  id="password"
-                  name="password"
-                  type="password"
                   required
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="!pl-12 w-full h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border border-slate-200"
+                  className="w-full h-11 pl-11 pr-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-slate-800"
                   placeholder="••••••••"
-                  autoComplete="current-password"
                 />
               </div>
             </div>
@@ -200,44 +138,16 @@ function SignInContent() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 rounded-xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 hover:shadow-blue-600/30 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold h-12 rounded-xl transition-all shadow-md shadow-blue-500/10 flex items-center justify-center gap-2 mt-4 active:scale-[0.98]"
           >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Signing in...
-              </>
-            ) : (
-              'Sign In'
-            )}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In Now'}
           </button>
         </form>
 
-        <div className="px-8 py-4 bg-slate-50 border-t border-gray-100 text-center">
-          <p className="text-xs text-slate-500 mb-2">
-            Don&apos;t have an account? Contact your administrator.
-          </p>
-          {debugLogs.length > 0 && (
-            <div className="mt-4 p-2 bg-slate-100 rounded text-[10px] text-left font-mono text-slate-400 overflow-hidden">
-              {debugLogs.map((log, i) => <div key={i}>&gt; {log}</div>)}
-            </div>
-          )}
+        <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 text-center">
+          <p className="text-xs text-slate-400">Otobix CRM &copy; 2026. All rights reserved.</p>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function SignInPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 flex flex-col items-center">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-4" />
-          <p className="text-slate-500 animate-pulse">Initializing login module...</p>
-        </div>
-      </div>
-    }>
-      <SignInContent />
-    </Suspense>
   );
 }
