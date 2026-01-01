@@ -4,11 +4,14 @@ import { getToken } from 'next-auth/jwt';
 
 export default withAuth(
   async function middleware(req) {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET || 'a-very-secret-value-for-development-only',
+    });
     const { pathname } = req.nextUrl;
-    
-    console.log(`[Middleware] Path: ${pathname}, HasToken: ${!!token}`);
-    
+
+    // console.log(`[Middleware] Path: ${pathname}, HasToken: ${!!token}`);
+
     return NextResponse.next();
   },
   {
