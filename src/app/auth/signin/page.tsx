@@ -25,7 +25,7 @@ export default function SignInPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    addLog('Starting sign in process...');
+    addLog('VERSION 2.1 - Starting sign in...');
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -44,21 +44,15 @@ export default function SignInPage() {
       });
 
       clearTimeout(timeoutId);
-      addLog(`Sign in result received: ${result?.error ? 'Error: ' + result.error : 'Success'}`);
+      addLog(`Result: ${result?.error ? 'Error' : 'Success'}`);
 
       if (result?.error) {
         setError(result.error);
         setLoading(false);
       } else {
-        addLog('Login Success! Forcing redirect...');
-        // Force a full reload to the dashboard to ensures session is picked up
-        window.location.href = '/';
-        
-        // Secondary fallback
-        setTimeout(() => {
-          router.push('/');
-          router.refresh();
-        }, 100);
+        addLog('Login Success! Jumping to root...');
+        // The most absolute way to redirect in a browser:
+        window.location.replace(window.location.origin);
       }
     } catch (err: any) {
       clearTimeout(timeoutId);
