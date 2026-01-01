@@ -86,9 +86,8 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account, profile, trigger }) {
+    async jwt({ token, user }) {
       if (user) {
-        console.log(`[Auth JWT] Creating token for user: ${user.name}`);
         token.role = (user as any).role;
         token.id = user.id;
         token.backendToken = (user as any).backendToken;
@@ -97,7 +96,6 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        console.log(`[Auth Session] Creating session for: ${session.user.name}`);
         (session.user as any).role = token.role;
         (session.user as any).id = token.id;
         (session.user as any).backendToken = token.backendToken;
@@ -112,5 +110,4 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET || 'a-very-secret-value-for-development-only',
-  debug: process.env.NODE_ENV === 'development',
 };
