@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { signIn, useSession } from 'next-auth/react';
-import { User, Phone, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { signIn, useSession, signOut } from 'next-auth/react';
+import { User, Phone, Lock, Loader2, AlertCircle, LogOut, LayoutDashboard } from 'lucide-react';
 
 export default function SignInPage() {
   const { data: session, status } = useSession();
@@ -13,20 +13,13 @@ export default function SignInPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 1. Initial cleanup and redirect Logic
+  // Clean URL on mount
   useEffect(() => {
-    // If already logged in, get out of here immediately
-    if (status === 'authenticated') {
-      window.location.href = '/';
-      return;
-    }
-
-    // Clean the URL visually to remove ugly callback params if present
     if (typeof window !== 'undefined' && window.location.search.includes('callbackUrl')) {
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, '', cleanUrl);
     }
-  }, [status]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +38,7 @@ export default function SignInPage() {
         setError(result.error || 'Login failed');
         setLoading(false);
       } else if (result?.ok) {
-        // Successful login - hard redirect home
+        // Successful login
         window.location.href = '/';
       }
     } catch (err: any) {
@@ -54,11 +47,35 @@ export default function SignInPage() {
     }
   };
 
-  // If authenticated, show a simple centering loader while window.location kicks in
+  // Safe Mode: If authenticated but on sign-in page, stop the loop
   if (status === 'authenticated') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-blue-600" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">You are logged in</h2>
+          <p className="text-slate-500 text-sm mb-8">
+            We detected an active session, but you were redirected back here. This usually happens
+            if your session acts up.
+          </p>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => (window.location.href = '/')}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold h-12 rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              <LayoutDashboard className="w-4 h-4" /> Go to Dashboard
+            </button>
+            <button
+              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold h-12 rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-4 h-4" /> Sign Out & Fix
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
