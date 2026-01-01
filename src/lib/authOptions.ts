@@ -16,9 +16,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('User Name, Contact Number, and Password are required');
         }
 
-        const baseUrl = process.env.NEXT_PUBLIC_BACKENDBASEURL || 'https://otobix-app-backend-development.onrender.com/api/';
+        const baseUrl =
+          process.env.NEXT_PUBLIC_BACKENDBASEURL ||
+          'https://otobix-app-backend-development.onrender.com/api/';
         const loginUrl = `${baseUrl}${process.env.NEXT_PUBLIC_USERLOGIN || 'user/login'}`;
-        
+
         console.log(`[Auth] loginUrl: ${loginUrl}`);
 
         try {
@@ -27,16 +29,16 @@ export const authOptions: NextAuthOptions = {
 
           const res = await fetch(loginUrl, {
             method: 'POST',
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
-              'Accept': 'application/json'
+              Accept: 'application/json',
             },
             body: JSON.stringify({
               userName: credentials.userName,
               phoneNumber: credentials.phoneNumber,
               password: credentials.password,
             }),
-            signal: controller.signal
+            signal: controller.signal,
           });
 
           clearTimeout(timeoutId);
@@ -51,14 +53,14 @@ export const authOptions: NextAuthOptions = {
           const result = await res.json();
           console.log('[Auth] Response body structure:', Object.keys(result));
 
-          if ((result.status === false) || (result.success === false)) {
+          if (result.status === false || result.success === false) {
             console.warn(`[Auth] Backend returned failure: ${result.message}`);
             throw new Error(result.message || 'Invalid login credentials');
           }
 
           // The user object is nested under 'user' key per your provided example
           const userData = result.user || result.data;
-          
+
           if (!userData) {
             console.error('[Auth] No user data found in result');
             throw new Error('User data not found in server response');
@@ -66,7 +68,7 @@ export const authOptions: NextAuthOptions = {
 
           // Map role from userType or userRole
           const role = userData.userType || userData.userRole || userData.role || 'user';
-          
+
           console.log('[Auth] Mapped user:', userData.userName || userData.name, 'Role:', role);
           console.log('--- Auth Debug End ---');
 
@@ -108,6 +110,18 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
+  },
+  // Force a consistent cookie name to prevent Middleware/Client mismatches
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
   },
   secret: process.env.NEXTAUTH_SECRET || 'a-very-secret-value-for-development-only',
 };
