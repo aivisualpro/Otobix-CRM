@@ -19,6 +19,14 @@ export default function SignInPage() {
     setError('');
     setLoading(true);
 
+    // Timeout safety net
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+        setError('Login is taking longer than expected. Please check your connection or refresh.');
+      }
+    }, 15000);
+
     try {
       const result = await signIn('credentials', {
         userName,
@@ -26,6 +34,8 @@ export default function SignInPage() {
         password,
         redirect: false,
       });
+
+      clearTimeout(timeoutId);
 
       if (result?.error) {
         setError(result.error);
@@ -35,6 +45,7 @@ export default function SignInPage() {
         router.refresh();
       }
     } catch (err) {
+      clearTimeout(timeoutId);
       setError('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
@@ -65,46 +76,55 @@ export default function SignInPage() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">User Name</label>
+              <label htmlFor="userName" className="block text-sm font-medium text-slate-700 mb-1.5">User Name</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
+                  id="userName"
+                  name="userName"
                   type="text"
                   required
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300"
+                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border-slate-200"
                   placeholder="Enter your user name"
+                  autoComplete="username"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Contact Number</label>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-slate-700 mb-1.5">Contact Number</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
+                  id="phoneNumber"
+                  name="phoneNumber"
                   type="tel"
                   required
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300"
+                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border-slate-200"
                   placeholder="Enter your contact number"
+                  autoComplete="tel"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
+                  id="password"
+                  name="password"
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300"
+                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border-slate-200"
                   placeholder="••••••••"
+                  autoComplete="current-password"
                 />
               </div>
             </div>
