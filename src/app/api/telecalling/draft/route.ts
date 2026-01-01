@@ -51,9 +51,15 @@ export async function POST(request: NextRequest) {
     // 3. Create the Draft Record immediately
     const newRecord = await Telecalling.create({
       appointmentId: newAppointmentId,
-      customerName: 'New Applicant', // Placeholder to be visible
+      ownerName: 'New Applicant', // Placeholder to be visible
+      carRegistrationNumber: 'PENDING',
+      yearOfRegistration: new Date().getFullYear().toString(),
+      ownershipSerialNumber: 1,
+      make: 'PENDING',
+      model: 'PENDING',
+      variant: 'PENDING',
       inspectionStatus: 'Pending', // Default status
-      createdAt: new Date(),
+      addedBy: 'Telecaller',
     });
 
     return NextResponse.json(newRecord);
