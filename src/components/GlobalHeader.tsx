@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
+import Image from 'next/image';
 import {
   Home,
   Settings,
@@ -42,13 +43,15 @@ interface MenuItem {
 }
 
 const GlobalHeader = () => {
+  const { data: session } = useSession();
+  const currentUser = session?.user;
+  const role = currentUser?.role || 'user';
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  // Mock user for demo (replace with your auth logic)
-  const user = { userName: 'Admin User', userType: 'admin', imageUrl: '' };
-  const role = 'admin';
+  const userDisplayName = currentUser?.name || 'User';
 
   const disabledCommon: MenuItem[] = useMemo(
     () => [
@@ -61,34 +64,51 @@ const GlobalHeader = () => {
   );
 
   const menuItems: MenuItem[] = useMemo(() => {
-    if (role === 'admin') {
-      return [
-        { name: 'Home', path: '/', icon: Home },
-        {
-          name: 'Admin',
-          path: '/admin', // This might just be a trigger, or overview
-          icon: Settings,
-          subMenu: [
-            { name: 'Users', path: '/admin/users', icon: Shield },
-            { name: 'Settings', path: '/admin/settings', icon: Settings },
-          ],
-        },
-        { name: 'Telecalling', path: '/telecalling', icon: PhoneCall },
-        { name: 'Auctions', path: '/auctions', icon: Gavel },
-        { name: 'Customers', path: '/customers', icon: Users },
-        { name: 'Sales', path: '/sales', icon: BarChart2 },
-        ...disabledCommon,
-      ];
+    const roleLower = role.toLowerCase();
+    
+    // Base menu items for everyone authenticated
+    const items: MenuItem[] = [
+      { name: 'Home', path: '/', icon: Home },
+    ];
+
+    // Admin-only menu
+    if (roleLower === 'admin' || roleLower === 'superadmin') {
+      items.push({
+        name: 'Admin',
+        path: '/admin',
+        icon: Settings,
+        subMenu: [
+          { name: 'Users', path: '/admin/users', icon: Shield },
+          { name: 'Settings', path: '/admin/settings', icon: Settings },
+        ],
+      });
     }
-    return [{ name: 'Home', path: '/', icon: Home }, ...disabledCommon];
+
+    // Role-based visibility for Telecalling, Auctions, etc.
+    // Allow Admin, Superadmin, Telecaller, Staff, and Dealer to see these
+    const allowedRoles = ['admin', 'superadmin', 'telecaller', 'staff', 'dealer'];
+    if (allowedRoles.includes(roleLower)) {
+      items.push({ name: 'Telecalling', path: '/telecalling', icon: PhoneCall });
+      items.push({ name: 'Auctions', path: '/auctions', icon: Gavel });
+      items.push({ name: 'Customers', path: '/customers', icon: Users });
+      items.push({ name: 'Sales', path: '/sales', icon: BarChart2 });
+    }
+
+    return [...items, ...disabledCommon];
   }, [role, disabledCommon]);
 
   return (
     <header className="bg-[#f4f9ff] border-b border-gray-200 z-50 h-full flex items-center justify-between px-4 lg:px-6 shadow-sm shrink-0">
       {/* Logo */}
       <div className="flex items-center gap-3">
-        <Link href="/" className="text-xl font-bold text-blue-500">
-          Otobix CRM
+        <Link href="/" className="flex items-center gap-2">
+          <div className="relative w-10 h-10 flex items-center justify-center">
+            <img
+              src="/logo-v2.png"
+              alt="Otobix CRM"
+              className="object-contain w-full h-full"
+            />
+          </div>
         </Link>
       </div>
 
@@ -172,7 +192,16 @@ const GlobalHeader = () => {
           {isProfileMenuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setIsProfileMenuOpen(false)} />
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg py-1 z-50 border border-gray-100">
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg py-1 z-50 border border-gray-100">
+                <div className="px-4 py-3 border-b border-gray-50 mb-1">
+                  <p className="text-xs font-semibold text-slate-800">{userDisplayName}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-[10px] text-slate-400 truncate">{currentUser?.email}</p>
+                    <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-bold rounded uppercase">
+                      {role}
+                    </span>
+                  </div>
+                </div>
                 <Link
                   href="/profile"
                   onClick={() => setIsProfileMenuOpen(false)}

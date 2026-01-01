@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import { useHeader } from '@/context/HeaderContext';
 import Table from '@/components/Table';
+import GlobalImportModal from '@/components/GlobalImportModal';
+import CarVarianceModal from '@/components/CarVarianceModal';
+import { Download, Upload, Car } from 'lucide-react'; // Added Car icon
 
 // --- Types ---
 interface Setting {
@@ -46,7 +49,15 @@ interface DropdownItem {
   sortOrder: number;
 }
 
-type ActiveSection = 'settings' | 'dropdowns';
+interface CarVariance {
+  _id: string;
+  make: string;
+  carModel: string;
+  variant: string;
+  price: number;
+}
+
+type ActiveSection = 'settings' | 'dropdowns' | 'car-variances';
 
 // Predefined colors
 const PRESET_COLORS = [
@@ -603,7 +614,8 @@ const AddSettingModal = ({ isOpen, onClose, onSubmit }: AddSettingModalProps) =>
   );
 };
 
-// --- Add/Edit Dropdown Modal ---
+
+
 interface DropdownModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -725,10 +737,14 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<Setting[]>([]);
   const [dropdowns, setDropdowns] = useState<DropdownItem[]>([]);
   const [dropdownTypes, setDropdownTypes] = useState<string[]>([]);
+  const [carVariances, setCarVariances] = useState<CarVariance[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddSettingModalOpen, setIsAddSettingModalOpen] = useState(false);
   const [isDropdownModalOpen, setIsDropdownModalOpen] = useState(false);
+  const [isCarVarianceModalOpen, setIsCarVarianceModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingDropdown, setEditingDropdown] = useState<DropdownItem | null>(null);
+  const [editingCarVariance, setEditingCarVariance] = useState<CarVariance | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -752,6 +768,13 @@ export default function SettingsPage() {
     } catch {}
   };
 
+  const fetchCarVariances = async () => {
+    try {
+      const res = await fetch('/api/car-variances', { cache: 'no-store' });
+      if (res.ok) setCarVariances(await res.json());
+    } catch {}
+  };
+
   const seedDefaults = async () => {
     for (const s of DEFAULT_SETTINGS) {
       try {
@@ -768,7 +791,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await Promise.all([fetchSettings(), fetchDropdowns()]);
+      await Promise.all([fetchSettings(), fetchDropdowns(), fetchCarVariances()]);
       setLoading(false);
     };
     load();
@@ -795,15 +818,43 @@ export default function SettingsPage() {
     );
     setActionsContent(
       activeSection === 'dropdowns' ? (
-        <button
-          onClick={() => {
-            setEditingDropdown(null);
-            setIsDropdownModalOpen(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-colors"
-        >
-          <Plus className="w-4 h-4" /> Add Dropdown
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center justify-center w-8 h-8 text-blue-500 hover:bg-blue-50 transition-colors border border-blue-200 rounded-lg"
+            title="Import Dropdowns"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => {
+              setEditingDropdown(null);
+              setIsDropdownModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-colors"
+          >
+            <Plus className="w-4 h-4" /> Add Dropdown
+          </button>
+        </div>
+      ) : activeSection === 'car-variances' ? (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center justify-center w-8 h-8 text-blue-500 hover:bg-blue-50 transition-colors border border-blue-200 rounded-lg"
+            title="Import Car Variances"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => {
+              setEditingCarVariance(null);
+              setIsCarVarianceModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-colors"
+          >
+            <Plus className="w-4 h-4" /> Add Variance
+          </button>
+        </div>
       ) : null
     );
   }, [setTitle, setSearchContent, setActionsContent, searchTerm, activeSection]);
@@ -853,6 +904,44 @@ export default function SettingsPage() {
       fetchDropdowns();
     }
   };
+
+  const handleUpdateCarVariance = async (data: Omit<CarVariance, '_id'>) => {
+    if (editingCarVariance) {
+      // Update
+      const res = await fetch('/api/car-variances', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, _id: editingCarVariance._id }),
+      });
+      if (res.ok) {
+        setCarVariances((prev) =>
+          prev.map((c) => (c._id === editingCarVariance._id ? { ...c, ...data } : c))
+        );
+        setIsCarVarianceModalOpen(false);
+      }
+    } else {
+      // Create
+      const res = await fetch('/api/car-variances', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const newItem = await res.json();
+        setCarVariances((prev) => [...prev, newItem]);
+        setIsCarVarianceModalOpen(false);
+      }
+    }
+  };
+
+  const handleDeleteCarVariance = async (id: string) => {
+    if (confirm('Are you sure you want to delete this car variance?')) {
+      const res = await fetch(`/api/car-variances/${id}`, { method: 'DELETE' });
+      if (res.ok) setCarVariances((prev) => prev.filter((c) => c._id !== id));
+    }
+  };
+
+
 
   const handleSaveDropdown = async (data: Omit<DropdownItem, '_id' | 'isActive' | 'sortOrder'>) => {
     if (editingDropdown) {
@@ -966,6 +1055,7 @@ export default function SettingsPage() {
   const sidebarSections = [
     { id: 'settings' as const, label: 'Settings', icon: SettingsIcon },
     { id: 'dropdowns' as const, label: 'Dropdowns', icon: List },
+    { id: 'car-variances' as const, label: 'Car Variances', icon: Car },
   ];
 
   return (
@@ -1088,7 +1178,7 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
-        ) : (
+        ) : activeSection === 'dropdowns' ? (
           <div className="flex-1 overflow-y-auto p-4">
             <table className="w-full text-left">
               <thead>
@@ -1172,6 +1262,68 @@ export default function SettingsPage() {
               </tbody>
             </table>
           </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+              <Table
+                data={carVariances.filter(
+                  (c) =>
+                    c.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    c.carModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    c.variant.toLowerCase().includes(searchTerm.toLowerCase())
+                )}
+                columns={[
+                  {
+                    header: 'Make',
+                    accessor: 'make',
+                    className: 'font-medium text-slate-900',
+                  },
+                  {
+                    header: 'Model',
+                    accessor: 'carModel',
+                  },
+                  {
+                    header: 'Variant',
+                    accessor: 'variant',
+                  },
+                  {
+                    header: 'Price',
+                    render: (row: CarVariance) => (
+                      <span className="font-mono text-slate-600">
+                        {typeof row.price === 'number' ? row.price.toLocaleString() : '-'}
+                      </span>
+                    ),
+                  },
+                  {
+                    header: '',
+                    accessor: '_id',
+                    className: 'w-10 text-right',
+                    render: (row: CarVariance) => (
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingCarVariance(row);
+                            setIsCarVarianceModalOpen(true);
+                          }}
+                          className="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCarVariance(row._id)}
+                          className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ),
+                  },
+                ]}
+              />
+            </div>
+          </div>
         )}
       </div>
 
@@ -1189,6 +1341,30 @@ export default function SettingsPage() {
         onSubmit={handleSaveDropdown}
         existingTypes={dropdownTypes}
         editItem={editingDropdown}
+      />
+
+      <CarVarianceModal
+        isOpen={isCarVarianceModalOpen}
+        onClose={() => {
+          setIsCarVarianceModalOpen(false);
+          setEditingCarVariance(null);
+        }}
+        onSubmit={handleUpdateCarVariance}
+        editItem={editingCarVariance}
+      />
+
+      <GlobalImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        endpoint={
+          activeSection === 'dropdowns' ? '/api/dropdowns/import' : '/api/car-variances/import'
+        }
+        onSuccess={() => {
+          if (activeSection === 'dropdowns') fetchDropdowns();
+          if (activeSection === 'car-variances') fetchCarVariances();
+          setTimeout(() => setIsImportModalOpen(false), 1500);
+        }}
+        title={`Import ${activeSection === 'dropdowns' ? 'Dropdown Options' : 'Car Variances'}`}
       />
     </div>
   );

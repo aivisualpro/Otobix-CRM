@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { User, Phone, Lock, Loader2, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 
 export default function SignInPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [userName, setUserName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,8 @@ export default function SignInPage() {
 
     try {
       const result = await signIn('credentials', {
-        email,
+        userName,
+        phoneNumber,
         password,
         redirect: false,
       });
@@ -42,8 +44,12 @@ export default function SignInPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
         <div className="px-8 py-6 bg-white border-b border-gray-100 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 text-white mb-4 shadow-blue-200 shadow-lg">
-            <span className="font-bold text-xl">O</span>
+          <div className="relative w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+            <img
+              src="/logo-v2.png"
+              alt="Otobix CRM"
+              className="object-contain w-full h-full"
+            />
           </div>
           <h1 className="text-2xl font-bold text-slate-800">Welcome Back</h1>
           <p className="text-slate-500 text-sm mt-1">Sign in to your account</p>
@@ -59,16 +65,31 @@ export default function SignInPage() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">User Name</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100"
-                  placeholder="name@company.com"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300"
+                  placeholder="Enter your user name"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Contact Number</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="tel"
+                  required
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300"
+                  placeholder="Enter your contact number"
                 />
               </div>
             </div>
@@ -82,7 +103,7 @@ export default function SignInPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100"
+                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300"
                   placeholder="••••••••"
                 />
               </div>

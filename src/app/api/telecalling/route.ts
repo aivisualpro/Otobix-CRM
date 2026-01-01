@@ -3,17 +3,15 @@ import dbConnect from '@/lib/mongodb';
 import Telecalling from '@/models/Telecalling';
 import Counter from '@/models/Counter';
 import ReusableId from '@/models/ReusableId';
-
 import { telecallingSchema } from '@/lib/validations/telecalling';
+
+export const dynamic = 'force-dynamic';
 
 // GET all telecalling records
 export async function GET(): Promise<NextResponse> {
   try {
     await dbConnect();
     const records = await Telecalling.find({})
-      .select(
-        'appointmentId customerName customerContactNumber city vehicleModel vehicleStatus requestedInspectionDate requestedInspectionTime appointmentSource remarks createdBy createdAt priority inspectionStatus allocatedTo'
-      )
       .sort({ createdAt: -1 })
       .lean();
     return NextResponse.json(records);
@@ -29,12 +27,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     await dbConnect();
     const body = await request.json();
 
-    // Map 'model' to 'vehicleModel' to avoid Document conflicts
-    if (body.model) {
-      body.vehicleModel = body.model;
-      delete body.model;
-    }
-
     // Validate request body
     const validationResult = telecallingSchema.safeParse(body);
     if (!validationResult.success) {
@@ -44,36 +36,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const validatedData = validationResult.data;
-    const finalData = { ...validatedData } as any; // Cast to allowing adding appointmentId
+    const finalData = { ...validationResult.data } as any;
 
-    // Let MongoDB generate the _id automatically
+    // Handle inspectionDateTime conversion if it's a string
+    if (finalData.inspectionDateTime && typeof finalData.inspectionDateTime === 'string') {
+        const date = new Date(finalData.inspectionDateTime);
+        if (!isNaN(date.getTime())) {
+            finalData.inspectionDateTime = date;
+        } else {
+            finalData.inspectionDateTime = null;
+        }
+    }
+
     // Generate unique Appointment ID
     const date = new Date();
     const yearShort = date.getFullYear().toString().slice(-2);
     const counterId = `appointmentId_${date.getFullYear()}`;
 
     // 1. Check for reusable ID first
+    // We sort by _id ascending to use the oldest deleted ID first
     const recycled = await ReusableId.findOneAndDelete({}, { sort: { _id: 1 } });
 
     if (recycled) {
       finalData.appointmentId = recycled._id;
     } else {
       // 2. Generate new ID
-
-      // Ensure counter exists and minimum value logic
-      let counter = await Counter.findById(counterId);
-      if (!counter) {
-        counter = await Counter.create({ _id: counterId, seq: 10000000 });
-      } else if (counter.seq < 10000000) {
-        counter.seq = 10000000;
-        await counter.save();
-      }
-
+      
+      // Atomic increment. If it doesn't exist, we'll initialize it.
       const updatedCounter = await Counter.findByIdAndUpdate(
         counterId,
         { $inc: { seq: 1 } },
-        { new: true }
+        { new: true, upsert: true, setDefaultsOnInsert: true }
       );
 
       if (updatedCounter) {
@@ -81,7 +74,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Explicitly cast to match Mongoose schema expected type if needed, or rely on flexible input
     const record = await Telecalling.create(finalData);
     return NextResponse.json(record, { status: 201 });
   } catch (error) {

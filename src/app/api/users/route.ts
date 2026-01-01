@@ -1,43 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
 
 export const dynamic = 'force-dynamic';
 
+const getBaseUrl = () => process.env.NEXT_PUBLIC_BACKENDBASEURL || 'https://otobix-app-backend-development.onrender.com/api/';
+const getListUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_USERSLIST || 'user/all-users-list'}`;
+const getAddUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_USERSADD || 'user/register'}`;
+const AUTH_TOKEN = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MDBhYzc2NTA4OGQxYTA2ODc3MDU0NCIsInVzZXJOYW1lIjoiY3VzdG9tZXIiLCJ1c2VyVHlwZSI6IkN1c3RvbWVyIiwiaWF0IjoxNzY0MzMxNjMxLCJleHAiOjIwNzk2OTE2MzF9.oXw1J4ca1XoIAg-vCO2y0QqZIq0VWHdYBrl2y9iIv4Q';
+
 export async function GET() {
   try {
-    await dbConnect();
-    const users = await User.find({}).sort({ createdAt: -1 }).lean();
-    console.log('--- GET /api/users ---');
-    console.log('Total users in DB:', users.length);
-    if (users.length > 0) {
-      console.log(
-        'Sample user emails:',
-        users.slice(0, 5).map((u: any) => u.email)
-      );
+    const res = await fetch(getListUrl(), {
+      headers: {
+        'Authorization': AUTH_TOKEN
+      },
+      cache: 'no-store'
+    });
+    
+    if (!res.ok) {
+        return NextResponse.json({ error: 'Failed to fetch users from external API' }, { status: res.status });
     }
-    return NextResponse.json(users);
+
+    const data = await res.json();
+    const actualData = data.data || data;
+    return NextResponse.json(actualData);
   } catch (error) {
-    console.error('Failed to fetch users:', error);
+    console.error('Failed to proxy fetch users:', error);
     return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
     const body = await request.json();
 
-    // Check existing email
-    const existing = await User.findOne({ email: body.email });
-    if (existing) {
-      return NextResponse.json({ error: 'User with this email already exists' }, { status: 400 });
+    const res = await fetch(getAddUrl(), {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': AUTH_TOKEN
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        return NextResponse.json(err, { status: res.status });
     }
 
-    const newUser = await User.create(body);
+    const newUser = await res.json();
     return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
-    console.error('Failed to create user:', error);
+    console.error('Failed to proxy create user:', error);
     return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
   }
 }

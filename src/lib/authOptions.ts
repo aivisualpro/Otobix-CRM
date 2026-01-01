@@ -1,78 +1,95 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
-import dbConnect from '@/lib/mongodb';
-import User from '@/models/User';
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email', placeholder: 'user@example.com' },
+        userName: { label: 'User Name', type: 'text' },
+        phoneNumber: { label: 'Contact Number', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Please enter an email and password');
+        console.log('--- Auth Debug Start ---');
+        if (!credentials?.userName || !credentials?.phoneNumber || !credentials?.password) {
+          throw new Error('User Name, Contact Number, and Password are required');
         }
 
-        await dbConnect();
-        const user = await User.findOne({ email: credentials.email.toLowerCase() });
+        const baseUrl = process.env.NEXT_PUBLIC_BACKENDBASEURL || 'https://otobix-app-backend-development.onrender.com/api/';
+        const loginUrl = `${baseUrl}${process.env.NEXT_PUBLIC_USERLOGIN || 'user/login'}`;
 
-        if (!user) {
-          throw new Error('No user found with this email');
-        }
+        try {
+          const res = await fetch(loginUrl, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              userName: credentials.userName,
+              phoneNumber: credentials.phoneNumber,
+              password: credentials.password,
+            }),
+          });
 
-        // If user has a password, check it
-        if (user.password) {
-          const isValid = await bcrypt.compare(credentials.password, user.password);
-          if (!isValid) {
-            throw new Error('Incorrect password');
+          const result = await res.json();
+          // We don't log the token for security in production, but let's log the structure
+          console.log('Login API Response keys:', Object.keys(result));
+
+          if (!res.ok || (result.status === false) || (result.success === false)) {
+            throw new Error(result.message || 'Invalid login credentials');
           }
-        } else {
-          // If no password set (e.g. created via admin or partially), allow login logic or fail
-          // For now, fail if no password
-          throw new Error('Please set up your password');
-        }
 
-        // Check for Approval Status
-        if (user.approvalStatus !== 'Approved') {
-          throw new Error('Your account is pending approval or has been rejected.');
-        }
+          // The user object is nested under 'user' key per your provided example
+          const userData = result.user || result.data;
+          
+          if (!userData) {
+            console.error('No user data found in response:', result);
+            throw new Error('User data not found in server response');
+          }
 
-        return {
-          id: user._id.toString(),
-          name: user.userName,
-          email: user.email,
-          image: user.image,
-          role: user.userRole,
-        };
+          // Map role from userType or userRole
+          const role = userData.userType || userData.userRole || userData.role || 'user';
+          
+          console.log('Login Success:', userData.userName, 'Mapped Role:', role);
+          console.log('--- Auth Debug End ---');
+
+          return {
+            id: (userData.id || userData._id || '').toString(),
+            name: userData.userName || userData.name,
+            email: userData.email,
+            image: userData.imageUrl || userData.image,
+            role: role,
+            backendToken: result.token, // Store the token if needed
+          };
+        } catch (error: any) {
+          console.error('Authorize error:', error.message);
+          throw new Error(error.message || 'Failed to sign in');
+        }
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
+        token.role = (user as any).role;
         token.id = user.id;
-      }
-      // Update session if needed
-      if (trigger === 'update' && session) {
-        token = { ...token, ...session };
+        token.backendToken = (user as any).backendToken;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role as string;
-        session.user.id = token.id as string;
+        (session.user as any).role = token.role;
+        (session.user as any).id = token.id;
+        (session.user as any).backendToken = token.backendToken;
       }
       return session;
     },
   },
   pages: {
-    signIn: '/auth/signin', // Custom signin page if we create one
+    signIn: '/auth/signin',
   },
   session: {
     strategy: 'jwt',

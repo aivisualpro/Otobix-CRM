@@ -29,10 +29,19 @@ interface UserRecord {
   userRole: string;
   phoneNumber?: string;
   location?: string;
+  dealershipName?: string;
+  entityType?: string;
+  primaryContactPerson?: string;
+  primaryContactNumber?: string;
+  secondaryContactPerson?: string;
+  secondaryContactNumber?: string;
   addressList?: string[];
-  allowedCities?: string[];
   approvalStatus: string;
+  rejectionComment?: string;
   image?: string;
+  isStaff?: boolean;
+  assignedKam?: string;
+  allowedCities?: string[];
   createdAt: string;
 }
 
@@ -53,19 +62,9 @@ const UserModal = ({ isOpen, onClose, onSubmit, editRecord }: UserModalProps) =>
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    // Parse address list
     const addressRaw = formData.get('addressList') as string;
     const addressList = addressRaw
       ? addressRaw
-          .split(',')
-          .map((c) => c.trim())
-          .filter(Boolean)
-      : [];
-
-    // Parse allowed cities
-    const citiesRaw = formData.get('allowedCities') as string;
-    const allowedCities = citiesRaw
-      ? citiesRaw
           .split(',')
           .map((c) => c.trim())
           .filter(Boolean)
@@ -77,9 +76,16 @@ const UserModal = ({ isOpen, onClose, onSubmit, editRecord }: UserModalProps) =>
       userRole: formData.get('userRole') as string,
       phoneNumber: formData.get('phoneNumber') as string,
       location: formData.get('location') as string,
+      dealershipName: formData.get('dealershipName') as string,
+      entityType: formData.get('entityType') as string,
+      primaryContactPerson: formData.get('primaryContactPerson') as string,
+      primaryContactNumber: formData.get('primaryContactNumber') as string,
+      secondaryContactPerson: formData.get('secondaryContactPerson') as string,
+      secondaryContactNumber: formData.get('secondaryContactNumber') as string,
       approvalStatus: formData.get('approvalStatus') as string,
+      rejectionComment: formData.get('rejectionComment') as string,
+      isStaff: formData.get('isStaff') === 'true',
       addressList,
-      allowedCities,
     };
 
     const password = formData.get('password') as string;
@@ -103,26 +109,23 @@ const UserModal = ({ isOpen, onClose, onSubmit, editRecord }: UserModalProps) =>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">User Name</label>
-            <div className="relative">
-              <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                name="userName"
-                type="text"
-                required
-                className="form-input pl-9"
-                defaultValue={editRecord?.userName}
-                placeholder="John Doe"
-              />
-            </div>
-          </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">
-                Email Address
-              </label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">User Name *</label>
+              <div className="relative">
+                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  name="userName"
+                  type="text"
+                  required
+                  className="form-input pl-9"
+                  defaultValue={editRecord?.userName}
+                  placeholder="dealertwo"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Email Address *</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -131,14 +134,38 @@ const UserModal = ({ isOpen, onClose, onSubmit, editRecord }: UserModalProps) =>
                   required
                   className="form-input pl-9"
                   defaultValue={editRecord?.email}
-                  placeholder="john@example.com"
+                  placeholder="dealer@gmail.com"
                 />
               </div>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">
-                Phone Number
-              </label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Dealership Name</label>
+              <input
+                name="dealershipName"
+                type="text"
+                className="form-input"
+                defaultValue={editRecord?.dealershipName}
+                placeholder="Super Cars"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Entity Type</label>
+              <input
+                name="entityType"
+                type="text"
+                className="form-input"
+                defaultValue={editRecord?.entityType}
+                placeholder="HUF"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Phone Number</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -146,7 +173,20 @@ const UserModal = ({ isOpen, onClose, onSubmit, editRecord }: UserModalProps) =>
                   type="tel"
                   className="form-input pl-9"
                   defaultValue={editRecord?.phoneNumber}
-                  placeholder="1234567890"
+                  placeholder="5555555555"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">City/Location</label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  name="location"
+                  type="text"
+                  className="form-input pl-9"
+                  defaultValue={editRecord?.location}
+                  placeholder="Andhra Pradesh"
                 />
               </div>
             </div>
@@ -155,94 +195,122 @@ const UserModal = ({ isOpen, onClose, onSubmit, editRecord }: UserModalProps) =>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Role</label>
-              <div className="relative">
-                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <select
-                  name="userRole"
-                  className="form-input pl-9"
-                  defaultValue={editRecord?.userRole || 'User'}
-                >
-                  <option value="Admin">Admin</option>
-                  <option value="Staff">Staff</option>
-                  <option value="User">User</option>
-                </select>
-              </div>
+              <select
+                name="userRole"
+                className="form-input"
+                defaultValue={editRecord?.userRole || 'User'}
+              >
+                <option value="Admin">Admin</option>
+                <option value="Staff">Staff</option>
+                <option value="Dealer">Dealer</option>
+                <option value="User">User</option>
+              </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Status</label>
-              <div className="relative">
-                <CheckCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <select
-                  name="approvalStatus"
-                  className="form-input pl-9"
-                  defaultValue={editRecord?.approvalStatus || 'Pending'}
-                >
-                  <option value="Approved">Approved</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-              </div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Is Staff?</label>
+              <select
+                name="isStaff"
+                className="form-input"
+                defaultValue={editRecord?.isStaff ? 'true' : 'false'}
+              >
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              Password{' '}
-              {editRecord && (
-                <span className="text-gray-400 font-normal">(Leave blank to keep unchanged)</span>
-              )}
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">P. Contact Person</label>
               <input
-                name="password"
-                type="password"
-                className="form-input pl-9"
-                placeholder={editRecord ? '••••••••' : 'Enter password'}
-                required={!editRecord}
+                name="primaryContactPerson"
+                type="text"
+                className="form-input"
+                defaultValue={editRecord?.primaryContactPerson}
+                placeholder="Ahsan"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">P. Contact Number</label>
+              <input
+                name="primaryContactNumber"
+                type="text"
+                className="form-input"
+                defaultValue={editRecord?.primaryContactNumber}
+                placeholder="6666666666"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">
-                City/Location
-              </label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  name="location"
-                  type="text"
-                  className="form-input pl-9"
-                  defaultValue={editRecord?.location}
-                  placeholder="Kolkata"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">
-                Address List (Comma Sep)
-              </label>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">S. Contact Person</label>
               <input
-                name="addressList"
+                name="secondaryContactPerson"
                 type="text"
                 className="form-input"
-                defaultValue={editRecord?.addressList?.join(', ')}
-                placeholder="Office, Home"
+                defaultValue={editRecord?.secondaryContactPerson}
+                placeholder=""
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">S. Contact Number</label>
+              <input
+                name="secondaryContactNumber"
+                type="text"
+                className="form-input"
+                defaultValue={editRecord?.secondaryContactNumber}
+                placeholder=""
               />
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Status</label>
+              <select
+                name="approvalStatus"
+                className="form-input"
+                defaultValue={editRecord?.approvalStatus || 'Pending'}
+              >
+                <option value="Approved">Approved</option>
+                <option value="Pending">Pending</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  name="password"
+                  type="password"
+                  className="form-input pl-9"
+                  placeholder={editRecord ? '••••••••' : 'Enter password'}
+                  required={!editRecord}
+                />
+              </div>
+            </div>
+          </div>
+
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              Allowed Cities (Comma Sep)
-            </label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Address List (Comma Sep)</label>
+            <input
+              name="addressList"
+              type="text"
+              className="form-input"
+              defaultValue={editRecord?.addressList?.join(', ')}
+              placeholder="Karachi, Lahore"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Rejection Comment</label>
             <textarea
-              name="allowedCities"
-              className="form-input h-20 resize-none pt-2"
-              defaultValue={editRecord?.allowedCities?.join(', ')}
-              placeholder="Siliguri, Bhubaneswar, Patna, Gaya..."
+              name="rejectionComment"
+              className="form-input h-16 resize-none pt-2"
+              defaultValue={editRecord?.rejectionComment}
+              placeholder="Reason for rejection..."
             ></textarea>
           </div>
 
@@ -270,15 +338,29 @@ export default function UsersPage() {
   const [editingRecord, setEditingRecord] = useState<UserRecord | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
+  // API configuration
+  const getBaseUrl = () => process.env.NEXT_PUBLIC_BACKENDBASEURL || 'https://otobix-app-backend-development.onrender.com/api/';
+  const getListUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_USERSLIST || 'user/all-users-list'}`;
+  const getAddUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_USERSADD || 'user/register'}`;
+  const getUpdateUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_USERSUPDATE || 'user/update-profile'}`;
+  const getDeleteUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_USERSDELETE || 'user/delete'}`;
+  const AUTH_TOKEN = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MDBhYzc2NTA4OGQxYTA2ODc3MDU0NCIsInVzZXJOYW1lIjoiY3VzdG9tZXIiLCJ1c2VyVHlwZSI6IkN1c3RvbWVyIiwiaWF0IjoxNzY0MzMxNjMxLCJleHAiOjIwNzk2OTE2MzF9.oXw1J4ca1XoIAg-vCO2y0QqZIq0VWHdYBrl2y9iIv4Q';
+
   // Fetch Data
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/users', { cache: 'no-store' });
+      const res = await fetch(getListUrl(), {
+        headers: {
+          'Authorization': AUTH_TOKEN
+        },
+        cache: 'no-store'
+      });
       if (res.ok) {
         const data = await res.json();
-        console.log('Fetched users count:', Array.isArray(data) ? data.length : 0);
-        setUsers(Array.isArray(data) ? data : []);
+        // Backend often wraps in { data: [...] }
+        const actualData = data.data || data;
+        setUsers(Array.isArray(actualData) ? actualData : []);
       }
     } catch (error) {
       console.error('Failed to fetch users', error);
@@ -332,12 +414,21 @@ export default function UsersPage() {
   // Handlers
   const handleSave = async (data: any) => {
     try {
-      const url = editingRecord ? `/api/users/${editingRecord._id}` : '/api/users';
-      const method = editingRecord ? 'PUT' : 'POST';
+      const isEdit = !!editingRecord;
+      const url = isEdit ? getUpdateUrl() : getAddUrl();
+      const method = 'POST'; // Backend typically uses POST for both add and update profiles
+
+      // Include ID if editing
+      if (isEdit) {
+          data.userId = editingRecord._id; // Backend might expect userId for update
+      }
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': AUTH_TOKEN
+        },
         body: JSON.stringify(data),
       });
 
@@ -347,7 +438,7 @@ export default function UsersPage() {
         setEditingRecord(null);
       } else {
         const err = await res.json();
-        alert('Error: ' + err.error);
+        alert('Error: ' + (err.error || err.message || 'Failed to save'));
       }
     } catch (error) {
       alert('Failed to save user');
@@ -357,8 +448,20 @@ export default function UsersPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
     try {
-      const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-      if (res.ok) fetchUsers();
+      const res = await fetch(getDeleteUrl(), { 
+        method: 'POST', // Backend often uses POST for delete too
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': AUTH_TOKEN
+        },
+        body: JSON.stringify({ userId: id })
+      });
+      if (res.ok) {
+          fetchUsers();
+      } else {
+          const err = await res.json();
+          alert('Delete failed: ' + (err.error || err.message || 'Unknown error'));
+      }
     } catch (error) {
       alert('Failed to delete user');
     }
@@ -418,7 +521,7 @@ export default function UsersPage() {
       header: 'Allowed Cities',
       render: (row: UserRecord) => (
         <div className="flex flex-wrap gap-1 max-w-[200px]">
-          {row.allowedCities?.slice(0, 3).map((city, i) => (
+          {row.allowedCities?.slice(0, 3).map((city: string, i: number) => (
             <span
               key={i}
               className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] rounded border border-blue-100"
@@ -433,11 +536,21 @@ export default function UsersPage() {
       ),
     },
     {
+      header: 'Dealership',
+      render: (row: UserRecord) => (
+        <div className="flex flex-col">
+          <span className="text-xs font-semibold text-slate-700">{row.dealershipName || '-'}</span>
+          <span className="text-[10px] text-slate-400 capitalize">{row.entityType || ''}</span>
+        </div>
+      ),
+    },
+    {
       header: 'Status',
       render: (row: UserRecord) => {
         let colors = 'bg-gray-100 text-gray-600';
         if (row.approvalStatus === 'Approved') colors = 'bg-green-100 text-green-700';
         if (row.approvalStatus === 'Rejected') colors = 'bg-red-100 text-red-700';
+        if (row.approvalStatus === 'Pending') colors = 'bg-orange-100 text-orange-700';
         return (
           <span
             className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${colors}`}

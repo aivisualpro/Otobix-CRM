@@ -13,8 +13,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-quicksand: var(--font-quicksand);
 }
 
 /* Prevent page-level scrolling */
@@ -29,13 +29,7 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
 }
 
 /* Subtle scrollbar styling for inner containers */

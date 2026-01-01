@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, FormEvent, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   Search,
   Plus,
@@ -23,25 +24,30 @@ import GlobalImportModal from '@/components/GlobalImportModal';
 // --- Types ---
 
 interface TelecallingRecord {
-  _id: string;
+  _id?: string;
   appointmentId?: string;
-  customerName?: string;
-  customerContactNumber?: string;
+  
+  // REQUIRED business fields
+  carRegistrationNumber: string;
+  yearOfRegistration: string;
+  ownerName: string;
+  ownershipSerialNumber: number;
+  make: string;
+  model: string;
+  variant: string;
+
+  // Optional/Default fields
+  timeStamp?: string; // Date
   emailAddress?: string;
-  city?: string;
-  zipCode?: string;
-  addressForInspection?: string;
-  make?: string;
-  vehicleModel?: string;
-  variant?: string;
-  yearOfManufacture?: number;
-  odometerReading?: string;
-  serialNum?: string;
+  appointmentSource?: string;
   vehicleStatus?: string;
-  requestedInspectionDate?: string;
-  requestedInspectionTime?: string;
+  zipCode?: string;
+  customerContactNumber?: string;
+  city?: string;
+  yearOfManufacture?: string;
   allocatedTo?: string;
   inspectionStatus?: string;
+  approvalStatus?: string;
   priority?: string;
   ncdUcdName?: string;
   repName?: string;
@@ -49,15 +55,25 @@ interface TelecallingRecord {
   bankSource?: string;
   referenceName?: string;
   remarks?: string;
-  appointmentSource?: string;
   createdBy?: string;
+  
+  odometerReadingInKms?: number;
+  additionalNotes?: string;
+  carImages?: string[];
+  inspectionDateTime?: string; // Date
+  inspectionAddress?: string;
+  inspectionEngineerNumber?: string;
+  addedBy?: 'Customer' | 'Telecaller';
+
   createdAt?: string;
+  updatedAt?: string;
 }
 
 interface UserOption {
   _id: string;
   userName: string;
   email: string;
+  phoneNumber?: string;
 }
 
 interface DropdownOption {
@@ -149,6 +165,7 @@ interface SearchableUserSelectProps {
   users: UserOption[];
   defaultValue?: string;
   placeholder?: string;
+  onSelect?: (user: UserOption | null) => void;
 }
 
 const SearchableUserSelect = ({
@@ -156,6 +173,7 @@ const SearchableUserSelect = ({
   users,
   defaultValue = '',
   placeholder = 'Search users...',
+  onSelect,
 }: SearchableUserSelectProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -223,6 +241,7 @@ const SearchableUserSelect = ({
                 setSelectedValue('');
                 setIsOpen(false);
                 setSearchTerm('');
+                if (onSelect) onSelect(null);
               }}
               className="w-full px-3 py-2 text-left text-sm text-slate-500 hover:bg-gray-50"
             >
@@ -236,6 +255,7 @@ const SearchableUserSelect = ({
                   setSelectedValue(u.userName);
                   setIsOpen(false);
                   setSearchTerm('');
+                  if (onSelect) onSelect(u);
                 }}
                 className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50
                   ${selectedValue === u.userName ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'}`}
@@ -402,38 +422,54 @@ const CallModal = ({
   appointmentSources = [],
   inspectionStatuses = [],
 }: CallModalProps) => {
+  const [engineerNumber, setEngineerNumber] = useState(editRecord?.inspectionEngineerNumber || '');
+
+  useEffect(() => {
+    setEngineerNumber(editRecord?.inspectionEngineerNumber || '');
+  }, [editRecord]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    
+    // Construct the object matching TelecallingRecord
     const callData: Partial<TelecallingRecord> = {
       appointmentId: (editRecord?.appointmentId || formData.get('appointmentId')) as string,
+      
+      // Required Fields
+      carRegistrationNumber: formData.get('carRegistrationNumber') as string,
+      yearOfRegistration: formData.get('yearOfRegistration') as string,
+      ownerName: formData.get('ownerName') as string,
+      ownershipSerialNumber: parseInt(formData.get('ownershipSerialNumber') as string) || 0,
+      make: formData.get('make') as string,
+      model: formData.get('model') as string,
+      variant: formData.get('variant') as string,
+
+      // Other Fields
       priority: formData.get('priority') as string,
       allocatedTo: formData.get('allocatedTo') as string,
       appointmentSource: formData.get('appointmentSource') as string,
       inspectionStatus: (formData.get('inspectionStatus') as string) || 'Pending',
-      customerName: formData.get('customerName') as string,
       customerContactNumber: formData.get('customerContactNumber') as string,
       emailAddress: formData.get('emailAddress') as string,
       city: formData.get('city') as string,
       zipCode: formData.get('zipCode') as string,
-      addressForInspection: formData.get('addressForInspection') as string,
-      make: formData.get('make') as string,
-      vehicleModel: formData.get('vehicleModel') as string,
-      variant: formData.get('variant') as string,
-      yearOfManufacture: parseInt(formData.get('yearOfManufacture') as string) || undefined,
-      odometerReading: formData.get('odometerReading') as string,
-      serialNum: formData.get('serialNum') as string,
+      inspectionAddress: formData.get('inspectionAddress') as string,
+      yearOfManufacture: formData.get('yearOfManufacture') as string,
+      odometerReadingInKms: parseFloat(formData.get('odometerReadingInKms') as string) || 0,
       vehicleStatus: formData.get('vehicleStatus') as string,
-      requestedInspectionDate: formData.get('requestedInspectionDate') as string,
-      requestedInspectionTime: formData.get('requestedInspectionTime') as string,
+      inspectionDateTime: formData.get('inspectionDateTime') as string,
       ncdUcdName: formData.get('ncdUcdName') as string,
       repName: formData.get('repName') as string,
       repContact: formData.get('repContact') as string,
       bankSource: formData.get('bankSource') as string,
       referenceName: formData.get('referenceName') as string,
+      inspectionEngineerNumber: formData.get('inspectionEngineerNumber') as string,
+      addedBy: (formData.get('addedBy') as any) || 'Telecaller',
       remarks: formData.get('remarks') as string,
+      additionalNotes: formData.get('additionalNotes') as string,
     };
     onSubmit(callData);
   };
@@ -491,6 +527,11 @@ const CallModal = ({
                 users={users}
                 defaultValue={editRecord?.allocatedTo || ''}
                 placeholder="Search users..."
+                onSelect={(user) => {
+                  if (user && user.phoneNumber) {
+                    setEngineerNumber(user.phoneNumber);
+                  }
+                }}
               />
               <SearchableDropdownSelect
                 name="appointmentSource"
@@ -516,12 +557,12 @@ const CallModal = ({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <input
-                name="customerName"
+                name="ownerName"
                 type="text"
-                placeholder="Customer Name"
+                placeholder="Owner Name *"
                 required
                 className="form-input"
-                defaultValue={editRecord?.customerName || ''}
+                defaultValue={editRecord?.ownerName || ''}
               />
               <input
                 name="customerContactNumber"
@@ -553,11 +594,11 @@ const CallModal = ({
               />
               <div className="md:col-span-3">
                 <input
-                  name="addressForInspection"
+                  name="inspectionAddress"
                   type="text"
                   placeholder="Address for Inspection"
                   className="form-input w-full"
-                  defaultValue={editRecord?.addressForInspection || ''}
+                  defaultValue={editRecord?.inspectionAddress || ''}
                 />
               </div>
             </div>
@@ -572,46 +613,66 @@ const CallModal = ({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <input
+                name="carRegistrationNumber"
+                type="text"
+                placeholder="Reg. Number *"
+                required
+                className="form-input"
+                defaultValue={editRecord?.carRegistrationNumber || ''}
+              />
+              <input
+                name="yearOfRegistration"
+                type="text"
+                placeholder="Reg. Year *"
+                required
+                className="form-input"
+                defaultValue={editRecord?.yearOfRegistration || ''}
+              />
+              <input
+                name="ownershipSerialNumber"
+                type="number"
+                placeholder="Ownership Serial *"
+                required
+                className="form-input"
+                defaultValue={editRecord?.ownershipSerialNumber || ''}
+              />
+              <input
                 name="make"
                 type="text"
-                placeholder="Make"
+                placeholder="Make *"
+                required
                 className="form-input"
                 defaultValue={editRecord?.make || ''}
               />
               <input
-                name="vehicleModel"
+                name="model"
                 type="text"
-                placeholder="Model"
+                placeholder="Model *"
+                required
                 className="form-input"
-                defaultValue={editRecord?.vehicleModel || ''}
+                defaultValue={editRecord?.model || ''}
               />
               <input
                 name="variant"
                 type="text"
-                placeholder="Variant"
+                placeholder="Variant *"
+                required
                 className="form-input"
                 defaultValue={editRecord?.variant || ''}
               />
               <input
                 name="yearOfManufacture"
-                type="number"
-                placeholder="Year"
+                type="text"
+                placeholder="Mfg Year"
                 className="form-input"
                 defaultValue={editRecord?.yearOfManufacture || ''}
               />
               <input
-                name="odometerReading"
-                type="text"
-                placeholder="Odometer"
+                name="odometerReadingInKms"
+                type="number"
+                placeholder="Odometer (Kms)"
                 className="form-input"
-                defaultValue={editRecord?.odometerReading || ''}
-              />
-              <input
-                name="serialNum"
-                type="text"
-                placeholder="Serial Num"
-                className="form-input"
-                defaultValue={editRecord?.serialNum || ''}
+                defaultValue={editRecord?.odometerReadingInKms || ''}
               />
               <input
                 name="vehicleStatus"
@@ -632,18 +693,11 @@ const CallModal = ({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <input
-                name="requestedInspectionDate"
-                type="date"
-                placeholder="Req. Inspection Date"
+                name="inspectionDateTime"
+                type="datetime-local"
+                placeholder="Inspection Date & Time"
                 className="form-input"
-                defaultValue={editRecord?.requestedInspectionDate || ''}
-              />
-              <input
-                name="requestedInspectionTime"
-                type="time"
-                placeholder="Req. Inspection Time"
-                className="form-input"
-                defaultValue={editRecord?.requestedInspectionTime || ''}
+                defaultValue={editRecord?.inspectionDateTime ? new Date(editRecord.inspectionDateTime).toISOString().slice(0, 16) : ''}
               />
               <input
                 name="ncdUcdName"
@@ -680,6 +734,22 @@ const CallModal = ({
                 className="form-input"
                 defaultValue={editRecord?.referenceName || ''}
               />
+              <input
+                name="inspectionEngineerNumber"
+                type="text"
+                placeholder="Engineer Number"
+                className="form-input"
+                value={engineerNumber}
+                onChange={(e) => setEngineerNumber(e.target.value)}
+              />
+              <select
+                name="addedBy"
+                className="form-input"
+                defaultValue={editRecord?.addedBy || 'Telecaller'}
+              >
+                <option value="Telecaller">Telecaller</option>
+                <option value="Customer">Customer</option>
+              </select>
             </div>
           </div>
 
@@ -688,9 +758,17 @@ const CallModal = ({
             <label className="text-xs font-semibold text-slate-500 mb-1 block">Remarks</label>
             <textarea
               name="remarks"
-              className="form-input w-full h-24 resize-none"
+              className="form-input w-full h-24 resize-none mb-4"
               placeholder="Enter remarks..."
               defaultValue={editRecord?.remarks || ''}
+            ></textarea>
+            
+            <label className="text-xs font-semibold text-slate-500 mb-1 block">Additional Notes</label>
+            <textarea
+              name="additionalNotes"
+              className="form-input w-full h-24 resize-none"
+              placeholder="Additional notes..."
+              defaultValue={editRecord?.additionalNotes || ''}
             ></textarea>
           </div>
 
@@ -766,6 +844,9 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, recordName }: DeleteModalProp
 // --- Main Component ---
 
 export default function TelecallingPage() {
+  const { data: session } = useSession();
+  const currentUser = session?.user;
+
   const { setTitle, setSearchContent, setActionsContent } = useHeader();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -787,46 +868,104 @@ export default function TelecallingPage() {
   // removed generatedId state
   const itemsPerPage = 20;
 
+  // API Endpoints from environment variables
+  const getBaseUrl = () => process.env.NEXT_PUBLIC_BACKENDBASEURL || 'https://otobix-app-backend-development.onrender.com/api/';
+  const getListUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGLIST || 'inspection/telecallings/get-list-by-telecaller'}`;
+  const getAddUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGADD || 'inspection/telecallings/add'}`;
+  const getUpdateUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGUPDATE || 'inspection/telecallings/update'}`;
+  const getDeleteUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGDELETE || 'inspection/telecallings/delete'}`;
+  
+  const AUTH_TOKEN = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MDBhYzc2NTA4OGQxYTA2ODc3MDU0NCIsInVzZXJOYW1lIjoiY3VzdG9tZXIiLCJ1c2VyVHlwZSI6IkN1c3RvbWVyIiwiaWF0IjoxNzY0MzMxNjMxLCJleHAiOjIwNzk2OTE2MzF9.oXw1J4ca1XoIAg-vCO2y0QqZIq0VWHdYBrl2y9iIv4Q';
+
   // Ref for debounced save timeout
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchData = async () => {
+  const fetchTelecallingData = async () => {
     setLoading(true);
+    
+    // Clear any existing telecalling cache to free up space
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('otobix_telecalling_cache');
+    }
+
     try {
-      const [teleRes, usersRes, apptSourcesRes, inspStatusesRes] = await Promise.all([
-        fetch('/api/telecalling'),
-        fetch('/api/users'),
-        fetch('/api/dropdowns?type=Appointment Source'),
-        fetch('/api/dropdowns?type=Inspection Status'),
-      ]);
+      const teleRes = await fetch(getListUrl(), {
+          method: 'GET',
+          headers: {
+            'Authorization': AUTH_TOKEN
+          }
+      });
+      
+      if (!teleRes.ok) {
+        throw new Error(`Backend returned ${teleRes.status}: ${teleRes.statusText}`);
+      }
 
       const teleData = await teleRes.json();
-      const usersData = await usersRes.json();
-      const apptSourcesData = await apptSourcesRes.json();
-      const inspStatusesData = await inspStatusesRes.json();
-
-      setAllLeadCalls(Array.isArray(teleData) ? teleData : []);
-      setUsers(Array.isArray(usersData) ? usersData : []);
-      setAppointmentSources(
-        Array.isArray(apptSourcesData)
-          ? apptSourcesData.filter((d: DropdownOption) => d.isActive)
-          : []
-      );
-      setInspectionStatuses(
-        Array.isArray(inspStatusesData)
-          ? inspStatusesData.filter((d: DropdownOption) => d.isActive)
-          : []
-      );
+      const calls = Array.isArray(teleData) ? teleData : (teleData.data && Array.isArray(teleData.data) ? teleData.data : []);
+      setAllLeadCalls(calls);
     } catch (error) {
-      console.error('Failed to fetch data', error);
+      console.error('Failed to fetch telecalling data', error);
       setAllLeadCalls([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchAuxData = async () => {
+    try {
+      // 1. Load from cache first for instant render
+      if (typeof window !== 'undefined') {
+        const cachedUsers = localStorage.getItem('otobix_users');
+        const cachedSources = localStorage.getItem('otobix_appt_sources');
+        const cachedStatuses = localStorage.getItem('otobix_insp_statuses');
+
+        if (cachedUsers) setUsers(JSON.parse(cachedUsers));
+        if (cachedSources) setAppointmentSources(JSON.parse(cachedSources));
+        if (cachedStatuses) setInspectionStatuses(JSON.parse(cachedStatuses));
+      }
+
+      // 2. Fetch fresh data in background
+      const [usersRes, apptSourcesRes, inspStatusesRes] = await Promise.all([
+        fetch('/api/users'),
+        fetch('/api/dropdowns?type=Appointment Source'),
+        fetch('/api/dropdowns?type=Inspection Status'),
+      ]);
+
+      if (!usersRes.ok || !apptSourcesRes.ok || !inspStatusesRes.ok) {
+          console.warn('One or more aux data fetches failed', {
+              users: usersRes.status,
+              apptSources: apptSourcesRes.status,
+              inspStatuses: inspStatusesRes.status
+          });
+      }
+
+      const usersData = usersRes.ok ? await usersRes.json() : [];
+      const apptSourcesData = apptSourcesRes.ok ? await apptSourcesRes.json() : [];
+      const inspStatusesData = inspStatusesRes.ok ? await inspStatusesRes.json() : [];
+
+      const validUsers = Array.isArray(usersData) ? usersData : [];
+      const validSources = Array.isArray(apptSourcesData) ? apptSourcesData.filter((d: DropdownOption) => d.isActive) : [];
+      const validStatuses = Array.isArray(inspStatusesData) ? inspStatusesData.filter((d: DropdownOption) => d.isActive) : [];
+
+      setUsers(validUsers);
+      setAppointmentSources(validSources);
+      setInspectionStatuses(validStatuses);
+
+      // 3. Update cache
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('otobix_users', JSON.stringify(validUsers));
+        localStorage.setItem('otobix_appt_sources', JSON.stringify(validSources));
+        localStorage.setItem('otobix_insp_statuses', JSON.stringify(validStatuses));
+      }
+
+    } catch (error) {
+       console.error('Failed to fetch aux data', error);
+    }
+  };
+
   useEffect(() => {
-    fetchData();
+    fetchTelecallingData();
+    fetchAuxData();
   }, []);
 
   // Close filter dropdown on click outside
@@ -841,7 +980,8 @@ export default function TelecallingPage() {
   }, []);
 
   const handleRefresh = () => {
-    fetchData();
+    fetchTelecallingData();
+    fetchAuxData();
   };
 
   // Optimistic Add - update UI immediately, save to backend after delay
@@ -856,20 +996,41 @@ export default function TelecallingPage() {
 
     // Save to backend immediately
     try {
-      const res = await fetch('/api/telecalling', {
+      const payload = { 
+        ...newCall,
+        inspectionStatus: newCall.inspectionStatus || 'Pending',
+        approvalStatus: newCall.approvalStatus || 'Pending',
+        priority: newCall.priority || 'Medium',
+        addedBy: newCall.addedBy || 'Telecaller',
+        carImages: newCall.carImages || [],
+        createdBy: currentUser?.id || '',
+      };
+      
+      delete payload._id;
+      if (payload.appointmentId === 'Auto-generated') {
+          delete payload.appointmentId;
+      }
+
+      const res = await fetch(getAddUrl(), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCall),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': AUTH_TOKEN
+        },
+        body: JSON.stringify(payload),
       });
+
       if (res.ok) {
         const savedRecord = await res.json();
         // Replace temp record with actual saved record
-        setAllLeadCalls((prev) => prev.map((r) => (r._id === tempId ? savedRecord : r)));
+        // Handle if response is wrapped
+        const actualRecord = savedRecord.data || savedRecord;
+        setAllLeadCalls((prev) => prev.map((r) => (r._id === tempId ? actualRecord : r)));
       } else {
         // Revert on failure
         setAllLeadCalls((prev) => prev.filter((r) => r._id !== tempId));
         const err = await res.json();
-        alert('Failed to save: ' + err.error);
+        alert('Failed to save to backend: ' + (err.error || err.message || 'Unknown error'));
       }
     } catch (error) {
       setAllLeadCalls((prev) => prev.filter((r) => r._id !== tempId));
@@ -877,63 +1038,75 @@ export default function TelecallingPage() {
     }
   };
 
-  // Optimistic Edit - update UI immediately, save to backend after delay
+  // Optimistic Edit
   const handleEditCall = async (updatedData: Partial<TelecallingRecord>) => {
-    if (!editingRecord) return;
+     if (!editingRecord) return;
+     const recordId = editingRecord._id;
+     const oldRecord = { ...editingRecord };
+     const newRecord = { ...editingRecord, ...updatedData };
 
-    const recordId = editingRecord._id;
-    const previousRecord = { ...editingRecord };
+     // Optimistic update
+     setAllLeadCalls(prev => prev.map(r => r._id === recordId ? newRecord : r));
+     setIsModalOpen(false);
 
-    // Update UI immediately
-    setAllLeadCalls((prev) => prev.map((r) => (r._id === recordId ? { ...r, ...updatedData } : r)));
-    setEditingRecord(null);
-    setIsModalOpen(false);
+     try {
+       const payload = {
+         ...updatedData,
+         telecallingId: recordId, // Required field
+         changedBy: currentUser?.id || '',
+         source: currentUser?.role || '',
+       };
+       delete (payload as any)._id;
+       delete (payload as any).id;
 
-    // Save to backend immediately
-    try {
-      const res = await fetch(`/api/telecalling/${recordId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedData),
-      });
-      if (!res.ok) {
-        // Revert on failure
-        setAllLeadCalls((prev) => prev.map((r) => (r._id === recordId ? previousRecord : r)));
-        const err = await res.json();
-        alert('Failed to update: ' + err.error);
-      }
-    } catch (error) {
-      setAllLeadCalls((prev) => prev.map((r) => (r._id === recordId ? previousRecord : r)));
-      alert('Failed to update: ' + (error as Error).message);
-    }
+       const res = await fetch(getUpdateUrl(), {
+         method: 'PUT',
+         headers: {
+           'Content-Type': 'application/json',
+           'Authorization': AUTH_TOKEN
+         },
+         body: JSON.stringify(payload),
+       });
+
+       if (!res.ok) {
+         setAllLeadCalls(prev => prev.map(r => r._id === recordId ? oldRecord : r));
+         const err = await res.json();
+         alert('Failed to update: ' + (err.error || err.message || 'Unknown error'));
+       }
+     } catch (error) {
+       setAllLeadCalls(prev => prev.map(r => r._id === recordId ? oldRecord : r));
+       alert('Update error: ' + (error as Error).message);
+     }
   };
 
-  // Optimistic Delete - update UI immediately, delete from backend after delay
+  // Optimistic Delete
   const handleDeleteCall = async () => {
     if (!deletingRecord) return;
-
     const recordId = deletingRecord._id;
-    const previousRecord = { ...deletingRecord };
+    const oldRecord = { ...deletingRecord };
 
-    // Update UI immediately
-    setAllLeadCalls((prev) => prev.filter((r) => r._id !== recordId));
-    setDeletingRecord(null);
+    // Optimistic delete
+    setAllLeadCalls(prev => prev.filter(r => r._id !== recordId));
     setIsDeleteModalOpen(false);
 
-    // Delete from backend immediately
     try {
-      const res = await fetch(`/api/telecalling/${recordId}`, {
-        method: 'DELETE',
+      const res = await fetch(getDeleteUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': AUTH_TOKEN
+        },
+        body: JSON.stringify({ telecallingId: recordId }),
       });
+
       if (!res.ok) {
-        // Revert on failure
-        setAllLeadCalls((prev) => [...prev, previousRecord]);
+        setAllLeadCalls(prev => [oldRecord, ...prev]);
         const err = await res.json();
-        alert('Failed to delete: ' + err.error);
+        alert('Failed to delete: ' + (err.error || err.message || 'Unknown error'));
       }
     } catch (error) {
-      setAllLeadCalls((prev) => [...prev, previousRecord]);
-      alert('Failed to delete: ' + (error as Error).message);
+      setAllLeadCalls(prev => [oldRecord, ...prev]);
+      alert('Delete error: ' + (error as Error).message);
     }
   };
 
@@ -1115,7 +1288,8 @@ export default function TelecallingPage() {
   const { currentCalls, pagination } = useMemo(() => {
     const filtered = allLeadCalls.filter((call) => {
       const matchesSearch =
-        (call.customerName || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        (call.ownerName || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        (call.carRegistrationNumber || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         (call._id || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         (call.make || '').toLowerCase().includes(debouncedSearch.toLowerCase());
 
@@ -1155,6 +1329,18 @@ export default function TelecallingPage() {
       width: 'auto',
     },
     {
+      header: 'Reg. No',
+      accessor: 'carRegistrationNumber' as keyof TelecallingRecord,
+      className: 'font-bold text-slate-700 whitespace-nowrap',
+      width: 'auto',
+    },
+    {
+       header: 'Owner',
+       accessor: 'ownerName' as keyof TelecallingRecord,
+       className: 'font-semibold text-slate-900 whitespace-nowrap',
+       width: 'auto',
+    },
+    {
       header: 'City',
       accessor: 'city' as keyof TelecallingRecord,
       className: 'text-slate-600 whitespace-nowrap',
@@ -1163,7 +1349,6 @@ export default function TelecallingPage() {
     {
       header: 'Allocated To',
       render: (row: TelecallingRecord) => {
-        // Try to find userName from the users list (match by email or userName)
         const user = users.find(
           (u) => u.email === row.allocatedTo || u.userName === row.allocatedTo
         );
@@ -1186,14 +1371,8 @@ export default function TelecallingPage() {
       width: 'auto',
     },
     {
-      header: 'Req. Date',
-      accessor: 'requestedInspectionDate' as keyof TelecallingRecord,
-      className: 'text-slate-600 whitespace-nowrap',
-      width: 'auto',
-    },
-    {
-      header: 'Req. Time',
-      accessor: 'requestedInspectionTime' as keyof TelecallingRecord,
+      header: 'Inspection Date',
+      render: (row: TelecallingRecord) => row.inspectionDateTime ? new Date(row.inspectionDateTime).toLocaleDateString() : '-',
       className: 'text-slate-600 whitespace-nowrap',
       width: 'auto',
     },
@@ -1210,7 +1389,7 @@ export default function TelecallingPage() {
     },
     {
       header: 'Model',
-      accessor: 'vehicleModel' as keyof TelecallingRecord,
+      accessor: 'model' as keyof TelecallingRecord,
       className: 'text-slate-700 whitespace-nowrap',
       width: 'auto',
     },
@@ -1221,24 +1400,6 @@ export default function TelecallingPage() {
       width: 'auto',
     },
     {
-      header: 'Mfg Year',
-      accessor: 'yearOfManufacture' as keyof TelecallingRecord,
-      className: 'text-slate-600 whitespace-nowrap',
-      width: 'auto',
-    },
-    {
-      header: 'Customer',
-      accessor: 'customerName' as keyof TelecallingRecord,
-      className: 'font-semibold text-slate-900 whitespace-nowrap',
-      width: 'auto',
-    },
-    {
-      header: 'Address',
-      accessor: 'addressForInspection' as keyof TelecallingRecord,
-      className: 'text-slate-600 text-xs whitespace-nowrap',
-      width: 'auto',
-    },
-    {
       header: 'Contact',
       accessor: 'customerContactNumber' as keyof TelecallingRecord,
       className: 'text-slate-600 font-mono text-xs whitespace-nowrap',
@@ -1246,8 +1407,40 @@ export default function TelecallingPage() {
     },
     {
       header: 'Source',
-      accessor: 'appointmentSource' as keyof TelecallingRecord,
-      className: 'text-slate-600 whitespace-nowrap',
+      render: (row: TelecallingRecord) => {
+        const source = row.appointmentSource;
+        if (!source) return <span className="text-slate-400 text-xs">-</span>;
+
+        const matchedOption = appointmentSources.find(
+          (d) => d.description.toLowerCase() === source.toLowerCase()
+        );
+
+        if (matchedOption?.color) {
+          const hexToRgb = (hex: string) => {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result
+              ? {
+                  r: parseInt(result[1], 16),
+                  g: parseInt(result[2], 16),
+                  b: parseInt(result[3], 16),
+                }
+              : null;
+          };
+          const rgb = hexToRgb(matchedOption.color);
+          const bgColor = rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)` : matchedOption.color;
+
+          return (
+            <span
+              className="px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide rounded whitespace-nowrap"
+              style={{ backgroundColor: bgColor, color: matchedOption.color }}
+            >
+              {source}
+            </span>
+          );
+        }
+
+        return <span className="text-slate-600 text-xs whitespace-nowrap">{source}</span>;
+      },
       width: 'auto',
     },
     {
@@ -1258,8 +1451,19 @@ export default function TelecallingPage() {
     },
     {
       header: 'Created By',
-      accessor: 'createdBy' as keyof TelecallingRecord,
-      className: 'text-slate-500 text-xs whitespace-nowrap',
+      render: (row: TelecallingRecord) => {
+        const user = users.find(
+          (u) =>
+            u._id === row.createdBy ||
+            u.email === row.createdBy ||
+            u.userName === row.createdBy
+        );
+        return (
+          <span className="text-slate-500 text-xs whitespace-nowrap">
+            {user?.userName || row.createdBy || '-'}
+          </span>
+        );
+      },
       width: 'auto',
     },
     {
@@ -1303,13 +1507,22 @@ export default function TelecallingPage() {
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden">
       {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Loading...
-            </span>
-          </div>
+        <div className="flex-1 w-full bg-white p-4 overflow-hidden">
+           <div className="animate-pulse space-y-4">
+             {/* Header Skeleton */}
+             <div className="h-10 bg-slate-100 rounded-lg w-full mb-6"></div>
+             
+             {/* Rows Skeleton */}
+             {[...Array(10)].map((_, i) => (
+               <div key={i} className="flex gap-4">
+                 <div className="h-4 bg-slate-50 rounded w-24"></div>
+                 <div className="h-4 bg-slate-50 rounded w-32"></div>
+                 <div className="h-4 bg-slate-50 rounded w-40 flex-1"></div>
+                 <div className="h-4 bg-slate-50 rounded w-20"></div>
+                 <div className="h-4 bg-slate-50 rounded w-24"></div>
+               </div>
+             ))}
+           </div>
         </div>
       ) : (
         <>
@@ -1337,7 +1550,7 @@ export default function TelecallingPage() {
               setDeletingRecord(null);
             }}
             onConfirm={handleDeleteCall}
-            recordName={deletingRecord?.customerName}
+            recordName={deletingRecord?.ownerName}
           />
 
           <GlobalImportModal

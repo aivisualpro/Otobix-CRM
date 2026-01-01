@@ -7,6 +7,8 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+export const dynamic = 'force-dynamic';
+
 // GET single telecalling record
 export async function GET(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
@@ -33,15 +35,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams): Promis
     const { id } = await params;
     const body = await request.json();
 
-    // Map 'model' to 'vehicleModel' to avoid Document conflicts
-    if (body.model) {
-      body.vehicleModel = body.model;
-      delete body.model;
-    }
-
-    // Remove _id from body to prevent update errors
+    // Remove immutable fields
     delete body._id;
+    delete body.appointmentId;
     delete body.id;
+    delete body.telecallingId;
 
     const record = await Telecalling.findByIdAndUpdate(
       id,
@@ -76,7 +74,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams): Pro
     // Recycle appointmentId
     if (record.appointmentId) {
       try {
-        // ID format: YY-SEQ (e.g. 25-10000001)
         const parts = record.appointmentId.split('-');
         let year = new Date().getFullYear();
         if (parts.length > 0 && !isNaN(parseInt(parts[0]))) {
@@ -89,7 +86,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams): Pro
           year: year,
         });
       } catch (e) {
-        // Ignore duplicates (if already in pool)
+        // Ignore duplicates
         console.warn('Could not recycle ID:', e);
       }
     }

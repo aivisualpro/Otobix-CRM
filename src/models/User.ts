@@ -6,7 +6,11 @@ export interface IUser extends Document {
   location?: string;
   userName: string;
   email: string;
+  dealershipName?: string;
   image?: string;
+  entityType?: string;
+  primaryContactPerson?: string;
+  primaryContactNumber?: string;
   secondaryContactPerson?: string;
   secondaryContactNumber?: string;
   password?: string;
@@ -30,9 +34,13 @@ const UserSchema = new Schema<IUser>(
     location: { type: String, trim: true },
     userName: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    dealershipName: { type: String, trim: true },
     image: { type: String },
-    secondaryContactPerson: { type: String },
-    secondaryContactNumber: { type: String },
+    entityType: { type: String, trim: true },
+    primaryContactPerson: { type: String, trim: true },
+    primaryContactNumber: { type: String, trim: true },
+    secondaryContactPerson: { type: String, trim: true },
+    secondaryContactNumber: { type: String, trim: true },
     password: { type: String },
     addressList: { type: [String], default: [] },
     allowedCities: { type: [String], default: [] },
@@ -51,17 +59,11 @@ const UserSchema = new Schema<IUser>(
 
 // Delete cached model
 if (mongoose.models.Users) {
-  // Try to delete specific 'Users' model if it exists, though usually it's singular
   delete mongoose.models.Users;
 }
 if (mongoose.models.User) {
   delete mongoose.models.User;
 }
-
-// Important: Mongoose often pluralizes 'User' to 'users'.
-// Since you have an existing collection 'users', explicit collection name is safer
-// or relying on mongoose default pluralization.
-// Assuming default 'users' is correct.
 
 const User: Model<IUser> = mongoose.model<IUser>('User', UserSchema);
 
