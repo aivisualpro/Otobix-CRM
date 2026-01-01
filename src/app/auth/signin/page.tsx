@@ -13,21 +13,29 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const loadingRef = useState(false); // We can just use a simple ref
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+
+  const addLog = (msg: string) => {
+    console.log(`[SignIn Debug] ${msg}`);
+    setDebugLogs(prev => [...prev.slice(-4), msg]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    addLog('Starting sign in process...');
 
-    // Timeout safety net
+    const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      if (loading) {
-        setLoading(false);
-        setError('Login is taking longer than expected. Please check your connection or refresh.');
-      }
+      addLog('Sign in timed out after 15s');
+      setLoading(false);
+      setError('Login is taking longer than expected. Please check your connection or refresh.');
     }, 15000);
 
     try {
+      addLog(`Attempting login for: ${userName}`);
       const result = await signIn('credentials', {
         userName,
         phoneNumber,
@@ -36,17 +44,20 @@ export default function SignInPage() {
       });
 
       clearTimeout(timeoutId);
+      addLog(`Sign in result received: ${result?.error ? 'Error: ' + result.error : 'Success'}`);
 
       if (result?.error) {
         setError(result.error);
         setLoading(false);
       } else {
+        addLog('Redirecting to dashboard...');
         router.push('/');
         router.refresh();
       }
-    } catch (err) {
+    } catch (err: any) {
       clearTimeout(timeoutId);
-      setError('An unexpected error occurred. Please try again.');
+      addLog(`Unexpected error: ${err.message}`);
+      setError(`An unexpected error occurred: ${err.message}`);
       setLoading(false);
     }
   };
@@ -146,9 +157,14 @@ export default function SignInPage() {
         </form>
 
         <div className="px-8 py-4 bg-slate-50 border-t border-gray-100 text-center">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 mb-2">
             Don&apos;t have an account? Contact your administrator.
           </p>
+          {debugLogs.length > 0 && (
+            <div className="mt-4 p-2 bg-slate-100 rounded text-[10px] text-left font-mono text-slate-400 overflow-hidden">
+              {debugLogs.map((log, i) => <div key={i}>&gt; {log}</div>)}
+            </div>
+          )}
         </div>
       </div>
     </div>

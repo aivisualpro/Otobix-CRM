@@ -18,8 +18,13 @@ export const authOptions: NextAuthOptions = {
 
         const baseUrl = process.env.NEXT_PUBLIC_BACKENDBASEURL || 'https://otobix-app-backend-development.onrender.com/api/';
         const loginUrl = `${baseUrl}${process.env.NEXT_PUBLIC_USERLOGIN || 'user/login'}`;
+        
+        console.log(`[Auth] loginUrl: ${loginUrl}`);
 
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s fetch timeout
+
           const res = await fetch(loginUrl, {
             method: 'POST',
             headers: { 
@@ -31,13 +36,23 @@ export const authOptions: NextAuthOptions = {
               phoneNumber: credentials.phoneNumber,
               password: credentials.password,
             }),
+            signal: controller.signal
           });
 
-          const result = await res.json();
-          // We don't log the token for security in production, but let's log the structure
-          console.log('Login API Response keys:', Object.keys(result));
+          clearTimeout(timeoutId);
+          console.log(`[Auth] Response status: ${res.status}`);
 
-          if (!res.ok || (result.status === false) || (result.success === false)) {
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error(`[Auth] Login failed with status ${res.status}: ${errorText}`);
+            throw new Error(`Server error: ${res.status}`);
+          }
+
+          const result = await res.json();
+          console.log('[Auth] Response body structure:', Object.keys(result));
+
+          if ((result.status === false) || (result.success === false)) {
+            console.warn(`[Auth] Backend returned failure: ${result.message}`);
             throw new Error(result.message || 'Invalid login credentials');
           }
 
@@ -45,14 +60,14 @@ export const authOptions: NextAuthOptions = {
           const userData = result.user || result.data;
           
           if (!userData) {
-            console.error('No user data found in response:', result);
+            console.error('[Auth] No user data found in result');
             throw new Error('User data not found in server response');
           }
 
           // Map role from userType or userRole
           const role = userData.userType || userData.userRole || userData.role || 'user';
           
-          console.log('Login Success:', userData.userName, 'Mapped Role:', role);
+          console.log('[Auth] Mapped user:', userData.userName || userData.name, 'Role:', role);
           console.log('--- Auth Debug End ---');
 
           return {
