@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { User, Phone, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { User, Phone, Lock, Loader2, AlertCircle, BadgeCheck, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, Suspense } from 'react';
 
@@ -28,8 +28,9 @@ function SignInContent() {
   // Auto-redirect if already authenticated or just became authenticated
   useEffect(() => {
     if (status === 'authenticated') {
-      addLog('Session Detected: Authenticated. Jumping to dashboard...');
-      window.location.replace(window.location.origin);
+      addLog('LOGGED IN - Attempting to jump to /');
+      // Force a full site reload to ensure middleware catches the cookie
+      window.location.href = '/'; 
     }
   }, [status]);
 
@@ -37,17 +38,16 @@ function SignInContent() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    addLog('VERSION 2.3 - Starting standard sign in...');
+    addLog('VERSION 2.4 - Starting sign in...');
 
     try {
-      addLog(`Attempting login for: ${userName}`);
+      addLog(`Connecting for: ${userName}`);
       
-      // We let Next-Auth handle the redirect naturally
       const result = await signIn('credentials', {
         userName,
         phoneNumber,
         password,
-        callbackUrl: callbackUrl,
+        callbackUrl: '/',
         redirect: true, 
       });
 
@@ -57,11 +57,39 @@ function SignInContent() {
         addLog(`Error: ${result.error}`);
       }
     } catch (err: any) {
-      addLog(`Catch Error: ${err.message}`);
+      addLog(`Error: ${err.message}`);
       setError(`An unexpected error occurred: ${err.message}`);
       setLoading(false);
     }
   };
+
+  if (status === 'authenticated') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <BadgeCheck className="w-10 h-10 text-green-600" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Authenticated Successfully</h2>
+          <p className="text-slate-500 mb-6">You are being redirected to the dashboard...</p>
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 rounded-xl transition-all flex items-center justify-center gap-2"
+          >
+            Go to Dashboard <ChevronRight className="w-4 h-4" />
+          </button>
+          
+          <div className="mt-8 p-3 bg-slate-50 rounded-lg w-full">
+             <div className="text-[10px] font-mono text-slate-400 text-left">
+               &gt; VERSION 2.4<br/>
+               &gt; Session status: active<br/>
+               &gt; Auto-redirecting...
+             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
