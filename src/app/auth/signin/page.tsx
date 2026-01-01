@@ -50,9 +50,15 @@ export default function SignInPage() {
         setError(result.error);
         setLoading(false);
       } else {
-        addLog('Redirecting to dashboard...');
-        router.push('/');
-        router.refresh();
+        addLog('Login Success! Forcing redirect...');
+        // Force a full reload to the dashboard to ensures session is picked up
+        window.location.href = '/';
+        
+        // Secondary fallback
+        setTimeout(() => {
+          router.push('/');
+          router.refresh();
+        }, 100);
       }
     } catch (err: any) {
       clearTimeout(timeoutId);
