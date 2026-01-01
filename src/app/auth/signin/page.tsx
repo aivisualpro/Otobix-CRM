@@ -1,19 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { User, Phone, Lock, Loader2, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
+import { useEffect } from 'react';
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
+
   const [userName, setUserName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const loadingRef = useState(false); // We can just use a simple ref
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
 
   const addLog = (msg: string) => {
@@ -21,42 +25,41 @@ export default function SignInPage() {
     setDebugLogs(prev => [...prev.slice(-4), msg]);
   };
 
+  // Auto-redirect if already authenticated or just became authenticated
+  useEffect(() => {
+    if (status === 'authenticated') {
+      addLog('Session Detected: Authenticated. Jumping to dashboard...');
+      window.location.replace(window.location.origin);
+    }
+  }, [status]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    addLog('VERSION 2.1 - Starting sign in...');
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      addLog('Sign in timed out after 15s');
-      setLoading(false);
-      setError('Login is taking longer than expected. Please check your connection or refresh.');
-    }, 15000);
+    addLog('VERSION 2.2 - Starting standard sign in...');
 
     try {
       addLog(`Attempting login for: ${userName}`);
+      
+      // We let Next-Auth handle the redirect naturally
       const result = await signIn('credentials', {
         userName,
         phoneNumber,
         password,
-        redirect: false,
+        callbackUrl: callbackUrl,
+        redirect: true, 
       });
 
-      clearTimeout(timeoutId);
-      addLog(`Result: ${result?.error ? 'Error' : 'Success'}`);
-
+      // If redirect: true, this code might not even run on success,
+      // which is perfect for avoiding "stuck" states.
       if (result?.error) {
         setError(result.error);
         setLoading(false);
-      } else {
-        addLog('Login Success! Jumping to root...');
-        // The most absolute way to redirect in a browser:
-        window.location.replace(window.location.origin);
+        addLog(`Error: ${result.error}`);
       }
     } catch (err: any) {
-      clearTimeout(timeoutId);
-      addLog(`Unexpected error: ${err.message}`);
+      addLog(`Catch Error: ${err.message}`);
       setError(`An unexpected error occurred: ${err.message}`);
       setLoading(false);
     }
