@@ -11,57 +11,88 @@ function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
-
+  
   const [userName, setUserName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [redirecting, setRedirecting] = useState(false);
 
   const addLog = (msg: string) => {
     console.log(`[SignIn Debug] ${msg}`);
     setDebugLogs(prev => [...prev.slice(-4), msg]);
   };
 
-  // Auto-redirect if already authenticated or just became authenticated
+  // Log status changes
   useEffect(() => {
-    if (status === 'authenticated') {
-      addLog('LOGGED IN - Attempting to jump to /');
-      // Force a full site reload to ensure middleware catches the cookie
-      window.location.href = '/'; 
+    addLog(`Status: ${status}`);
+    if (session) {
+      addLog(`User: ${session.user?.name || 'Unknown'}`);
     }
-  }, [status]);
+  }, [status, session]);
+
+  // Auto-redirect handling
+  useEffect(() => {
+    if (status === 'authenticated' && !redirecting) {
+      setRedirecting(true);
+      
+      let callbackUrl = searchParams.get('callbackUrl') || '/';
+      if (callbackUrl.includes('/auth/signin')) callbackUrl = '/';
+
+      addLog(`Logic: Logged in, will jump to ${callbackUrl} in 1s...`);
+      
+      const timer = setTimeout(() => {
+        addLog('Executing jump...');
+        // Force full reload to ensure middleware sees the new cookie
+        window.location.href = callbackUrl;
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [status, searchParams, redirecting]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    addLog('VERSION 2.4 - Starting sign in...');
+    addLog('Starting sign in process...');
 
     try {
-      addLog(`Connecting for: ${userName}`);
-      
       const result = await signIn('credentials', {
         userName,
         phoneNumber,
         password,
-        callbackUrl: '/',
-        redirect: true, 
+        redirect: false,
       });
 
       if (result?.error) {
         setError(result.error);
         setLoading(false);
         addLog(`Error: ${result.error}`);
+      } else if (result?.ok) {
+        addLog('Login successful! Updating session...');
+        // The useEffect above will handle redirection when status changes
       }
     } catch (err: any) {
-      addLog(`Error: ${err.message}`);
+      addLog(`Unexpected error: ${err.message}`);
       setError(`An unexpected error occurred: ${err.message}`);
       setLoading(false);
     }
   };
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 flex flex-col items-center text-center">
+          <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Verifying Session</h2>
+          <p className="text-slate-500">Checking your login status...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (status === 'authenticated') {
     return (
@@ -70,21 +101,35 @@ function SignInContent() {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
             <BadgeCheck className="w-10 h-10 text-green-600" />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Authenticated Successfully</h2>
-          <p className="text-slate-500 mb-6">You are being redirected to the dashboard...</p>
-          <button 
-            onClick={() => window.location.href = '/'}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 rounded-xl transition-all flex items-center justify-center gap-2"
-          >
-            Go to Dashboard <ChevronRight className="w-4 h-4" />
-          </button>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Login Successful</h2>
+          <p className="text-slate-500 mb-6">Redirecting you to the dashboard...</p>
           
-          <div className="mt-8 p-3 bg-slate-50 rounded-lg w-full">
-             <div className="text-[10px] font-mono text-slate-400 text-left">
-               &gt; VERSION 2.4<br/>
-               &gt; Session status: active<br/>
-               &gt; Auto-redirecting...
-             </div>
+          <div className="w-full space-y-3">
+            <button 
+              onClick={() => window.location.href = '/'}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold h-11 rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              Go to Dashboard <ChevronRight className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('callbackUrl');
+                window.location.href = url.pathname;
+              }}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium h-11 rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              Clear Redirect & Stay Here
+            </button>
+          </div>
+
+          <div className="mt-8 p-3 bg-slate-50 rounded-lg w-full text-left">
+            <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Debug Info</p>
+            <div className="text-[10px] font-mono text-slate-400 space-y-1">
+              {debugLogs.map((log, i) => (
+                <div key={i} className="border-l-2 border-slate-200 pl-2">&gt; {log}</div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -126,7 +171,7 @@ function SignInContent() {
                   required
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border-slate-200"
+                  className="!pl-12 w-full h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border border-slate-200"
                   placeholder="Enter your user name"
                   autoComplete="username"
                 />
@@ -144,7 +189,7 @@ function SignInContent() {
                   required
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border-slate-200"
+                  className="!pl-12 w-full h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border border-slate-200"
                   placeholder="Enter your contact number"
                   autoComplete="tel"
                 />
@@ -162,7 +207,7 @@ function SignInContent() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="!pl-12 w-full form-input h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border-slate-200"
+                  className="!pl-12 w-full h-10 transition-all focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300 rounded-xl border border-slate-200"
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
@@ -206,7 +251,7 @@ export default function SignInPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 flex flex-col items-center">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-4" />
-          <p className="text-slate-500 animate-pulse">Initializing login...</p>
+          <p className="text-slate-500 animate-pulse">Initializing login module...</p>
         </div>
       </div>
     }>
