@@ -5,9 +5,9 @@ import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { User, Phone, Lock, Loader2, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
@@ -37,7 +37,7 @@ export default function SignInPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    addLog('VERSION 2.2 - Starting standard sign in...');
+    addLog('VERSION 2.3 - Starting standard sign in...');
 
     try {
       addLog(`Attempting login for: ${userName}`);
@@ -51,8 +51,6 @@ export default function SignInPage() {
         redirect: true, 
       });
 
-      // If redirect: true, this code might not even run on success,
-      // which is perfect for avoiding "stuck" states.
       if (result?.error) {
         setError(result.error);
         setLoading(false);
@@ -171,5 +169,20 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 flex flex-col items-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-4" />
+          <p className="text-slate-500 animate-pulse">Initializing login...</p>
+        </div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }
