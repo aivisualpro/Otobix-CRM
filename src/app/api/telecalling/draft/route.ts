@@ -4,6 +4,8 @@ import Counter from '@/models/Counter';
 import Telecalling from '@/models/Telecalling';
 import ReusableId from '@/models/ReusableId';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();
