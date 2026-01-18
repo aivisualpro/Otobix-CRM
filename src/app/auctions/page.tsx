@@ -134,7 +134,43 @@ const CarDetailsModal = ({
       });
       if (res.ok) {
         const data = await res.json();
-        setDetails(data.data || data);
+        const rawDetails = data.data || data;
+
+        // Construct a normalized images array
+        const images: string[] = [];
+        
+        // Helper to push valid images
+        const addImages = (source: any) => {
+             if (Array.isArray(source)) {
+                 source.forEach(img => typeof img === 'string' && img.length > 5 && images.push(img));
+             } else if (typeof source === 'string' && source.length > 5) {
+                 images.push(source);
+             }
+        };
+
+        // Priority order for images
+        addImages(rawDetails.carImages);
+        addImages(rawDetails.frontMain);
+        addImages(rawDetails.frontMainImages);
+        addImages(rawDetails.rearMain);
+        addImages(rawDetails.rearMainImages);
+        addImages(rawDetails.leftSide);
+        addImages(rawDetails.leftSideImages);
+        addImages(rawDetails.rightSide);
+        addImages(rawDetails.rightSideImages);
+        addImages(rawDetails.interior);
+        addImages(rawDetails.interiorImages);
+        addImages(rawDetails.bonnet); 
+        addImages(rawDetails.bonnetImages);
+        addImages(rawDetails.boot);
+        addImages(rawDetails.bootImages);
+        
+        // Fallback or single image
+        if (images.length === 0 && rawDetails.imageUrl) {
+            images.push(rawDetails.imageUrl);
+        }
+
+        setDetails({ ...rawDetails, carImages: images.length > 0 ? images : null });
       }
     } catch (error) {
       console.error('Fetch details error:', error);

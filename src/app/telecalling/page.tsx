@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback, FormEvent } from 'react';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
+import { toast } from "sonner";
 import {
   Search,
   Plus,
@@ -477,11 +478,12 @@ const CallModal = ({
   useEffect(() => {
     if (isOpen) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedMake(editRecord?.make || '');
         // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedModel(editRecord?.model || '');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editRecord, isOpen]);
 
   // Derived Options
@@ -1154,15 +1156,16 @@ export default function TelecallingPage() {
     // Update UI immediately
     setAllLeadCalls((prev) => [optimisticRecord, ...prev]);
     setIsModalOpen(false);
+    toast.info('Saving record...', { duration: 2000 });
 
     // Save to backend immediately
     try {
       const formData = new FormData();
 
-      // Core fields
-      formData.append('carRegistrationNumber', newCall.carRegistrationNumber || '');
+      // Core fields - with defaults to prevent backend errors
+      formData.append('carRegistrationNumber', newCall.carRegistrationNumber || '0');
       formData.append('ownerName', newCall.ownerName || '');
-      formData.append('yearOfRegistration', newCall.yearOfRegistration || '');
+      formData.append('yearOfRegistration', newCall.yearOfRegistration || '0');
       // Ensure ownershipSerialNumber is a number or string representation of it
       formData.append('ownershipSerialNumber', (newCall.ownershipSerialNumber || 0).toString());
       formData.append('make', newCall.make || '');
@@ -1215,18 +1218,18 @@ export default function TelecallingPage() {
 
       if (res.ok) {
         const savedRecord = await res.json();
-        // Replace temp record with actual saved record
         const actualRecord = savedRecord.data || savedRecord;
         setAllLeadCalls((prev) => prev.map((r) => (r._id === tempId ? actualRecord : r)));
+        toast.success('Record saved successfully!');
       } else {
         // Revert on failure
         setAllLeadCalls((prev) => prev.filter((r) => r._id !== tempId));
         const err = await res.json();
-        alert('Failed to save to backend: ' + (err.error || err.message || 'Unknown error'));
+        toast.error('Failed to save to backend: ' + (err.error || err.message || 'Unknown error'));
       }
     } catch (error) {
       setAllLeadCalls((prev) => prev.filter((r) => r._id !== tempId));
-      alert('Failed to save call: ' + (error as Error).message);
+      toast.error('Failed to save call: ' + (error as Error).message);
     }
   };
 
@@ -1240,7 +1243,8 @@ export default function TelecallingPage() {
      // Optimistic update
      setAllLeadCalls(prev => prev.map(r => r._id === recordId ? newRecord : r));
      setIsModalOpen(false);
-
+     toast.info('Updating record...', { duration: 1500 });
+     
      try {
        const payload = {
          ...updatedData,
@@ -1263,11 +1267,13 @@ export default function TelecallingPage() {
        if (!res.ok) {
          setAllLeadCalls(prev => prev.map(r => r._id === recordId ? oldRecord : r));
          const err = await res.json();
-         alert('Failed to update: ' + (err.error || err.message || 'Unknown error'));
+         toast.error('Failed to update: ' + (err.error || err.message || 'Unknown error'));
+       } else {
+         toast.success('Record updated successfully');
        }
      } catch (error) {
        setAllLeadCalls(prev => prev.map(r => r._id === recordId ? oldRecord : r));
-       alert('Update error: ' + (error as Error).message);
+       toast.error('Update error: ' + (error as Error).message);
      }
   }, [editingRecord, currentUser, getUpdateUrl, AUTH_TOKEN]);
 
@@ -1280,6 +1286,7 @@ export default function TelecallingPage() {
     // Optimistic delete
     setAllLeadCalls(prev => prev.filter(r => r._id !== recordId));
     setIsDeleteModalOpen(false);
+    toast.info('Deleting record...');
 
     try {
       const res = await fetch(getDeleteUrl(), {
@@ -1294,11 +1301,13 @@ export default function TelecallingPage() {
       if (!res.ok) {
         setAllLeadCalls(prev => [oldRecord, ...prev]);
         const err = await res.json();
-        alert('Failed to delete: ' + (err.error || err.message || 'Unknown error'));
+        toast.error('Failed to delete: ' + (err.error || err.message || 'Unknown error'));
+      } else {
+        toast.success('Record deleted successfully');
       }
     } catch (error) {
       setAllLeadCalls(prev => [oldRecord, ...prev]);
-      alert('Delete error: ' + (error as Error).message);
+      toast.error('Delete error: ' + (error as Error).message);
     }
   }, [deletingRecord, getDeleteUrl, AUTH_TOKEN]);
 
