@@ -17,10 +17,9 @@ export default function SettingsSidebar({
   const pathname = usePathname();
 
   const sections = [
-    { id: 'settings', label: 'Settings' },
+    { id: 'module-settings', label: 'Module Settings' },
     { id: 'dropdowns', label: 'Dropdowns' },
     { id: 'car-variances', label: 'Car Variances' },
-    { id: 'module-settings', label: 'Module Settings' },
   ];
 
   const handleClick = (id: string) => {
@@ -28,12 +27,10 @@ export default function SettingsSidebar({
       router.push('/admin/settings/module-settings');
     } else if (id === 'car-variances') {
       router.push('/admin/settings/car-variances');
+    } else if (id === 'dropdowns') {
+      router.push('/admin/settings/dropdowns');
     } else {
-      if (pathname.includes('/module-settings') || pathname.includes('/car-variances')) {
-        router.push(`/admin/settings?section=${id}`);
-      } else {
-        onNavigate?.(id);
-      }
+      onNavigate?.(id);
     }
   };
 

@@ -45,11 +45,17 @@ function CarVariancesPageContent() {
         headers: { 'Authorization': AUTH_TOKEN },
         cache: 'no-store'
       });
-      if (res.ok) {
+        if (res.ok) {
         const data = await res.json();
         const items = Array.isArray(data) ? data : (data.data || []);
-        // Check multiple possible properties for total count and ensure it is a number
-        const total = data.totalCount || data.count || data.total || (items.length === itemsPerPage ? items.length * 2 : items.length); 
+        
+        // Extract total count from pagination object or fallbacks
+        const total = 
+          data.pagination?.totalItems || 
+          data.totalCount || 
+          data.count || 
+          data.total || 
+          (items.length === itemsPerPage ? items.length * 2 : items.length); 
         
         setCarVariances(items.map((c: any) => ({
           _id: c._id || c.id,
@@ -87,13 +93,6 @@ function CarVariancesPageContent() {
     );
     setActionsContent(
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => setIsImportModalOpen(true)}
-          className="flex items-center justify-center w-8 h-8 text-blue-500 hover:bg-blue-50 transition-colors border border-blue-200 rounded-lg"
-          title="Import Car Variances"
-        >
-          <Download className="w-4 h-4" />
-        </button>
         <button
           onClick={() => {
             setEditingCarVariance(null);

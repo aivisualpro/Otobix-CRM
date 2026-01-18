@@ -21,7 +21,12 @@ import {
   BadgeCheck,
   Fuel,
   Settings,
-  AlertCircle
+  LayoutGrid,
+  Armchair,
+  FileText,
+  ArrowUp,
+  Activity,
+  Shield,
 } from 'lucide-react';
 
 // --- Types ---
@@ -54,6 +59,7 @@ const CountdownTimer = ({ endTime }: { endTime: string | undefined }) => {
   const [timeLeft, setTimeLeft] = useState<string>('00:00:00');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     if (!endTime) {
       setTimeLeft('00:00:00');
       return;
@@ -114,18 +120,10 @@ const CarDetailsModal = ({
   const [details, setDetails] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const backendBaseUrl = process.env.NEXT_PUBLIC_BACKENDBASEURL;
-  const detailsPath = process.env.NEXT_PUBLIC_CAR_DETAILS;
-
-  useEffect(() => {
-    if (isOpen && carId && authToken) {
-      fetchDetails();
-    } else {
-      setDetails(null);
-      setActiveImage(0);
-    }
-  }, [isOpen, carId, authToken]);
+  const detailsPath = process.env.NEXT_PUBLIC_CAR_DETAILS || 'car/details';
 
   const fetchDetails = async () => {
     setIsLoading(true);
@@ -145,171 +143,386 @@ const CarDetailsModal = ({
     }
   };
 
+  useEffect(() => {
+    if (isOpen && carId && authToken) {
+      fetchDetails();
+    } else {
+      setDetails(null);
+      setActiveImage(0);
+      setActiveTab('overview');
+    }
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, carId, authToken]);
+
+
   if (!isOpen) return null;
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: LayoutGrid },
+    { id: 'exterior', label: 'Exterior', icon: Car },
+    { id: 'interior', label: 'Interior', icon: Armchair },
+    { id: 'engine', label: 'Engine & Chassis', icon: Settings },
+    { id: 'docs', label: 'Documents', icon: FileText },
+  ];
+
+  // Helper to safely display dropdown lists or single values
+  const displayValue = (val: any) => {
+      if (Array.isArray(val)) return val.join(', ');
+      return val || '-';
+  };
+
+  // Helper for status badges
+  const StatusBadge = ({ value, type = 'neutral' }: { value: string, type?: 'success' | 'warning' | 'error' | 'neutral' | 'info' }) => {
+      if (!value) return <span className="text-slate-300">-</span>;
+      
+      const styles = {
+          success: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+          warning: 'bg-amber-50 text-amber-700 border-amber-100',
+          error: 'bg-red-50 text-red-700 border-red-100',
+          neutral: 'bg-slate-50 text-slate-600 border-slate-100',
+          info: 'bg-blue-50 text-blue-700 border-blue-100'
+      };
+
+      // Auto-detect type for common values if generic
+      let detectedType = type;
+      const lower = value.toLowerCase();
+      if (['ok', 'original', 'good', 'available', 'yes'].some(k => lower.includes(k))) detectedType = 'success';
+      if (['repaired', 'dent', 'scratch', 'faded', 'crack', 'torn', 'worn'].some(k => lower.includes(k))) detectedType = 'warning';
+      if (['replace', 'missing', 'damaged', 'major', 'no'].some(k => lower.includes(k))) detectedType = 'error';
+
+      return (
+          <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${styles[detectedType]} tracking-wide`}>
+              {value}
+          </span>
+      );
+  };
+
+  const SectionTitle = ({ icon: Icon, title }: { icon: any, title: string }) => (
+      <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+          <div className="p-1.5 bg-blue-50 rounded-lg">
+            <Icon className="w-4 h-4 text-blue-600" />
+          </div>
+          <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">{title}</h4>
+      </div>
+  );
+
+  const GridItem = ({ label, value, highlight = false }: { label: string, value: any, highlight?: boolean }) => (
+    <div className={`flex flex-col gap-1 p-3 rounded-xl transition-all ${highlight ? 'bg-slate-50' : 'hover:bg-slate-50/50'}`}>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</span>
+        <span className={`text-xs font-bold ${highlight ? 'text-slate-900' : 'text-slate-700'} break-words`}>
+           {typeof value === 'object' && !Array.isArray(value) && value !== null ? '-' : displayValue(value)}
+        </span>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-all duration-300">
-      <div className="bg-white w-full max-w-5xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Car className="w-5 h-5 text-blue-600" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md transition-all duration-300">
+      <div className="bg-white w-full max-w-7xl h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300 border border-white/20">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-white z-20">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 text-white">
+              <Car className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-800 leading-tight">
-                {isLoading ? 'Loading vehicle...' : `${details?.make || ''} ${details?.model || ''}`}
+              <h3 className="text-xl font-black text-slate-900 leading-none mb-1">
+                {isLoading ? 'Loading...' : `${details?.make || ''} ${details?.model || ''}`}
               </h3>
               {!isLoading && (
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                  {details?.carRegistrationNumber} &bull; {details?.variant}
-                </p>
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                  <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-bold tracking-wide">{details?.variant}</span>
+                  <span>&bull;</span>
+                  <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-bold">{details?.carRegistrationNumber}</span>
+                  <span>&bull;</span>
+                  <span>{details?.ownershipSerialNumber || 1}st Owner</span>
+                </div>
               )}
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-red-500 transition-all active:scale-90"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-rose-500 transition-all active:scale-95"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Modal Content */}
-        <div className="flex-1 overflow-auto custom-scrollbar p-6">
-          {isLoading ? (
-            <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400">
-               <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-               <p className="font-bold text-sm tracking-widest uppercase">Fetching Records...</p>
-            </div>
-          ) : details ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Left Column: Images & Key Info */}
-              <div className="space-y-6">
-                <div className="relative group">
-                   <div className="aspect-[16/10] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200">
-                      <img 
-                        src={details.carImages?.[activeImage] || details.imageUrl} 
-                        alt="Car" 
-                        className="w-full h-full object-cover"
-                      />
-                   </div>
-                   {details.carImages?.length > 1 && (
-                     <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        {details.carImages.map((img: string, idx: number) => (
-                           <button 
-                             key={idx}
-                             onClick={() => setActiveImage(idx)}
-                             className={`w-20 h-14 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${activeImage === idx ? 'border-blue-500 scale-105 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                           >
-                             <img src={img} className="w-full h-full object-cover" />
-                           </button>
-                        ))}
-                     </div>
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar Tabs */}
+          <div className="w-64 bg-slate-50 border-r border-slate-200 flex flex-col py-6 gap-2 px-4 shrink-0 overflow-y-auto">
+             {tabs.map(tab => (
+                 <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all duration-200 ${
+                        activeTab === tab.id 
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 translate-x-1' 
+                        : 'text-slate-500 hover:bg-white hover:text-blue-600 hover:shadow-sm'
+                    }`}
+                 >
+                    <tab.icon className="w-4 h-4" />
+                    {tab.label}
+                 </button>
+             ))}
+             
+             <div className="mt-auto px-4 pt-6 border-t border-slate-200">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Quick Actions</div>
+                <button className="w-full flex items-center gap-2 justify-center py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:border-blue-300 hover:text-blue-600 shadow-sm transition-all mb-2">
+                   <Download className="w-4 h-4" /> Inspection PDF
+                </button>
+             </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 overflow-auto custom-scrollbar p-8 bg-white/50 relative">
+             {isLoading ? (
+               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10">
+                  <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-slate-500 font-bold text-sm tracking-widest uppercase animate-pulse">Retrieving Data...</p>
+               </div>
+             ) : details && (
+                <div className="max-w-5xl mx-auto space-y-8 pb-12">
+                   
+                   {/* Overview Tab */}
+                   {activeTab === 'overview' && (
+                       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                           {/* Gallery & Pricing */}
+                           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                               <div className="lg:col-span-2 space-y-4">
+                                   <div className="aspect-video bg-slate-100 rounded-2xl overflow-hidden shadow-sm relative group">
+                                       <img 
+                                         src={details.carImages?.[activeImage] || details.imageUrl || details.frontMainImages?.[0] || '/placeholder-car.png'} 
+                                         alt="Car Main" 
+                                         className="w-full h-full object-cover"
+                                       />
+                                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
+                                          <div className="flex gap-2 p-2 bg-black/40 backdrop-blur rounded-full">
+                                            {details.carImages?.map((_: any, idx: number) => (
+                                                <button 
+                                                  key={idx} 
+                                                  onClick={(e) => { e.stopPropagation(); setActiveImage(idx); }}
+                                                  className={`w-2 h-2 rounded-full transition-all ${activeImage === idx ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/80'}`} 
+                                                />
+                                            ))}
+                                          </div>
+                                       </div>
+                                       <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[10px] font-bold shadow-sm">
+                                          {activeImage + 1} / {details.carImages?.length || 1}
+                                       </div>
+                                   </div>
+                               </div>
+                               <div className="space-y-4">
+                                   <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-xl shadow-blue-600/20">
+                                       <p className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1">Highest Bid</p>
+                                       <div className="text-3xl font-black mb-4">₹{(details.highestBid || 0).toLocaleString()}</div>
+                                       <div className="flex items-center gap-2 text-blue-100 text-xs font-medium bg-white/10 p-2 rounded-lg">
+                                          <Gavel className="w-3 h-3" />
+                                          <span>{details.totalBids || 0} active bids</span>
+                                       </div>
+                                   </div>
+                                   <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+                                       <div>
+                                           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Base Price</p>
+                                           <div className="text-xl font-bold text-slate-800">₹{(details.priceDiscovery || details.basePrice || 0).toLocaleString()}</div>
+                                       </div>
+                                       <div>
+                                           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Customer Expectation</p>
+                                           <div className="text-xl font-bold text-slate-800">₹{(details.customerExpectedPrice || 0).toLocaleString()}</div>
+                                       </div>
+                                       <div className="pt-4 border-t border-slate-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                                                    <User className="w-5 h-5 text-slate-400" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-xs font-bold text-slate-900">{details.ownerName || 'Unknown'}</div>
+                                                    <div className="text-[10px] font-medium text-slate-500">{details.location || details.city}</div>
+                                                </div>
+                                            </div>
+                                       </div>
+                                   </div>
+                               </div>
+                           </div>
+
+                           {/* Spec Grid */}
+                           <div>
+                               <SectionTitle icon={Info} title="Key Specifications" />
+                               <div className="grid grid-cols-2md:grid-cols-4 gap-4">
+                                   <GridItem label="Make / Model" value={`${details.make} ${details.model}`} highlight />
+                                   <GridItem label="Variant" value={details.variant} highlight />
+                                   <GridItem label="Reg. Year" value={details.yearOfRegistration} />
+                                   <GridItem label="Kms Driven" value={`${(details.odometerReadingInKms || 0).toLocaleString()} km`} />
+                                   <GridItem label="Fuel Type" value={details.fuelType} />
+                                   <GridItem label="Transmission" value={details.transmission || details.transmissionTypeDropdownList?.[0]} />
+                                   <GridItem label="Ownership" value={details.ownershipSerialNumber} />
+                                   <GridItem label="RTO" value={details.registeredRto} />
+                                   <GridItem label="Insurance" value={details.insurance} />
+                                   <GridItem label="Color" value={details.exteriorColor || details.color} />
+                                   <GridItem label="Mfg Date" value={details.yearMonthOfManufacture ? new Date(details.yearMonthOfManufacture).toLocaleDateString(undefined, {month:'short', year:'numeric'}) : '-'} />
+                                   <GridItem label="Status" value={<StatusBadge value={details.auctionStatus || details.status} type="info" />} />
+                               </div>
+                           </div>
+                       </div>
                    )}
+
+                   {/* Exterior Tab */}
+                   {activeTab === 'exterior' && (
+                       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                               <div>
+                                   <SectionTitle icon={Car} title="Panels & Structure" />
+                                   <div className="grid grid-cols-2 gap-3">
+                                       <GridItem label="Bonnet" value={<StatusBadge value={details.bonnet} />} />
+                                       <GridItem label="Roof" value={<StatusBadge value={details.roof} />} />
+                                       <GridItem label="Front Bumper" value={<StatusBadge value={details.frontBumper} />} />
+                                       <GridItem label="Rear Bumper" value={<StatusBadge value={details.rearBumper} />} />
+                                       <GridItem label="Boot Door" value={<StatusBadge value={details.bootDoor} />} />
+                                       <GridItem label="Dickey Floor" value={<StatusBadge value={details.bootFloor} />} />
+                                       <GridItem label="Cowl Top" value={<StatusBadge value={details.cowlTop} />} />
+                                       <GridItem label="Firewall" value={<StatusBadge value={details.firewall} />} />
+                                   </div>
+                               </div>
+                               <div>
+                                   <SectionTitle icon={ArrowUp} title="Sides & Glass" />
+                                    <div className="grid grid-cols-2 gap-3">
+                                       <GridItem label="LHS Front Door" value={<StatusBadge value={details.lhsFrontDoor} />} />
+                                       <GridItem label="RHS Front Door" value={<StatusBadge value={details.rhsFrontDoor} />} />
+                                       <GridItem label="LHS Rear Door" value={<StatusBadge value={details.lhsRearDoor} />} />
+                                       <GridItem label="RHS Rear Door" value={<StatusBadge value={details.rhsRearDoor} />} />
+                                       <GridItem label="Front Windshield" value={<StatusBadge value={details.frontWindshield} />} />
+                                       <GridItem label="Rear Windshield" value={<StatusBadge value={details.rearWindshield} />} />
+                                       <GridItem label="LHS Fender" value={<StatusBadge value={details.lhsFender} />} />
+                                       <GridItem label="RHS Fender" value={<StatusBadge value={details.rhsFender} />} />
+                                   </div>
+                               </div>
+                           </div>
+                           
+                           <div>
+                               <SectionTitle icon={Activity} title="Lighting & Tyres" />
+                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                   <GridItem label="LHS Headlamp" value={<StatusBadge value={details.lhsHeadlamp} />} />
+                                   <GridItem label="RHS Headlamp" value={<StatusBadge value={details.rhsHeadlamp} />} />
+                                   <GridItem label="LHS Tail Lamp" value={<StatusBadge value={details.lhsTailLamp} />} />
+                                   <GridItem label="RHS Tail Lamp" value={<StatusBadge value={details.rhsTailLamp} />} />
+                                   <GridItem label="LHS Front Tyre" value={<StatusBadge value={details.lhsFrontTyre} />} />
+                                   <GridItem label="RHS Front Tyre" value={<StatusBadge value={details.rhsFrontTyre} />} />
+                                   <GridItem label="LHS Rear Tyre" value={<StatusBadge value={details.lhsRearTyre} />} />
+                                   <GridItem label="RHS Rear Tyre" value={<StatusBadge value={details.rhsRearTyre} />} />
+                               </div>
+                           </div>
+                           
+                           {details.comments && (
+                               <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Exterior Comments</p>
+                                   <p className="text-sm font-medium text-slate-700">{details.comments}</p>
+                               </div>
+                           )}
+                       </div>
+                   )}
+
+                   {/* Interior Tab */}
+                   {activeTab === 'interior' && (
+                       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                               <GridItem label="Odometer" value={details.odometerReadingInKms} highlight />
+                               <GridItem label="AC Cooling" value={details.acCoolingDropdownList || details.airConditioningClimateControl} />
+                               <GridItem label="Heater" value={details.airConditioningManual} />
+                               <GridItem label="Music System" value={details.musicSystem} />
+                               <GridItem label="Power Windows" value={details.noOfPowerWindows} />
+                               <GridItem label="Leather Seats" value={details.leatherSeats} />
+                               <GridItem label="Sunroof" value={details.sunroof} />
+                               <GridItem label="Steering Audio" value={details.steeringMountedAudioControl} />
+                               <GridItem label="Reverse Camera" value={details.reverseCamera} />
+                           </div>
+
+                           <div>
+                               <SectionTitle icon={Shield} title="Safety & Airbags" />
+                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                   <GridItem label="Airbags Count" value={details.noOfAirBags} highlight />
+                                   <GridItem label="ABS" value={details.abs} />
+                                   <GridItem label="Driver Airbag" value={details.driverAirbag} />
+                                   <GridItem label="Co-Driver Airbag" value={details.coDriverAirbag} />
+                               </div>
+                           </div>
+
+                           {details.commentOnInterior && (
+                               <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Interior Comments</p>
+                                   <p className="text-sm font-medium text-slate-700">{details.commentOnInterior}</p>
+                               </div>
+                           )}
+                       </div>
+                   )}
+
+                   {/* Engine & Chassis Tab */}
+                   {activeTab === 'engine' && (
+                       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                               <GridItem label="Engine" value={<StatusBadge value={details.engine} />} />
+                               <GridItem label="Battery" value={<StatusBadge value={details.battery} />} />
+                               <GridItem label="Suspension" value={<StatusBadge value={details.suspension} />} />
+                               <GridItem label="Clutch" value={<StatusBadge value={details.clutch} />} />
+                               <GridItem label="Gear Shift" value={<StatusBadge value={details.gearShift} />} />
+                               <GridItem label="Brakes" value={<StatusBadge value={details.brakes} />} />
+                               <GridItem label="Steering" value={<StatusBadge value={details.steering} />} />
+                               <GridItem label="Engine Oil" value={<StatusBadge value={details.engineOil} />} />
+                               <GridItem label="Coolant" value={<StatusBadge value={details.coolant} />} />
+                               <GridItem label="Exhaust Smoke" value={<StatusBadge value={details.exhaustSmoke} />} />
+                               <GridItem label="Engine Mount" value={<StatusBadge value={details.engineMount} />} />
+                               <GridItem label="Blow By" value={<StatusBadge value={details.enginePermisableBlowBy} />} />
+                           </div>
+
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                               {details.commentsOnEngine && (
+                                   <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Engine Comments</p>
+                                      <p className="text-sm font-medium text-slate-700">{details.commentsOnEngine}</p>
+                                   </div>
+                               )}
+                               {details.commentsOnTransmission && (
+                                   <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Transmission Comments</p>
+                                      <p className="text-sm font-medium text-slate-700">{details.commentsOnTransmission}</p>
+                                   </div>
+                               )}
+                           </div>
+                       </div>
+                   )}
+
+                   {/* Documents Tab */}
+                   {activeTab === 'docs' && (
+                       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                               <GridItem label="RC Availability" value={details.rcBookAvailability} highlight />
+                               <GridItem label="RC Condition" value={details.rcCondition} />
+                               <GridItem label="Registration Type" value={details.registrationType} />
+                               <GridItem label="Mismatch in RC" value={details.mismatchInRc} />
+                               <GridItem label="Duplicate Key" value={details.duplicateKey} />
+                               <GridItem label="Part Peshi" value={details.partyPeshi} />
+                               <GridItem label="RTO NOC" value={details.rtoNoc} />
+                               <GridItem label="Hypothecation" value={details.hypothecationDetails} />
+                               <GridItem label="Chassis Number" value={details.chassisNumber} />
+                               <GridItem label="Engine Number" value={details.engineNumber} />
+                           </div>
+
+                           <div>
+                               <SectionTitle icon={FileText} title="Tax & Insurance" />
+                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                   <GridItem label="Road Tax Validity" value={details.roadTaxValidity} />
+                                   <GridItem label="Tax Valid Till" value={details.taxValidTill ? new Date(details.taxValidTill).toLocaleDateString() : '-'} />
+                                   <GridItem label="Insurance Type" value={details.insurance} />
+                                   <GridItem label="Insurance Validity" value={details.insuranceValidity ? new Date(details.insuranceValidity).toLocaleDateString() : '-'} />
+                                   <GridItem label="No Claim Bonus" value={details.noClaimBonus} />
+                                   <GridItem label="Policy Number" value={details.insurancePolicyNumber || details.policyNumber} />
+                               </div>
+                           </div>
+                       </div>
+                   )}
+
                 </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                   {[
-                     { label: 'Highest Bid', value: `₹${(details.highestBid || 0).toLocaleString()}`, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
-                     { label: 'Year', value: details.yearOfRegistration, icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50' },
-                     { label: 'Fuel Type', value: details.fuelType || 'Diesel', icon: Fuel, color: 'text-emerald-600', bg: 'bg-emerald-50' }
-                   ].map((item, idx) => (
-                     <div key={idx} className={`${item.bg} p-4 rounded-xl border border-slate-100`}>
-                        <item.icon className={`w-4 h-4 ${item.color} mb-2`} />
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">{item.label}</div>
-                        <div className={`text-sm font-black ${item.color}`}>{item.value}</div>
-                     </div>
-                   ))}
-                </div>
-              </div>
-
-              {/* Right Column: Detailed Specs */}
-              <div className="space-y-8">
-                 <section>
-                    <div className="flex items-center gap-2 mb-4">
-                       <Info className="w-4 h-4 text-blue-500" />
-                       <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Configuration</h4>
-                    </div>
-                    <div className="grid grid-cols-2 gap-y-4 gap-x-8">
-                       {[
-                         { label: 'Transmission', value: details.transmission || 'Manual' },
-                         { label: 'Kms Driven', value: `${(details.odometerReadingInKms || 0).toLocaleString()} KM` },
-                         { label: 'Ownership', value: `${details.ownershipSerialNumber || 1}st Owner` },
-                         { label: 'Body Type', value: details.bodyType || 'SUV' },
-                         { label: 'Color', value: details.exteriorColor || 'White' },
-                         { label: 'Engine Cap', value: details.engineCapacity || '2200 CC' }
-                       ].map((spec, idx) => (
-                         <div key={idx} className="flex flex-col">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{spec.label}</span>
-                            <span className="text-xs font-extrabold text-slate-700">{spec.value}</span>
-                         </div>
-                       ))}
-                    </div>
-                 </section>
-
-                 <section className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                    <div className="flex items-center gap-2 mb-4">
-                       <User className="w-4 h-4 text-blue-500" />
-                       <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Seller Context</h4>
-                    </div>
-                    <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-slate-200">
-                          <User className="w-6 h-6 text-slate-400" />
-                       </div>
-                       <div>
-                          <div className="text-sm font-black text-slate-800">{details.ownerName || 'Unknown Owner'}</div>
-                          <div className="flex items-center gap-4 mt-1">
-                             <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
-                                <Phone className="w-3.5 h-3.5" />
-                                {details.customerContactNumber || 'N/A'}
-                             </div>
-                             <div className="flex items-center gap-1 text-[11px] text-slate-500 font-bold">
-                                <MapPin className="w-3.5 h-3.5" />
-                                {details.location || 'Kolkata'}
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-                 </section>
-
-                 <section>
-                    <div className="flex items-center gap-2 mb-4">
-                       <BadgeCheck className="w-4 h-4 text-emerald-500" />
-                       <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Valuation Summary</h4>
-                    </div>
-                    <div className="space-y-3">
-                       <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
-                          <span className="text-xs font-bold text-blue-700">Customer Expected Price</span>
-                          <span className="text-sm font-black text-blue-800">₹{(details.customerExpectedPrice || 0).toLocaleString()}</span>
-                       </div>
-                       <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl">
-                          <span className="text-xs font-bold text-emerald-700">Highest Bidding Price</span>
-                          <span className="text-sm font-black text-emerald-800">₹{(details.highestBid || 0).toLocaleString()}</span>
-                       </div>
-                    </div>
-                 </section>
-              </div>
-            </div>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400">
-               <AlertCircle className="w-12 h-12 mb-2" />
-               <p>Unable to retrieve vehicle details.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Modal Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 z-20">
-           <button 
-             onClick={onClose}
-             className="px-6 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors"
-           >
-             Close
-           </button>
-           <button className="px-6 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all">
-             Print Inspection Report
-           </button>
+             )}
+          </div>
         </div>
       </div>
     </div>
@@ -388,6 +601,7 @@ export default function AuctionsPage() {
     if (authToken) {
         fetchCars(activeTab);
     }
+     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, authToken]);
 
   useEffect(() => {
@@ -594,10 +808,14 @@ export default function AuctionsPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50/30">
         <Table
-          columns={columns}
+          columns={columns.slice(0, -1)} // Remove the last column (Manage button)
           data={filteredCars}
           isLoading={isLoading}
           keyField="_id"
+          onRowClick={(car) => {
+            setSelectedCarId(car._id || car.id);
+            setIsDetailsModalOpen(true);
+          }}
           emptyMessage={`No vehicles found in ${activeTab || 'selected'} status.`}
         />
 

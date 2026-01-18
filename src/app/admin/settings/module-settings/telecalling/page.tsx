@@ -190,7 +190,7 @@ export default function ModuleTelecallingPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="max-w-4xl mx-auto space-y-4">
+      <div className="space-y-4">
         {/* Data Management Section */}
         <Card className="rounded-xl shadow-sm border">
           <CardHeader className="pb-4">
