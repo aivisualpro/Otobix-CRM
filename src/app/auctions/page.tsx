@@ -139,12 +139,43 @@ const CarDetailsModal = ({
         // Construct a normalized images array
         const images: string[] = [];
         
-        // Helper to push valid images
+        // Helper to push valid images and handle relative paths
+        const processImageUrl = (img: string) => {
+            if (!img || typeof img !== 'string' || img.length < 5) return null;
+            
+            // Check if it's already an absolute URL (http/https/data)
+            if (img.startsWith('http') || img.startsWith('data:')) {
+                return img;
+            }
+            
+            // If it looks like a relative path from backend (e.g. contains spaces or slashes but no protocol)
+            // We assume it needs to be prefixed with backendBaseUrl (stripping 'api/' if present, or finding the root)
+            // However, typically the backend might serve static files from a specific root. 
+            // If backendBaseUrl is 'https://.../api/', we might need 'https://.../'
+            
+            let baseUrl = backendBaseUrl || '';
+            if (baseUrl.endsWith('api/')) {
+                baseUrl = baseUrl.replace('api/', '');
+            }
+            if (!baseUrl.endsWith('/')) {
+                baseUrl += '/';
+            }
+
+            // Remove leading slash from img if present to avoid double slash
+            const cleanImg = img.startsWith('/') ? img.substring(1) : img;
+            
+            return `${baseUrl}${cleanImg}`;
+        };
+
         const addImages = (source: any) => {
              if (Array.isArray(source)) {
-                 source.forEach(img => typeof img === 'string' && img.length > 5 && images.push(img));
-             } else if (typeof source === 'string' && source.length > 5) {
-                 images.push(source);
+                 source.forEach(img => {
+                     const processed = processImageUrl(img);
+                     if (processed) images.push(processed);
+                 });
+             } else if (typeof source === 'string') {
+                 const processed = processImageUrl(source);
+                 if (processed) images.push(processed);
              }
         };
 
@@ -167,7 +198,8 @@ const CarDetailsModal = ({
         
         // Fallback or single image
         if (images.length === 0 && rawDetails.imageUrl) {
-            images.push(rawDetails.imageUrl);
+             const processed = processImageUrl(rawDetails.imageUrl);
+             if (processed) images.push(processed);
         }
 
         setDetails({ ...rawDetails, carImages: images.length > 0 ? images : null });
