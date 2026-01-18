@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, FormEvent, useRef } from 'react';
+import { useState, useEffect, FormEvent, useRef, Suspense, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Settings as SettingsIcon,
   Plus,
@@ -16,16 +17,21 @@ import {
   List,
   Code,
   ChevronDown,
-  Image,
+  Image as ImageIcon,
   Palette,
   Search,
   Check,
+  Download, 
+  Upload, 
+  Car
 } from 'lucide-react';
+import Image from 'next/image';
 import { useHeader } from '@/context/HeaderContext';
 import Table from '@/components/Table';
+import SettingsSidebar from '@/components/SettingsSidebar';
 import GlobalImportModal from '@/components/GlobalImportModal';
 import CarVarianceModal from '@/components/CarVarianceModal';
-import { Download, Upload, Car } from 'lucide-react'; // Added Car icon
+
 
 // --- Types ---
 interface Setting {
@@ -49,15 +55,7 @@ interface DropdownItem {
   sortOrder: number;
 }
 
-interface CarVariance {
-  _id: string;
-  make: string;
-  carModel: string;
-  variant: string;
-  price: number;
-}
-
-type ActiveSection = 'settings' | 'dropdowns' | 'car-variances';
+type ActiveSection = 'settings' | 'dropdowns';
 
 // Predefined colors
 const PRESET_COLORS = [
@@ -309,10 +307,7 @@ const SettingCard = ({ setting, onUpdate, onDelete }: SettingCardProps) => {
   const [localValue, setLocalValue] = useState(setting.value);
   const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    setLocalValue(setting.value);
-    setHasChanges(false);
-  }, [setting.value]);
+
 
   const handleChange = (newValue: any) => {
     setLocalValue(newValue);
@@ -637,17 +632,19 @@ const DropdownModal = ({
   const [description, setDescription] = useState(editItem?.description || '');
 
   useEffect(() => {
-    if (editItem) {
-      setSelectedType(editItem.type);
-      setSelectedColor(editItem.color || '');
-      setIconUrl(editItem.icon || '');
-      setDescription(editItem.description);
-    } else {
-      setSelectedType('');
-      setSelectedColor('');
-      setIconUrl('');
-      setDescription('');
-    }
+    Promise.resolve().then(() => {
+      if (editItem) {
+        setSelectedType(editItem.type);
+        setSelectedColor(editItem.color || '');
+        setIconUrl(editItem.icon || '');
+        setDescription(editItem.description);
+      } else {
+        setSelectedType('');
+        setSelectedColor('');
+        setIconUrl('');
+        setDescription('');
+      }
+    });
   }, [editItem, isOpen]);
 
   if (!isOpen) return null;
@@ -670,18 +667,18 @@ const DropdownModal = ({
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Description *</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Value *</label>
             <input
               type="text"
               required
               className="form-input"
-              placeholder="Enter description..."
+              placeholder="Enter value..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Type *</label>
+            <label className="block text-xs font-semibold text-slate-500 mb-1">Name (Group) *</label>
             <SearchableTypeSelect
               value={selectedType}
               onChange={setSelectedType}
@@ -691,7 +688,7 @@ const DropdownModal = ({
           <div>
             <label className="block text-xs font-semibold text-slate-500 mb-1">
               <span className="flex items-center gap-1">
-                <Image className="w-3 h-3" /> Icon (URL)
+                 <ImageIcon className="w-3 h-3" /> Icon (URL)
               </span>
             </label>
             <input
@@ -703,7 +700,9 @@ const DropdownModal = ({
             />
             {iconUrl && (
               <div className="mt-2 p-2 bg-gray-50 rounded-lg inline-block">
-                <img src={iconUrl} alt="Preview" className="w-8 h-8 object-contain" />
+                <div className="relative w-8 h-8">
+                  <Image src={iconUrl} alt="Preview" fill className="object-contain" />
+                </div>
               </div>
             )}
           </div>
@@ -729,53 +728,81 @@ const DropdownModal = ({
   );
 };
 
-// --- Main Page ---
-export default function SettingsPage() {
+// --- Main Page Content ---
+function SettingsPageContent() {
   const { setTitle, setSearchContent, setActionsContent } = useHeader();
 
   const [activeSection, setActiveSection] = useState<ActiveSection>('settings');
   const [settings, setSettings] = useState<Setting[]>([]);
   const [dropdowns, setDropdowns] = useState<DropdownItem[]>([]);
   const [dropdownTypes, setDropdownTypes] = useState<string[]>([]);
-  const [carVariances, setCarVariances] = useState<CarVariance[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // API Configuration
+  const getBaseUrl = useCallback(() => process.env.NEXT_PUBLIC_BACKENDBASEURL || 'https://otobix-app-backend-development.onrender.com/api/', []);
+  const AUTH_TOKEN = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MDBhYzc2NTA4OGQxYTA2ODc3MDU0NCIsInVzZXJOYW1lIjoiY3VzdG9tZXIiLCJ1c2VyVHlwZSI6IkN1c3RvbWVyIiwiaWF0IjoxNzY0MzMxNjMxLCJleHAiOjIwNzk2OTE2MzF9.oXw1J4ca1XoIAg-vCO2y0QqZIq0VWHdYBrl2y9iIv4Q';
+
   const [isAddSettingModalOpen, setIsAddSettingModalOpen] = useState(false);
   const [isDropdownModalOpen, setIsDropdownModalOpen] = useState(false);
-  const [isCarVarianceModalOpen, setIsCarVarianceModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingDropdown, setEditingDropdown] = useState<DropdownItem | null>(null);
-  const [editingCarVariance, setEditingCarVariance] = useState<CarVariance | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       const res = await fetch('/api/settings', { cache: 'no-store' });
       if (res.ok) setSettings(await res.json());
     } catch {}
-  };
+  }, []);
 
-  const fetchDropdowns = async () => {
+  const fetchDropdowns = useCallback(async () => {
     try {
-      const [itemsRes, typesRes] = await Promise.all([
-        fetch('/api/dropdowns', { cache: 'no-store' }),
-        fetch('/api/dropdowns/types', { cache: 'no-store' }),
-      ]);
-      if (itemsRes.ok) setDropdowns(await itemsRes.json());
-      if (typesRes.ok) setDropdownTypes(await typesRes.json());
-    } catch {}
-  };
+      const url = `${getBaseUrl()}${process.env.NEXT_PUBLIC_SETTINGS_DROPDOWNS_LIST || 'admin/dropdowns/get-all-dropdowns-list'}`;
+      const res = await fetch(url, {
+        headers: { 
+          'Authorization': AUTH_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        cache: 'no-store'
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        const allItems = Array.isArray(data) ? data : (data.data || []);
+        
+        // Map to internal DropdownItem interface
+        const mappedItems = allItems.map((d: any) => ({
+          _id: d._id || d.id || d.dropdownId,
+          // SWAP: Name is Group (Type), Value is Item (Description)
+          description: (Array.isArray(d.dropdownValues) && d.dropdownValues.length > 0) 
+            ? d.dropdownValues[0] 
+            : (d.description || d.name || ''),
+          type: (Array.isArray(d.dropdownNames) && d.dropdownNames.length > 0) 
+            ? d.dropdownNames[0] 
+            : (d.type || ''),
+          icon: d.icon,
+          color: d.color,
+          isActive: d.isActive !== false,
+          sortOrder: d.sortOrder || 0
+        }));
+        
+        setDropdowns(mappedItems);
+        
+        // Extract unique types
+        const types = [...new Set(mappedItems.map((item: any) => item.type))].filter(Boolean) as string[];
+        setDropdownTypes(types.sort());
+      }
+    } catch (error) {
+      console.error('[Settings] Failed to fetch dropdowns:', error);
+    }
+  }, [getBaseUrl, AUTH_TOKEN]);
 
-  const fetchCarVariances = async () => {
-    try {
-      const res = await fetch('/api/car-variances', { cache: 'no-store' });
-      if (res.ok) setCarVariances(await res.json());
-    } catch {}
-  };
+  // Car variance moved to separate route
 
-  const seedDefaults = async () => {
+  const seedDefaults = useCallback(async () => {
     for (const s of DEFAULT_SETTINGS) {
       try {
         await fetch('/api/settings', {
@@ -786,20 +813,33 @@ export default function SettingsPage() {
       } catch {}
     }
     fetchSettings();
-  };
+  }, [fetchSettings]);
+
+
+
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await Promise.all([fetchSettings(), fetchDropdowns(), fetchCarVariances()]);
+      await Promise.all([fetchSettings(), fetchDropdowns()]);
       setLoading(false);
     };
     load();
-  }, []);
+  }, [fetchSettings, fetchDropdowns]);
 
   useEffect(() => {
-    if (!loading && settings.length === 0) seedDefaults();
-  }, [loading, settings.length]);
+    const section = searchParams.get('section');
+    if (section && ['settings', 'dropdowns'].includes(section)) {
+      Promise.resolve().then(() => setActiveSection(section as ActiveSection));
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!loading && settings.length === 0) {
+      Promise.resolve().then(() => seedDefaults());
+    }
+  }, [loading, settings.length, seedDefaults]);
 
   // Header - title, search, and action button
   useEffect(() => {
@@ -836,25 +876,6 @@ export default function SettingsPage() {
             <Plus className="w-4 h-4" /> Add Dropdown
           </button>
         </div>
-      ) : activeSection === 'car-variances' ? (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center justify-center w-8 h-8 text-blue-500 hover:bg-blue-50 transition-colors border border-blue-200 rounded-lg"
-            title="Import Car Variances"
-          >
-            <Download className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => {
-              setEditingCarVariance(null);
-              setIsCarVarianceModalOpen(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Add Variance
-          </button>
-        </div>
       ) : null
     );
   }, [setTitle, setSearchContent, setActionsContent, searchTerm, activeSection]);
@@ -888,12 +909,36 @@ export default function SettingsPage() {
   };
 
   const handleUpdateDropdown = async (id: string, data: Partial<DropdownItem>) => {
-    const res = await fetch(`/api/dropdowns/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (res.ok) setDropdowns((prev) => prev.map((d) => (d._id === id ? { ...d, ...data } : d)));
+    const url = `${getBaseUrl()}${process.env.NEXT_PUBLIC_SETTINGS_DROPDOWNS_ADD_UPDATE || 'admin/dropdowns/add-or-update'}`;
+    
+    // Get current item to preserve fields not being updated
+    const current = dropdowns.find(d => d._id === id);
+    if (!current) return;
+
+    const payload: any = {
+      dropdownId: id,
+      dropdownNames: [data.type || current.type],
+      dropdownValues: [data.description || current.description],
+      isActive: data.isActive !== undefined ? data.isActive : current.isActive
+    };
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': AUTH_TOKEN
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setDropdowns((prev) => prev.map((d) => (d._id === id ? { ...d, ...data } : d)));
+        fetchDropdowns(); // Refresh to ensure sync
+      }
+    } catch (error) {
+      console.error('[Settings] Update dropdown error:', error);
+    }
   };
 
   const handleDeleteDropdown = async (id: string) => {
@@ -905,57 +950,37 @@ export default function SettingsPage() {
     }
   };
 
-  const handleUpdateCarVariance = async (data: Omit<CarVariance, '_id'>) => {
-    if (editingCarVariance) {
-      // Update
-      const res = await fetch('/api/car-variances', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, _id: editingCarVariance._id }),
-      });
-      if (res.ok) {
-        setCarVariances((prev) =>
-          prev.map((c) => (c._id === editingCarVariance._id ? { ...c, ...data } : c))
-        );
-        setIsCarVarianceModalOpen(false);
-      }
-    } else {
-      // Create
-      const res = await fetch('/api/car-variances', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (res.ok) {
-        const newItem = await res.json();
-        setCarVariances((prev) => [...prev, newItem]);
-        setIsCarVarianceModalOpen(false);
-      }
-    }
-  };
-
-  const handleDeleteCarVariance = async (id: string) => {
-    if (confirm('Are you sure you want to delete this car variance?')) {
-      const res = await fetch(`/api/car-variances/${id}`, { method: 'DELETE' });
-      if (res.ok) setCarVariances((prev) => prev.filter((c) => c._id !== id));
-    }
-  };
+  // Handlers for car variance moved to separate route
 
 
 
   const handleSaveDropdown = async (data: Omit<DropdownItem, '_id' | 'isActive' | 'sortOrder'>) => {
-    if (editingDropdown) {
-      await handleUpdateDropdown(editingDropdown._id, data);
-    } else {
-      await fetch('/api/dropdowns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+    try {
+      if (editingDropdown) {
+        await handleUpdateDropdown(editingDropdown._id, data);
+      } else {
+        const url = `${getBaseUrl()}${process.env.NEXT_PUBLIC_SETTINGS_DROPDOWNS_ADD_UPDATE || 'admin/dropdowns/add-or-update'}`;
+        const payload = {
+          dropdownNames: [data.type],
+          dropdownValues: [data.description],
+          isActive: true
+        };
+
+        await fetch(url, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': AUTH_TOKEN
+          },
+          body: JSON.stringify(payload),
+        });
+        fetchDropdowns();
+      }
+      setIsDropdownModalOpen(false);
+      setEditingDropdown(null);
+    } catch (error) {
+      console.error('[Settings] Save dropdown error:', error);
     }
-    fetchDropdowns();
-    setIsDropdownModalOpen(false);
-    setEditingDropdown(null);
   };
 
   const openEditDropdown = (item: DropdownItem) => {
@@ -966,9 +991,11 @@ export default function SettingsPage() {
   // Filter
   const settingCategories = [...new Set(settings.map((s) => s.category || 'General'))].sort();
   const filteredSettings = settings.filter((s) => {
+    // Hide column configurations
+    if (s.key === 'telecalling_columns_config' || s.key === 'users_columns_config') return false;
+    
     const matchCat = !selectedCategory || s.category === selectedCategory;
     const matchSearch =
-      !searchTerm ||
       s.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.key.toLowerCase().includes(searchTerm.toLowerCase());
     return matchCat && matchSearch;
@@ -983,111 +1010,21 @@ export default function SettingsPage() {
     return matchType && matchSearch;
   });
 
-  // Dropdown Table Columns
-  const dropdownColumns = [
-    {
-      header: '',
-      render: (row: DropdownItem) => (
-        <div className="flex items-center gap-2">
-          {row.color && <div className="w-5 h-5 rounded" style={{ backgroundColor: row.color }} />}
-          {row.icon && <img src={row.icon} alt="" className="w-5 h-5 object-contain" />}
-        </div>
-      ),
-      width: '50px',
-    },
-    {
-      header: 'Description',
-      accessor: 'description' as keyof DropdownItem,
-      className: 'font-medium text-slate-800',
-    },
-    {
-      header: 'Type',
-      render: (row: DropdownItem) => (
-        <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-[10px] font-medium rounded">
-          {row.type}
-        </span>
-      ),
-      width: '100px',
-    },
-    {
-      header: 'Status',
-      render: (row: DropdownItem) => (
-        <button
-          onClick={() => handleUpdateDropdown(row._id, { isActive: !row.isActive })}
-          className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium ${row.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}
-        >
-          {row.isActive ? (
-            <>
-              <ToggleRight className="w-3 h-3" /> Active
-            </>
-          ) : (
-            <>
-              <ToggleLeft className="w-3 h-3" /> Off
-            </>
-          )}
-        </button>
-      ),
-      width: '70px',
-    },
-    {
-      header: '',
-      align: 'right' as const,
-      render: (row: DropdownItem) => (
-        <div className="flex items-center justify-end gap-1">
-          <button
-            onClick={() => openEditDropdown(row)}
-            className="p-1 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded"
-          >
-            <Edit2 className="w-3 h-3" />
-          </button>
-          <button
-            onClick={() => handleDeleteDropdown(row._id)}
-            className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
-        </div>
-      ),
-      width: '50px',
-    },
-  ];
 
-  const sidebarSections = [
-    { id: 'settings' as const, label: 'Settings', icon: SettingsIcon },
-    { id: 'dropdowns' as const, label: 'Dropdowns', icon: List },
-    { id: 'car-variances' as const, label: 'Car Variances', icon: Car },
-  ];
+
+
 
   return (
     <div className="h-full flex bg-slate-50 overflow-hidden">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <SettingsIcon className="w-5 h-5 text-blue-500" /> Configuration
-          </h2>
-        </div>
-
-        <div className="p-3">
-          {sidebarSections.map((section) => (
-            <button
-              key={section.id}
-              onClick={() => {
-                setActiveSection(section.id);
-                setSelectedCategory(null);
-                setSelectedType(null);
-              }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-1 ${activeSection === section.id ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-gray-50'}`}
-            >
-              <section.icon className="w-4 h-4" /> {section.label}
-            </button>
-          ))}
-        </div>
-
+      <SettingsSidebar 
+        activeSection={activeSection}
+        onNavigate={(id) => setActiveSection(id as ActiveSection)}
+      >
         <div className="flex-1 overflow-y-auto p-3 border-t border-gray-100">
           <div className="flex items-center justify-between px-3 mb-2">
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              {activeSection === 'settings' ? 'Categories' : 'Types'}
+              {activeSection === 'settings' ? 'Categories' : activeSection === 'dropdowns' ? 'Types' : ''}
             </div>
             <button
               onClick={() =>
@@ -1095,7 +1032,7 @@ export default function SettingsPage() {
                   ? setIsAddSettingModalOpen(true)
                   : (setEditingDropdown(null), setIsDropdownModalOpen(true))
               }
-              className="p-1 text-blue-500 hover:bg-blue-50 rounded"
+              className={`p-1 text-blue-500 hover:bg-blue-50 rounded ${activeSection === 'car-variances' ? 'hidden' : ''}`}
               title="Add New"
             >
               <Plus className="w-4 h-4" />
@@ -1106,7 +1043,9 @@ export default function SettingsPage() {
             <>
               <button
                 onClick={() => setSelectedCategory(null)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${selectedCategory === null ? 'bg-blue-100 text-blue-700 font-medium' : 'text-slate-600 hover:bg-gray-50'}`}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${
+                  selectedCategory === null ? 'bg-blue-100 text-blue-700 font-medium' : 'text-slate-600 hover:bg-gray-50'
+                }`}
               >
                 All ({settings.length})
               </button>
@@ -1114,17 +1053,21 @@ export default function SettingsPage() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${selectedCategory === cat ? 'bg-blue-100 text-blue-700 font-medium' : 'text-slate-600 hover:bg-gray-50'}`}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${
+                    selectedCategory === cat ? 'bg-blue-100 text-blue-700 font-medium' : 'text-slate-600 hover:bg-gray-50'
+                  }`}
                 >
                   {cat} ({settings.filter((s) => s.category === cat).length})
                 </button>
               ))}
             </>
-          ) : (
+          ) : activeSection === 'dropdowns' ? (
             <>
               <button
                 onClick={() => setSelectedType(null)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${selectedType === null ? 'bg-blue-100 text-blue-700 font-medium' : 'text-slate-600 hover:bg-gray-50'}`}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${
+                  selectedType === null ? 'bg-blue-100 text-blue-700 font-medium' : 'text-slate-600 hover:bg-gray-50'
+                }`}
               >
                 All ({dropdowns.length})
               </button>
@@ -1132,15 +1075,17 @@ export default function SettingsPage() {
                 <button
                   key={type}
                   onClick={() => setSelectedType(type)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${selectedType === type ? 'bg-blue-100 text-blue-700 font-medium' : 'text-slate-600 hover:bg-gray-50'}`}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors mb-1 ${
+                    selectedType === type ? 'bg-blue-100 text-blue-700 font-medium' : 'text-slate-600 hover:bg-gray-50'
+                  }`}
                 >
                   {type} ({dropdowns.filter((d) => d.type === type).length})
                 </button>
               ))}
             </>
-          )}
+          ) : null}
         </div>
-      </div>
+      </SettingsSidebar>
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
@@ -1185,9 +1130,9 @@ export default function SettingsPage() {
                 <tr className="border-b border-gray-200">
                   <th className="py-2 px-2 text-[10px] font-bold text-slate-500 uppercase w-10"></th>
                   <th className="py-2 px-2 text-[10px] font-bold text-slate-500 uppercase w-110">
-                    Description
+                    Value
                   </th>
-                  <th className="py-2 px-2 text-[10px] font-bold text-slate-500 uppercase">Type</th>
+                  <th className="py-2 px-2 text-[10px] font-bold text-slate-500 uppercase">Name (Group)</th>
                   <th className="py-2 px-2 text-[10px] font-bold text-slate-500 uppercase w-20">
                     Status
                   </th>
@@ -1207,7 +1152,9 @@ export default function SettingsPage() {
                             />
                           )}
                           {row.icon && (
-                            <img src={row.icon} alt="" className="w-5 h-5 object-contain" />
+                            <div className="relative w-5 h-5 shrink-0">
+                              <Image src={row.icon} alt="" fill className="object-contain" />
+                            </div>
                           )}
                         </div>
                       </td>
@@ -1262,69 +1209,7 @@ export default function SettingsPage() {
               </tbody>
             </table>
           </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-              <Table
-                data={carVariances.filter(
-                  (c) =>
-                    c.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    c.carModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    c.variant.toLowerCase().includes(searchTerm.toLowerCase())
-                )}
-                columns={[
-                  {
-                    header: 'Make',
-                    accessor: 'make',
-                    className: 'font-medium text-slate-900',
-                  },
-                  {
-                    header: 'Model',
-                    accessor: 'carModel',
-                  },
-                  {
-                    header: 'Variant',
-                    accessor: 'variant',
-                  },
-                  {
-                    header: 'Price',
-                    render: (row: CarVariance) => (
-                      <span className="font-mono text-slate-600">
-                        {typeof row.price === 'number' ? row.price.toLocaleString() : '-'}
-                      </span>
-                    ),
-                  },
-                  {
-                    header: '',
-                    accessor: '_id',
-                    className: 'w-10 text-right',
-                    render: (row: CarVariance) => (
-                      <div className="flex justify-end gap-1">
-                        <button
-                          onClick={() => {
-                            setEditingCarVariance(row);
-                            setIsCarVarianceModalOpen(true);
-                          }}
-                          className="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCarVariance(row._id)}
-                          className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ),
-                  },
-                ]}
-              />
-            </div>
-          </div>
-        )}
+        ) : null}
       </div>
 
       <AddSettingModal
@@ -1343,15 +1228,7 @@ export default function SettingsPage() {
         editItem={editingDropdown}
       />
 
-      <CarVarianceModal
-        isOpen={isCarVarianceModalOpen}
-        onClose={() => {
-          setIsCarVarianceModalOpen(false);
-          setEditingCarVariance(null);
-        }}
-        onSubmit={handleUpdateCarVariance}
-        editItem={editingCarVariance}
-      />
+      {/* Modal for car variance moved to separate route */}
 
       <GlobalImportModal
         isOpen={isImportModalOpen}
@@ -1361,11 +1238,22 @@ export default function SettingsPage() {
         }
         onSuccess={() => {
           if (activeSection === 'dropdowns') fetchDropdowns();
-          if (activeSection === 'car-variances') fetchCarVariances();
           setTimeout(() => setIsImportModalOpen(false), 1500);
         }}
         title={`Import ${activeSection === 'dropdowns' ? 'Dropdown Options' : 'Car Variances'}`}
       />
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={
+       <div className="flex items-center justify-center min-h-screen">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+       </div>
+    }>
+      <SettingsPageContent />
+    </Suspense>
   );
 }

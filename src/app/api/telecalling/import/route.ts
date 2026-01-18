@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import Telecalling from '@/models/Telecalling';
 
 interface ImportRecord {
   [key: string]: unknown;
@@ -20,65 +18,147 @@ const normalizeFieldName = (key: string): string => {
 
   // Map common variations
   const fieldMappings: Record<string, string> = {
+    // Required Fields
+    carregistrationnumber: 'carRegistrationNumber',
+    car_registration_number: 'carRegistrationNumber',
+    registrationnumber: 'carRegistrationNumber',
+    regnumber: 'carRegistrationNumber',
+    regno: 'carRegistrationNumber',
+    car_reg_no: 'carRegistrationNumber',
+    
+    yearofregistration: 'yearOfRegistration',
+    year_of_registration: 'yearOfRegistration',
+    reg_year: 'yearOfRegistration',
+    regyear: 'yearOfRegistration',
+    
+    ownername: 'ownerName',
+    owner_name: 'ownerName',
+    customername: 'ownerName',
+    customer_name: 'ownerName',
+    name: 'ownerName',
+    
+    ownershipserialnumber: 'ownershipSerialNumber',
+    ownership_serial_number: 'ownershipSerialNumber',
+    ownershipserial: 'ownershipSerialNumber',
+    ownership_serial: 'ownershipSerialNumber',
+    serialnumber: 'ownershipSerialNumber',
+    serial_no: 'ownershipSerialNumber',
+    
+    make: 'make',
+    vehiclemake: 'make',
+    
+    model: 'model',
+    vehiclemodel: 'model',
+    vehicle_model: 'model',
+    
+    variant: 'variant',
+    vehiclevariant: 'variant',
+    
+    // Optional Fields
     appointmentid: 'appointmentId',
-    customername: 'customerName',
-    customer_name: 'customerName',
+    appointment_id: 'appointmentId',
+    
+    timestamp: 'timeStamp',
+    date: 'timeStamp',
+    
+    emailaddress: 'emailAddress',
+    email_address: 'emailAddress',
+    email: 'emailAddress',
+    
+    contactnumber: 'customerContactNumber',
+    contact_number: 'customerContactNumber',
     customercontactnumber: 'customerContactNumber',
     customer_contact_number: 'customerContactNumber',
     phonenumber: 'customerContactNumber',
     phone: 'customerContactNumber',
     contact: 'customerContactNumber',
-    emailaddress: 'emailAddress',
-    email_address: 'emailAddress',
-    email: 'emailAddress',
-    model: 'vehicleModel',
-    vehiclemodel: 'vehicleModel',
-    vehicle_model: 'vehicleModel',
-    yearofmanufacture: 'yearOfManufacture',
-    year_of_manufacture: 'yearOfManufacture',
-    year: 'yearOfManufacture',
-    odometerreading: 'odometerReading',
-    odometer_reading: 'odometerReading',
-    odometer: 'odometerReading',
-    serialnum: 'serialNum',
-    serial_num: 'serialNum',
-    serialnumber: 'serialNum',
-    vin: 'serialNum',
-    addressforinspection: 'addressForInspection',
-    address_for_inspection: 'addressForInspection',
-    address: 'addressForInspection',
+    
+    city: 'city',
+    location: 'city',
+    
     zipcode: 'zipCode',
     zip_code: 'zipCode',
     zip: 'zipCode',
-    requestedinspectiondate: 'requestedInspectionDate',
-    requested_inspection_date: 'requestedInspectionDate',
-    inspectiondate: 'requestedInspectionDate',
-    requestedinspectiontime: 'requestedInspectionTime',
-    requested_inspection_time: 'requestedInspectionTime',
-    inspectiontime: 'requestedInspectionTime',
+    pincode: 'zipCode',
+    
+    yearofmanufacture: 'yearOfManufacture',
+    year_of_manufacture: 'yearOfManufacture',
+    mfg_year: 'yearOfManufacture',
+    year: 'yearOfManufacture',
+    
+    odometerreadinginkms: 'odometerReadingInKms',
+    odometer_reading_in_kms: 'odometerReadingInKms',
+    odometerreading: 'odometerReadingInKms',
+    odometer: 'odometerReadingInKms',
+    kms: 'odometerReadingInKms',
+    
     allocatedto: 'allocatedTo',
     allocated_to: 'allocatedTo',
     assignedto: 'allocatedTo',
+    
     inspectionstatus: 'inspectionStatus',
     inspection_status: 'inspectionStatus',
     status: 'inspectionStatus',
-    vehiclestatus: 'vehicleStatus',
-    vehicle_status: 'vehicleStatus',
+    
+    approvalstatus: 'approvalStatus',
+    approval_status: 'approvalStatus',
+    
+    priority: 'priority',
+    
+    ncducdname: 'ncdUcdName',
+    ncd_ucd_name: 'ncdUcdName',
+    ncd_ucd: 'ncdUcdName',
+    
+    repname: 'repName',
+    rep_name: 'repName',
+    representative: 'repName',
+    
+    repcontact: 'repContact',
+    rep_contact: 'repContact',
+    representative_contact: 'repContact',
+    
+    banksource: 'bankSource',
+    bank_source: 'bankSource',
+    bank: 'bankSource',
+    
+    referencename: 'referenceName',
+    reference_name: 'referenceName',
+    reference: 'referenceName',
+    
+    remarks: 'remarks',
+    comments: 'remarks',
+    
+    additionalnotes: 'additionalNotes',
+    additional_notes: 'additionalNotes',
+    notes: 'additionalNotes',
+    
+    carimages: 'carImages',
+    car_images: 'carImages',
+    images: 'carImages',
+    
+    inspectiondatetime: 'inspectionDateTime',
+    inspection_date_time: 'inspectionDateTime',
+    inspectiondate: 'inspectionDateTime',
+    
+    inspectionaddress: 'inspectionAddress',
+    inspection_address: 'inspectionAddress',
+    addressforinspection: 'inspectionAddress',
+    address: 'inspectionAddress',
+    
+    inspectionengineernumber: 'inspectionEngineerNumber',
+    inspection_engineer_number: 'inspectionEngineerNumber',
+    engineernumber: 'inspectionEngineerNumber',
+    engineer_contact: 'inspectionEngineerNumber',
+    
+    addedby: 'addedBy',
+    added_by: 'addedBy',
+    
     appointmentsource: 'appointmentSource',
     appointment_source: 'appointmentSource',
     source: 'appointmentSource',
-    ncducdname: 'ncdUcdName',
-    ncd_ucd_name: 'ncdUcdName',
-    repname: 'repName',
-    rep_name: 'repName',
-    repcontact: 'repContact',
-    rep_contact: 'repContact',
-    banksource: 'bankSource',
-    bank_source: 'bankSource',
-    referencename: 'referenceName',
-    reference_name: 'referenceName',
-    createdat: 'createdAt',
-    created_at: 'createdAt',
+    
+    vehiclestatus: 'vehicleStatus',
+    vehicle_status: 'vehicleStatus',
   };
 
   return fieldMappings[normalized.toLowerCase()] || normalized;
@@ -100,17 +180,21 @@ const sanitizeValue = (value: unknown): unknown => {
   return value;
 };
 
-// POST bulk import telecalling records
+// Backend API configuration
+const getBaseUrl = () => process.env.NEXT_PUBLIC_BACKENDBASEURL || 'https://otobix-app-backend-development.onrender.com/api/';
+const getAddUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGADD || 'inspection/telecallings/add'}`;
+const AUTH_TOKEN = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MDBhYzc2NTA4OGQxYTA2ODc3MDU0NCIsInVzZXJOYW1lIjoiY3VzdG9tZXIiLCJ1c2VyVHlwZSI6IkN1c3RvbWVyIiwiaWF0IjoxNzY0MzMxNjMxLCJleHAiOjIwNzk2OTE2MzF9.oXw1J4ca1XoIAg-vCO2y0QqZIq0VWHdYBrl2y9iIv4Q';
+
+// POST bulk import telecalling records via external API
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    await dbConnect();
     const { records }: ImportRequestBody = await request.json();
 
     if (!records || !Array.isArray(records) || records.length === 0) {
       return NextResponse.json({ error: 'No records to process' }, { status: 400 });
     }
 
-    console.log(`[Import] Processing ${records.length} records...`);
+    console.log(`[Import] Processing ${records.length} records via external API...`);
 
     // Prepare documents for insert
     const docsToInsert = records.map((record, index) => {
@@ -128,72 +212,116 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
       }
 
-      // Store original appointmentId/id as appointmentId field
-      if (record.appointmentId || record._id || record.id) {
-        doc.appointmentId = String(record.appointmentId || record._id || record.id);
-      }
-
-      // Remove _id and id to let MongoDB generate ObjectId
+      // Remove _id and id to let backend generate new IDs
       delete doc._id;
       delete doc.id;
 
-      // Handle createdAt date parsing
-      if (doc.createdAt && typeof doc.createdAt === 'string') {
-        const parsedDate = new Date(doc.createdAt as string);
-        if (!isNaN(parsedDate.getTime())) {
-          doc.createdAt = parsedDate;
-        } else {
-          delete doc.createdAt;
-        }
+      // Ensure all required fields have defaults if missing
+      if (!doc.carRegistrationNumber) doc.carRegistrationNumber = `UNKNOWN-${index + 1}`;
+      if (!doc.yearOfRegistration) doc.yearOfRegistration = new Date().getFullYear().toString();
+      if (!doc.ownerName) {
+        doc.ownerName = doc.name || doc.customerName || `Unknown Owner`;
+      }
+      if (!doc.make) doc.make = 'Unknown';
+      if (!doc.model) doc.model = 'Unknown';
+      if (!doc.variant) doc.variant = 'Unknown';
+
+      // Ensure required numeric fields are numbers with proper defaults
+      if (doc.ownershipSerialNumber === undefined || doc.ownershipSerialNumber === null || doc.ownershipSerialNumber === '') {
+        doc.ownershipSerialNumber = 1;
+      } else {
+        const num = parseInt(String(doc.ownershipSerialNumber));
+        doc.ownershipSerialNumber = isNaN(num) ? 1 : num;
       }
 
-      // Ensure customerName has a value
-      if (!doc.customerName) {
-        doc.customerName = doc.name || doc.customer || `Record ${index + 1}`;
+      if (doc.odometerReadingInKms) {
+        const num = parseFloat(String(doc.odometerReadingInKms));
+        doc.odometerReadingInKms = isNaN(num) ? 0 : num;
       }
+
+      // Set defaults for optional fields
+      if (!doc.addedBy) doc.addedBy = 'Telecaller';
+      if (!doc.inspectionStatus) doc.inspectionStatus = 'Pending';
+      if (!doc.priority) doc.priority = 'Medium';
 
       // Clean up helper fields
-      delete doc.name;
-      delete doc.customer;
       delete doc.__v;
-
-      // Parse yearOfManufacture as number
-      if (doc.yearOfManufacture) {
-        const year = parseInt(String(doc.yearOfManufacture));
-        doc.yearOfManufacture = isNaN(year) ? undefined : year;
-      }
+      delete doc.customerName;
+      delete doc.name;
 
       return doc;
     });
 
-    console.log(`[Import] Prepared ${docsToInsert.length} documents for insert`);
-    console.log('[Import] Sample document:', JSON.stringify(docsToInsert[0], null, 2));
+    console.log(`[Import] Prepared ${docsToInsert.length} documents for external API`);
+    if (docsToInsert.length > 0) {
+      console.log('[Import] Sample document:', JSON.stringify(docsToInsert[0], null, 2));
+    }
 
-    // Use insertMany with ordered: false to continue even if some fail
-    const result = await Telecalling.insertMany(docsToInsert, {
-      ordered: false,
-      rawResult: true,
-    });
+    // Send records to external API one by one (or in small batches)
+    let insertedCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
 
-    console.log(`[Import] Result:`, result);
+    // Process in batches of 10 to avoid overwhelming the API
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < docsToInsert.length; i += BATCH_SIZE) {
+      const batch = docsToInsert.slice(i, i + BATCH_SIZE);
+      
+      // Process batch items in parallel
+      const results = await Promise.allSettled(
+        batch.map(async (doc) => {
+          const formData = new FormData();
+          
+          // Append all fields to FormData
+          for (const [key, value] of Object.entries(doc)) {
+            if (value !== undefined && value !== null) {
+              formData.append(key, String(value));
+            }
+          }
+
+          const response = await fetch(getAddUrl(), {
+            method: 'POST',
+            headers: {
+              'Authorization': AUTH_TOKEN,
+            },
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `API returned ${response.status}`);
+          }
+
+          return response.json();
+        })
+      );
+
+      // Count successes and failures
+      results.forEach((result, idx) => {
+        if (result.status === 'fulfilled') {
+          insertedCount++;
+        } else {
+          failedCount++;
+          if (errors.length < 5) {
+            errors.push(`Row ${i + idx + 1}: ${result.reason?.message || 'Unknown error'}`);
+          }
+        }
+      });
+
+      console.log(`[Import] Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${results.filter(r => r.status === 'fulfilled').length} success, ${results.filter(r => r.status === 'rejected').length} failed`);
+    }
+
+    console.log(`[Import] Complete: ${insertedCount} inserted, ${failedCount} failed`);
 
     return NextResponse.json({
-      message: 'Import completed successfully',
-      inserted: result.insertedCount || docsToInsert.length,
+      message: insertedCount > 0 ? 'Import completed' : 'Import failed',
+      inserted: insertedCount,
+      failed: failedCount,
       total: records.length,
+      errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error: unknown) {
     console.error('POST /api/telecalling/import error:', error);
-
-    // Handle bulk write errors (some documents may have been inserted)
-    if (error && typeof error === 'object' && 'insertedDocs' in error) {
-      const bulkError = error as { insertedDocs: unknown[]; message: string };
-      return NextResponse.json({
-        message: 'Import partially completed',
-        inserted: bulkError.insertedDocs?.length || 0,
-        error: bulkError.message,
-      });
-    }
 
     const errorMessage = error instanceof Error ? error.message : 'Import failed';
     return NextResponse.json(

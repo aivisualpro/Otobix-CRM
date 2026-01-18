@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo, FormEvent, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, FormEvent } from 'react';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import {
   Search,
   Plus,
   Filter,
-  Download,
   Edit2,
   Trash2,
   Phone,
@@ -19,7 +19,42 @@ import {
 } from 'lucide-react';
 import { useHeader } from '@/context/HeaderContext';
 import Table from '@/components/Table';
-import GlobalImportModal from '@/components/GlobalImportModal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 // --- Types ---
 
@@ -132,10 +167,11 @@ const StatusBadge = ({
 
   // Fallback to static colors if no dropdown match
   let colors = 'bg-gray-100 text-gray-700';
-  if (status === 'Scheduled') colors = 'bg-blue-100 text-blue-700';
-  if (status === 'Pending') colors = 'bg-yellow-100 text-yellow-700';
-  if (status === 'Completed') colors = 'bg-emerald-100 text-emerald-700';
-  if (status === 'Cancelled') colors = 'bg-red-100 text-red-700';
+  const lowerStatus = status.toLowerCase();
+  if (lowerStatus === 'scheduled') colors = 'bg-blue-100 text-blue-700';
+  else if (lowerStatus === 'pending') colors = 'bg-yellow-100 text-yellow-700';
+  else if (lowerStatus === 'completed') colors = 'bg-emerald-100 text-emerald-700';
+  else if (lowerStatus === 'cancelled') colors = 'bg-red-100 text-red-700';
 
   return (
     <span
@@ -159,7 +195,7 @@ const PriorityBadge = ({ priority }: { priority: string }) => {
   );
 };
 
-// Searchable User Select Component
+// Searchable User Select Component (Shadcn)
 interface SearchableUserSelectProps {
   name: string;
   users: UserOption[];
@@ -175,110 +211,93 @@ const SearchableUserSelect = ({
   placeholder = 'Search users...',
   onSelect,
 }: SearchableUserSelectProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedValue, setSelectedValue] = useState(defaultValue);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState(defaultValue)
 
   // Find selected user display name
-  const selectedUser = users.find((u) => u.userName === selectedValue || u.email === selectedValue);
-  const displayValue = selectedUser?.userName || selectedValue || '';
-
-  const filteredUsers = users.filter(
-    (u) =>
-      u.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Close on click outside
+  const selectedUser = users.find((u) => u.userName === value || u.email === value)
+  
+  // Update value if defaultValue changes externally
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    setValue(defaultValue);
+  }, [defaultValue]);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <input type="hidden" name={name} value={selectedValue} />
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="form-input w-full text-left flex items-center justify-between"
-      >
-        <span className={displayValue ? 'text-slate-900' : 'text-slate-400'}>
-          {displayValue || 'Select User'}
-        </span>
-        <svg
-          className="w-4 h-4 text-slate-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
-            <input
-              type="text"
-              placeholder={placeholder}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              autoFocus
-            />
-          </div>
-          <div className="max-h-44 overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedValue('');
-                setIsOpen(false);
-                setSearchTerm('');
-                if (onSelect) onSelect(null);
-              }}
-              className="w-full px-3 py-2 text-left text-sm text-slate-500 hover:bg-gray-50"
-            >
-              -- Clear Selection --
-            </button>
-            {filteredUsers.map((u) => (
-              <button
-                key={u._id}
-                type="button"
-                onClick={() => {
-                  setSelectedValue(u.userName);
-                  setIsOpen(false);
-                  setSearchTerm('');
-                  if (onSelect) onSelect(u);
-                }}
-                className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50
-                  ${selectedValue === u.userName ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'}`}
-              >
-                {u.userName}
-              </button>
-            ))}
-            {filteredUsers.length === 0 && (
-              <div className="px-3 py-4 text-center text-sm text-slate-400">No users found</div>
-            )}
-          </div>
-        </div>
-      )}
+    <div className="relative">
+      <input type="hidden" name={name} value={value} />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between font-normal text-slate-900 border-gray-200"
+          >
+            {selectedUser ? selectedUser.userName : (value || "Select User")}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[300px] p-0" align="start">
+          <Command>
+            <CommandInput placeholder={placeholder} />
+            <CommandList>
+              <CommandEmpty>No users found.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  value="__clear_selection__"
+                  onSelect={() => {
+                     setValue("")
+                     setOpen(false)
+                     if (onSelect) onSelect(null)
+                  }}
+                  className="text-slate-500"
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === "" ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  -- Clear Selection --
+                </CommandItem>
+                {users.map((user) => (
+                  <CommandItem
+                    key={user._id}
+                    value={user.userName}
+                    onSelect={(currentValue) => {
+                      // CommandItem often uses lowercase value for filtering, 
+                      // but we want to retain case or match by ID if possible.
+                      // Here we use user.userName as value.
+                      setValue(user.userName)
+                      setOpen(false)
+                      if (onSelect) onSelect(user)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === user.userName ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {user.userName}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };
 
-// Searchable Dropdown Select with Color/Icon support (for references like Appointment Source)
+// Searchable Dropdown Select (Shadcn)
 interface SearchableDropdownSelectProps {
   name: string;
   options: DropdownOption[];
   defaultValue?: string;
   placeholder?: string;
+  onValueChange?: (value: string) => void;
 }
 
 const SearchableDropdownSelect = ({
@@ -286,117 +305,135 @@ const SearchableDropdownSelect = ({
   options,
   defaultValue = '',
   placeholder = 'Search...',
+  onValueChange,
 }: SearchableDropdownSelectProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedValue, setSelectedValue] = useState(defaultValue);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(defaultValue);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const selectedOption = options.find((o) => o.description === selectedValue);
-  const filteredOptions = options.filter((o) =>
-    o.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const showAddNew =
-    searchTerm && !options.some((o) => o.description.toLowerCase() === searchTerm.toLowerCase());
-
+  const selectedOption = options.find((o) => o.description === value);
+  
+  // Update value if defaultValue changes externally
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node))
-        setIsOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
+    setValue(defaultValue);
+  }, [defaultValue]);
+  
+  // Custom filter to allow "Add new" logic visualization if needed
+  // But standard Command should suffice if we just show a create button on empty
+  
   return (
-    <div className="relative" ref={dropdownRef}>
-      <input type="hidden" name={name} value={selectedValue} />
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="form-input w-full text-left flex items-center gap-2"
-      >
-        {selectedOption?.color && (
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: selectedOption.color }} />
-        )}
-        {selectedOption?.icon && (
-          <img src={selectedOption.icon} alt="" className="w-4 h-4 object-contain" />
-        )}
-        <span className={selectedValue ? 'text-slate-900 flex-1' : 'text-slate-400 flex-1'}>
-          {selectedValue || 'Select...'}
-        </span>
-        <svg
-          className="w-4 h-4 text-slate-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
-            <input
-              type="text"
-              placeholder={placeholder}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              autoFocus
-            />
-          </div>
-          <div className="max-h-44 overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedValue('');
-                setIsOpen(false);
-                setSearchTerm('');
-              }}
-              className="w-full px-3 py-2 text-left text-sm text-slate-500 hover:bg-gray-50"
-            >
-              -- Clear --
-            </button>
-            {showAddNew && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedValue(searchTerm);
-                  setIsOpen(false);
-                  setSearchTerm('');
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" /> Add &quot;{searchTerm}&quot;
-              </button>
-            )}
-            {filteredOptions.map((opt) => (
-              <button
-                key={opt._id}
-                type="button"
-                onClick={() => {
-                  setSelectedValue(opt.description);
-                  setIsOpen(false);
-                  setSearchTerm('');
-                }}
-                className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50 flex items-center gap-2 ${selectedValue === opt.description ? 'bg-blue-50 text-blue-700' : 'text-slate-700'}`}
-              >
-                {opt.color && (
-                  <div className="w-4 h-4 rounded" style={{ backgroundColor: opt.color }} />
+    <div className="relative">
+      <input type="hidden" name={name} value={value} />
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between font-normal text-slate-900 border-gray-200 bg-white"
+          >
+            <div className="flex items-center gap-2 overflow-hidden">
+                {selectedOption?.color && (
+                <div className="w-4 h-4 rounded shrink-0" style={{ backgroundColor: selectedOption.color }} />
                 )}
-                {opt.icon && <img src={opt.icon} alt="" className="w-4 h-4 object-contain" />}
-                <span>{opt.description}</span>
-              </button>
-            ))}
-            {filteredOptions.length === 0 && !showAddNew && (
-              <div className="px-3 py-4 text-center text-sm text-slate-400">No options found</div>
-            )}
-          </div>
-        </div>
-      )}
+                {selectedOption?.icon && (
+                <div className="relative w-4 h-4 shrink-0">
+                  <Image src={selectedOption.icon} alt="" fill className="object-contain" />
+                </div>
+                )}
+                <span className="truncate">{value || "Select..."}</span>
+            </div>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[250px] p-0" align="start">
+          <Command shouldFilter={false}>
+            <CommandInput 
+                placeholder={placeholder} 
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+            />
+            <CommandList className="max-h-[200px] overflow-y-auto">
+                {/* Custom filtering logic since we need 'Add new' */}
+                {(() => {
+                    const filtered = options.filter(o => o.description.toLowerCase().includes(searchQuery.toLowerCase()));
+                    const exactMatch = options.some(o => o.description.toLowerCase() === searchQuery.toLowerCase());
+                    
+                    return (
+                        <>
+                            <CommandGroup>
+                                <CommandItem
+                                    value="__clear__"
+                                    onSelect={() => {
+                                        setValue("");
+                                        setOpen(false);
+                                    }}
+                                    className="text-slate-500"
+                                >
+                                    -- Clear --
+                                </CommandItem>
+                                {filtered.map((opt) => (
+                                    <CommandItem
+                                        key={opt._id}
+                                        value={opt.description}
+                                        onSelect={(currentValue) => {
+                                            setValue(opt.description);
+                                            setOpen(false);
+                                            setSearchQuery("");
+                                            if (onValueChange) onValueChange(opt.description);
+                                        }}
+                                    >
+                                        <Check
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                value === opt.description ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
+                                        <div className="flex items-center gap-2">
+                                            {opt.color && (
+                                                <div className="w-4 h-4 rounded" style={{ backgroundColor: opt.color }} />
+                                            )}
+                                            {opt.icon && (
+                                              <div className="relative w-4 h-4">
+                                                <Image src={opt.icon} alt="" fill className="object-contain" />
+                                              </div>
+                                            )}
+                                            {opt.description}
+                                        </div>
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                            
+                            {searchQuery && !exactMatch && (
+                                <>
+                                    <CommandSeparator />
+                                    <CommandGroup>
+                                        <CommandItem
+                                            onSelect={() => {
+                                                setValue(searchQuery);
+                                                setOpen(false);
+                                                setSearchQuery("");
+                                                if (onValueChange) onValueChange(searchQuery);
+                                            }}
+                                            className="text-blue-600 cursor-pointer"
+                                        >
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Add &quot;{searchQuery}&quot;
+                                        </CommandItem>
+                                    </CommandGroup>
+                                </>
+                            )}
+                            
+                             {filtered.length === 0 && !searchQuery && (
+                                <div className="py-6 text-center text-sm text-muted-foreground">No options found.</div>
+                             )}
+                        </>
+                    )
+                })()}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };
@@ -404,12 +441,21 @@ const SearchableDropdownSelect = ({
 interface CallModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Partial<TelecallingRecord>) => void;
+
+  onSubmit: (data: Partial<TelecallingRecord>, files?: File[]) => void;
   editRecord: TelecallingRecord | null;
   title?: string;
   users?: UserOption[];
   appointmentSources?: DropdownOption[];
   inspectionStatuses?: DropdownOption[];
+  carVariances?: CarVarianceData[];
+}
+
+interface CarVarianceData {
+  _id: string;
+  make: string;
+  model: string;
+  variant: string;
 }
 
 const CallModal = ({
@@ -421,14 +467,85 @@ const CallModal = ({
   users = [],
   appointmentSources = [],
   inspectionStatuses = [],
+  carVariances = [],
 }: CallModalProps) => {
   const [engineerNumber, setEngineerNumber] = useState(editRecord?.inspectionEngineerNumber || '');
+  const [selectedMake, setSelectedMake] = useState(editRecord?.make || '');
+  const [selectedModel, setSelectedModel] = useState(editRecord?.model || '');
 
+  // Reset Make/Model when editRecord changes
   useEffect(() => {
-    setEngineerNumber(editRecord?.inspectionEngineerNumber || '');
-  }, [editRecord]);
+    if (isOpen) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        setSelectedMake(editRecord?.make || '');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        setSelectedModel(editRecord?.model || '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editRecord, isOpen]);
 
-  if (!isOpen) return null;
+  // Derived Options
+  const makeOptions = useMemo(() => {
+    const uniqueMakes = Array.from(new Set(carVariances.map(c => c.make))).filter(Boolean).sort();
+    return uniqueMakes.map(m => ({
+        _id: m,
+        description: m,
+        type: 'text',
+        isActive: true
+    }));
+  }, [carVariances]);
+
+  const modelOptions = useMemo(() => {
+    if (!selectedMake) return [];
+    const uniqueModels = Array.from(new Set(carVariances
+        .filter(c => c.make === selectedMake)
+        .map(c => c.model)
+    )).filter(Boolean).sort();
+    return uniqueModels.map(m => ({
+        _id: m,
+        description: m,
+        type: 'text',
+        isActive: true
+    }));
+  }, [carVariances, selectedMake]);
+
+  const variantOptions = useMemo(() => {
+     if (!selectedMake || !selectedModel) return [];
+     const uniqueVariants = Array.from(new Set(carVariances
+        .filter(c => c.make === selectedMake && c.model === selectedModel)
+        .map(c => c.variant)
+     )).filter(Boolean).sort();
+     return uniqueVariants.map(v => ({
+        _id: v,
+        description: v,
+        type: 'text',
+        isActive: true
+     }));
+  }, [carVariances, selectedMake, selectedModel]);
+
+
+
+  const [priority, setPriority] = useState(editRecord?.priority || 'Medium');
+  const [addedBy, setAddedBy] = useState(editRecord?.addedBy || 'Telecaller');
+
+
+
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArr = Array.from(e.target.files);
+      if (filesArr.length + selectedFiles.length > 5) {
+        alert('Maximum 5 images allowed');
+        return;
+      }
+      setSelectedFiles(prev => [...prev, ...filesArr]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -471,325 +588,234 @@ const CallModal = ({
       remarks: formData.get('remarks') as string,
       additionalNotes: formData.get('additionalNotes') as string,
     };
-    onSubmit(callData);
+    onSubmit(callData, selectedFiles);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-100 rounded-xl">
-        <div className="sticky top-0 bg-white/95 backdrop-blur-sm px-6 py-4 border-b border-gray-100 flex justify-between items-center z-10">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">
-              {title || (editRecord ? 'Edit Record' : 'Add Lead Call Record')}
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {editRecord
+    <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()}>
+      <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b border-gray-100 shrink-0">
+          <DialogTitle className="text-xl font-bold text-slate-900">
+             {title || (editRecord ? 'Edit Record' : 'Add Lead Call Record')}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-500 mt-0.5">
+            {editRecord
                 ? 'Update the record details'
                 : 'Enter details for the new appointment call'}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 transition-colors rounded-lg">
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          <form id="call-modal-form" onSubmit={handleSubmit}>
+            {/* Two Column Layout like reference image */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* LEFT COLUMN: Source & Vehicle Details */}
+              <div className="bg-white border border-gray-200 rounded-lg p-5 space-y-5">
+                <h3 className="text-base font-semibold text-slate-900 border-b pb-3">Source & Vehicle Details</h3>
+                
+                {/* Priority Toggle */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Priority</Label>
+                  <input type="hidden" name="priority" value={priority} />
+                  <div className="flex rounded-lg overflow-hidden border border-gray-200">
+                    {['High', 'Medium', 'Low'].map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPriority(p)}
+                        className={cn(
+                          "flex-1 py-2.5 text-sm font-medium transition-colors",
+                          priority === p 
+                            ? "bg-slate-800 text-white" 
+                            : "bg-white text-slate-600 hover:bg-gray-50"
+                        )}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Source */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Source *</Label>
+                  <SearchableDropdownSelect
+                    name="appointmentSource"
+                    options={appointmentSources}
+                    defaultValue={editRecord?.appointmentSource || ''}
+                    placeholder="Select source..."
+                  />
+                </div>
+
+                {/* Year of Manufacture */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Year of Manufacture *</Label>
+                  <Input name="yearOfManufacture" defaultValue={editRecord?.yearOfManufacture || ''} className="h-10 bg-gray-50" />
+                </div>
+
+                {/* Make */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Make *</Label>
+                  <SearchableDropdownSelect
+                    name="make"
+                    options={makeOptions}
+                    defaultValue={selectedMake}
+                    placeholder="Select Make"
+                    onValueChange={(val) => {
+                        setSelectedMake(val);
+                        setSelectedModel(''); // Reset model when make changes
+                    }}
+                  />
+                </div>
+
+                {/* Model */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Model *</Label>
+                  <SearchableDropdownSelect
+                    key={`model-${selectedMake}`} // Reset when make changes
+                    name="model"
+                    options={modelOptions}
+                    defaultValue={selectedModel}
+                    placeholder="Select Model"
+                    onValueChange={(val) => setSelectedModel(val)}
+                  />
+                </div>
+
+                {/* Variant */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Variant *</Label>
+                  <SearchableDropdownSelect
+                    key={`variant-${selectedModel}`} // Reset when model changes
+                    name="variant"
+                    options={variantOptions}
+                    defaultValue={editRecord?.variant || ''}
+                    placeholder="Select Variant"
+                  />
+                </div>
+
+                {/* Odometer Reading */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Odometer Reading</Label>
+                  <Input name="odometerReadingInKms" type="number" defaultValue={editRecord?.odometerReadingInKms || ''} className="h-10 bg-gray-50" />
+                </div>
+
+                {/* Ownership Serial Number */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Ownership Serial Number *</Label>
+                  <Input name="ownershipSerialNumber" type="number" required defaultValue={editRecord?.ownershipSerialNumber || ''} className="h-10 bg-gray-50" />
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: Booking Details */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 space-y-5">
+                <h3 className="text-base font-semibold text-slate-900 border-b pb-3">Booking Details</h3>
+                
+                {/* Vehicle Status (Hidden as per request) */}
+                {/* <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Vehicle Status *</Label>
+                  <SearchableDropdownSelect
+                    name="inspectionStatus"
+                    options={inspectionStatuses}
+                    defaultValue={editRecord?.inspectionStatus || 'Pending'}
+                    placeholder="Select status..."
+                  />
+                </div> */}
+
+                {/* Customer Name */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Customer Name *</Label>
+                  <Input name="ownerName" required defaultValue={editRecord?.ownerName || ''} className="h-10 bg-white" />
+                </div>
+
+                {/* Contact No */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Contact No. *</Label>
+                  <Input name="customerContactNumber" type="tel" defaultValue={editRecord?.customerContactNumber || ''} className="h-10 bg-white" />
+                </div>
+
+                {/* Address for Inspection */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Address for Inspection *</Label>
+                  <Input name="inspectionAddress" defaultValue={editRecord?.inspectionAddress || ''} className="h-10 bg-white" />
+                </div>
+
+                {/* Zip Code */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Zip Code *</Label>
+                  <Input name="zipCode" defaultValue={editRecord?.zipCode || ''} className="h-10 bg-white" />
+                </div>
+
+                {/* Req. Date */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Req. Date *</Label>
+                  <Input name="inspectionDateTime" type="date" defaultValue={editRecord?.inspectionDateTime ? new Date(editRecord.inspectionDateTime).toISOString().slice(0, 10) : ''} className="h-10 bg-white" />
+                </div>
+
+                {/* Remarks */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium text-slate-600">Remarks</Label>
+                  <Input name="remarks" defaultValue={editRecord?.remarks || ''} className="h-10 bg-white" />
+                </div>
+              </div>
+            </div>
+
+            {/* Hidden fields for required data not shown in 2-col layout */}
+            <input type="hidden" name="appointmentId" value={editRecord?.appointmentId || 'Auto-generated'} />
+            <input type="hidden" name="carRegistrationNumber" value={editRecord?.carRegistrationNumber || ''} />
+            <input type="hidden" name="yearOfRegistration" value={editRecord?.yearOfRegistration || ''} />
+            <input type="hidden" name="city" value={editRecord?.city || ''} />
+            <input type="hidden" name="emailAddress" value={editRecord?.emailAddress || ''} />
+            <input type="hidden" name="allocatedTo" value={editRecord?.allocatedTo || ''} />
+            <input type="hidden" name="vehicleStatus" value={editRecord?.vehicleStatus || ''} />
+            <input type="hidden" name="addedBy" value={addedBy} />
+            <input type="hidden" name="ncdUcdName" value={editRecord?.ncdUcdName || ''} />
+            <input type="hidden" name="repName" value={editRecord?.repName || ''} />
+            <input type="hidden" name="repContact" value={editRecord?.repContact || ''} />
+            <input type="hidden" name="bankSource" value={editRecord?.bankSource || ''} />
+            <input type="hidden" name="referenceName" value={editRecord?.referenceName || ''} />
+            <input type="hidden" name="inspectionEngineerNumber" value={engineerNumber} />
+            <input type="hidden" name="additionalNotes" value={editRecord?.additionalNotes || ''} />
+
+            {/* Images Section - Below the two columns */}
+            {!editRecord && selectedFiles.length === 0 && (
+              <div className="mt-6 border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors relative">
+                <input type="file" multiple accept="image/*" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <div className="flex flex-col items-center gap-2 text-slate-400">
+                  <div className="p-3 bg-blue-50 text-blue-500 rounded-full"><Plus className="w-5 h-5" /></div>
+                  <span className="text-sm font-medium text-slate-600">Click or drag images to upload (Max 5)</span>
+                </div>
+              </div>
+            )}
+            {selectedFiles.length > 0 && (
+              <div className="mt-6 grid grid-cols-5 gap-3">
+                {selectedFiles.map((file, index) => (
+                  <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                    <Image 
+                      src={URL.createObjectURL(file)} 
+                      alt={`Preview ${index}`} 
+                      fill 
+                      className="object-cover" 
+                    />
+                    <button type="button" onClick={() => removeFile(index)} className="absolute top-1 right-1 p-1 bg-white/90 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity text-red-500"><X className="w-3 h-3" /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </form>
         </div>
+        
+        <DialogFooter className="px-6 py-4 border-t border-gray-200 bg-gray-50 shrink-0">
+          <Button variant="outline" type="button" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="call-modal-form" className="bg-blue-600 hover:bg-blue-700 text-white">
+            {editRecord ? 'Update Record' : 'Save Record'}
+          </Button>
+        </DialogFooter>
 
-        <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Appointment Details */}
-          <div className="md:col-span-3">
-            <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Calendar className="w-4 h-4" /> Appointment Details
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="relative">
-                <label className="text-[10px] font-bold text-slate-400 absolute -top-2 left-2 bg-white px-1">
-                  Appt ID
-                </label>
-                <input
-                  name="appointmentId"
-                  type="text"
-                  readOnly
-                  className="form-input bg-gray-50 text-slate-500 cursor-not-allowed font-mono italic"
-                  defaultValue={editRecord?.appointmentId || 'Auto-generated'}
-                />
-              </div>
-              <select
-                name="priority"
-                className="form-input"
-                defaultValue={editRecord?.priority || 'Medium'}
-              >
-                <option value="">Select Priority</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-              <SearchableUserSelect
-                name="allocatedTo"
-                users={users}
-                defaultValue={editRecord?.allocatedTo || ''}
-                placeholder="Search users..."
-                onSelect={(user) => {
-                  if (user && user.phoneNumber) {
-                    setEngineerNumber(user.phoneNumber);
-                  }
-                }}
-              />
-              <SearchableDropdownSelect
-                name="appointmentSource"
-                options={appointmentSources}
-                defaultValue={editRecord?.appointmentSource || ''}
-                placeholder="Search sources..."
-              />
-              <SearchableDropdownSelect
-                name="inspectionStatus"
-                options={inspectionStatuses}
-                defaultValue={editRecord?.inspectionStatus || 'Pending'}
-                placeholder="Search status..."
-              />
-            </div>
-          </div>
-
-          <div className="border-t border-gray-100 md:col-span-3 my-2"></div>
-
-          {/* Customer Info */}
-          <div className="md:col-span-3">
-            <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <User className="w-4 h-4" /> Customer Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <input
-                name="ownerName"
-                type="text"
-                placeholder="Owner Name *"
-                required
-                className="form-input"
-                defaultValue={editRecord?.ownerName || ''}
-              />
-              <input
-                name="customerContactNumber"
-                type="tel"
-                placeholder="Contact Number"
-                className="form-input"
-                defaultValue={editRecord?.customerContactNumber || ''}
-              />
-              <input
-                name="emailAddress"
-                type="email"
-                placeholder="Email Address"
-                className="form-input"
-                defaultValue={editRecord?.emailAddress || ''}
-              />
-              <input
-                name="city"
-                type="text"
-                placeholder="City"
-                className="form-input"
-                defaultValue={editRecord?.city || ''}
-              />
-              <input
-                name="zipCode"
-                type="text"
-                placeholder="Zip Code"
-                className="form-input"
-                defaultValue={editRecord?.zipCode || ''}
-              />
-              <div className="md:col-span-3">
-                <input
-                  name="inspectionAddress"
-                  type="text"
-                  placeholder="Address for Inspection"
-                  className="form-input w-full"
-                  defaultValue={editRecord?.inspectionAddress || ''}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-100 md:col-span-3 my-2"></div>
-
-          {/* Vehicle Details */}
-          <div className="md:col-span-3">
-            <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Car className="w-4 h-4" /> Vehicle Details
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <input
-                name="carRegistrationNumber"
-                type="text"
-                placeholder="Reg. Number *"
-                required
-                className="form-input"
-                defaultValue={editRecord?.carRegistrationNumber || ''}
-              />
-              <input
-                name="yearOfRegistration"
-                type="text"
-                placeholder="Reg. Year *"
-                required
-                className="form-input"
-                defaultValue={editRecord?.yearOfRegistration || ''}
-              />
-              <input
-                name="ownershipSerialNumber"
-                type="number"
-                placeholder="Ownership Serial *"
-                required
-                className="form-input"
-                defaultValue={editRecord?.ownershipSerialNumber || ''}
-              />
-              <input
-                name="make"
-                type="text"
-                placeholder="Make *"
-                required
-                className="form-input"
-                defaultValue={editRecord?.make || ''}
-              />
-              <input
-                name="model"
-                type="text"
-                placeholder="Model *"
-                required
-                className="form-input"
-                defaultValue={editRecord?.model || ''}
-              />
-              <input
-                name="variant"
-                type="text"
-                placeholder="Variant *"
-                required
-                className="form-input"
-                defaultValue={editRecord?.variant || ''}
-              />
-              <input
-                name="yearOfManufacture"
-                type="text"
-                placeholder="Mfg Year"
-                className="form-input"
-                defaultValue={editRecord?.yearOfManufacture || ''}
-              />
-              <input
-                name="odometerReadingInKms"
-                type="number"
-                placeholder="Odometer (Kms)"
-                className="form-input"
-                defaultValue={editRecord?.odometerReadingInKms || ''}
-              />
-              <input
-                name="vehicleStatus"
-                type="text"
-                placeholder="Vehicle Status"
-                className="form-input"
-                defaultValue={editRecord?.vehicleStatus || ''}
-              />
-            </div>
-          </div>
-
-          <div className="border-t border-gray-100 md:col-span-3 my-2"></div>
-
-          {/* Additional Info */}
-          <div className="md:col-span-3">
-            <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" /> Additional Info
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input
-                name="inspectionDateTime"
-                type="datetime-local"
-                placeholder="Inspection Date & Time"
-                className="form-input"
-                defaultValue={editRecord?.inspectionDateTime ? new Date(editRecord.inspectionDateTime).toISOString().slice(0, 16) : ''}
-              />
-              <input
-                name="ncdUcdName"
-                type="text"
-                placeholder="NCD/UCD Name"
-                className="form-input"
-                defaultValue={editRecord?.ncdUcdName || ''}
-              />
-              <input
-                name="repName"
-                type="text"
-                placeholder="Rep Name"
-                className="form-input"
-                defaultValue={editRecord?.repName || ''}
-              />
-              <input
-                name="repContact"
-                type="text"
-                placeholder="Rep Contact"
-                className="form-input"
-                defaultValue={editRecord?.repContact || ''}
-              />
-              <input
-                name="bankSource"
-                type="text"
-                placeholder="Bank Source"
-                className="form-input"
-                defaultValue={editRecord?.bankSource || ''}
-              />
-              <input
-                name="referenceName"
-                type="text"
-                placeholder="Reference Name"
-                className="form-input"
-                defaultValue={editRecord?.referenceName || ''}
-              />
-              <input
-                name="inspectionEngineerNumber"
-                type="text"
-                placeholder="Engineer Number"
-                className="form-input"
-                value={engineerNumber}
-                onChange={(e) => setEngineerNumber(e.target.value)}
-              />
-              <select
-                name="addedBy"
-                className="form-input"
-                defaultValue={editRecord?.addedBy || 'Telecaller'}
-              >
-                <option value="Telecaller">Telecaller</option>
-                <option value="Customer">Customer</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Remarks */}
-          <div className="md:col-span-3">
-            <label className="text-xs font-semibold text-slate-500 mb-1 block">Remarks</label>
-            <textarea
-              name="remarks"
-              className="form-input w-full h-24 resize-none mb-4"
-              placeholder="Enter remarks..."
-              defaultValue={editRecord?.remarks || ''}
-            ></textarea>
-            
-            <label className="text-xs font-semibold text-slate-500 mb-1 block">Additional Notes</label>
-            <textarea
-              name="additionalNotes"
-              className="form-input w-full h-24 resize-none"
-              placeholder="Additional notes..."
-              defaultValue={editRecord?.additionalNotes || ''}
-            ></textarea>
-          </div>
-
-          <div className="md:col-span-3 flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 border border-gray-300 text-slate-700 font-medium hover:bg-gray-100 transition-colors text-sm rounded-lg"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2.5 bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors text-sm rounded-lg"
-            >
-              {editRecord ? 'Update Record' : 'Save Record'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -849,7 +875,6 @@ export default function TelecallingPage() {
 
   const { setTitle, setSearchContent, setActionsContent } = useHeader();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<TelecallingRecord | null>(null);
   const [deletingRecord, setDeletingRecord] = useState<TelecallingRecord | null>(null);
@@ -863,24 +888,65 @@ export default function TelecallingPage() {
   const [users, setUsers] = useState<UserOption[]>([]);
   const [appointmentSources, setAppointmentSources] = useState<DropdownOption[]>([]);
   const [inspectionStatuses, setInspectionStatuses] = useState<DropdownOption[]>([]);
+  const [allCarVariances, setAllCarVariances] = useState<CarVarianceData[]>([]); // New state
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  // removed generatedId state
-  const itemsPerPage = 20;
+  const [totalCount, setTotalCount] = useState(0);
+  const [columnConfig, setColumnConfig] = useState<{id: string; visible: boolean}[]>([]);
+  const itemsPerPage = 100; // Increased default limit for better UX
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      let savedConfigs = null;
+
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const settings = await res.json();
+          const targetSetting = settings.find((s: any) => s.key === 'telecalling_columns_config');
+          if (targetSetting && targetSetting.value) {
+            savedConfigs = typeof targetSetting.value === 'string' 
+              ? JSON.parse(targetSetting.value) 
+              : targetSetting.value;
+            console.log('[Telecalling] Loaded column config from MongoDB');
+          }
+        }
+      } catch (err) {
+        console.warn('[Telecalling] MongoDB config load failed:', err);
+      }
+
+      if (!savedConfigs) {
+        const saved = localStorage.getItem('telecalling_columns_config');
+        if (saved) {
+          try {
+            savedConfigs = JSON.parse(saved);
+            console.log('[Telecalling] Loaded column config from localStorage');
+          } catch (err) {
+            console.error('[Telecalling] Error parsing local storage:', err);
+          }
+        }
+      }
+
+      if (savedConfigs) {
+        setColumnConfig(savedConfigs);
+      }
+    };
+
+    loadConfig();
+  }, []);
 
   // API Endpoints from environment variables
-  const getBaseUrl = () => process.env.NEXT_PUBLIC_BACKENDBASEURL || 'https://otobix-app-backend-development.onrender.com/api/';
-  const getListUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGLIST || 'inspection/telecallings/get-list-by-telecaller'}`;
-  const getAddUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGADD || 'inspection/telecallings/add'}`;
-  const getUpdateUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGUPDATE || 'inspection/telecallings/update'}`;
-  const getDeleteUrl = () => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGDELETE || 'inspection/telecallings/delete'}`;
+  const getBaseUrl = useCallback(() => process.env.NEXT_PUBLIC_BACKENDBASEURL || 'https://otobix-app-backend-development.onrender.com/api/', []);
+  const getAddUrl = useCallback(() => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGADD || 'inspection/telecallings/add'}`, [getBaseUrl]);
+  const getUpdateUrl = useCallback(() => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGUPDATE || 'inspection/telecallings/update'}`, [getBaseUrl]);
+  const getDeleteUrl = useCallback(() => `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGDELETE || 'inspection/telecallings/delete'}`, [getBaseUrl]);
   
   const AUTH_TOKEN = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MDBhYzc2NTA4OGQxYTA2ODc3MDU0NCIsInVzZXJOYW1lIjoiY3VzdG9tZXIiLCJ1c2VyVHlwZSI6IkN1c3RvbWVyIiwiaWF0IjoxNzY0MzMxNjMxLCJleHAiOjIwNzk2OTE2MzF9.oXw1J4ca1XoIAg-vCO2y0QqZIq0VWHdYBrl2y9iIv4Q';
 
   // Ref for debounced save timeout
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchTelecallingData = async () => {
+  const fetchTelecallingData = useCallback(async (page = 1, limit = 100, search = '', status = 'All') => {
     setLoading(true);
     
     // Clear any existing telecalling cache to free up space
@@ -889,7 +955,14 @@ export default function TelecallingPage() {
     }
 
     try {
-      const teleRes = await fetch(getListUrl(), {
+      const listUrl = `${getBaseUrl()}${process.env.NEXT_PUBLIC_TELECALLINGLIST || 'inspection/telecallings/get-list-by-telecaller'}`;
+      const url = new URL(listUrl);
+      url.searchParams.append('pageNumber', page.toString());
+      url.searchParams.append('limit', limit.toString());
+      if (search) url.searchParams.append('search', search);
+      if (status !== 'All') url.searchParams.append('status', status);
+
+      const teleRes = await fetch(url.toString(), {
           method: 'GET',
           headers: {
             'Authorization': AUTH_TOKEN
@@ -902,16 +975,20 @@ export default function TelecallingPage() {
 
       const teleData = await teleRes.json();
       const calls = Array.isArray(teleData) ? teleData : (teleData.data && Array.isArray(teleData.data) ? teleData.data : []);
+      const total = teleData.totalCount || teleData.total || (Array.isArray(teleData) ? teleData.length : (teleData.data ? teleData.data.length : 0));
+      
       setAllLeadCalls(calls);
+      setTotalCount(total);
     } catch (error) {
       console.error('Failed to fetch telecalling data', error);
       setAllLeadCalls([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [getBaseUrl, AUTH_TOKEN]);
 
-  const fetchAuxData = async () => {
+  const fetchAuxData = useCallback(async () => {
     try {
       // 1. Load from cache first for instant render
       if (typeof window !== 'undefined') {
@@ -924,28 +1001,92 @@ export default function TelecallingPage() {
         if (cachedStatuses) setInspectionStatuses(JSON.parse(cachedStatuses));
       }
 
-      // 2. Fetch fresh data in background
-      const [usersRes, apptSourcesRes, inspStatusesRes] = await Promise.all([
-        fetch('/api/users'),
-        fetch('/api/dropdowns?type=Appointment Source'),
-        fetch('/api/dropdowns?type=Inspection Status'),
+      // 2. Fetch fresh data from EXTERNAL backend APIs (not local MongoDB)
+      const usersListUrl = `${getBaseUrl()}${process.env.NEXT_PUBLIC_USERSLIST || 'user/all-users-list'}`;
+      const dropdownsUrl = `${getBaseUrl()}${process.env.NEXT_PUBLIC_CAR_DROPDOWNS_LIST || 'admin/customers/car-dropdowns/get-list'}?limit=20000`; // Fetch all for dropdowns
+
+      const [usersRes, dropdownsRes] = await Promise.all([
+        fetch(usersListUrl, {
+          method: 'GET',
+          headers: { 'Authorization': AUTH_TOKEN }
+        }),
+        fetch(dropdownsUrl, {
+          method: 'GET',
+          headers: { 'Authorization': AUTH_TOKEN }
+        }),
       ]);
 
-      if (!usersRes.ok || !apptSourcesRes.ok || !inspStatusesRes.ok) {
-          console.warn('One or more aux data fetches failed', {
-              users: usersRes.status,
-              apptSources: apptSourcesRes.status,
-              inspStatuses: inspStatusesRes.status
-          });
+      // Process users
+      let validUsers: UserOption[] = [];
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        const usersList = Array.isArray(usersData) ? usersData : (usersData.data || []);
+        validUsers = usersList.map((u: any) => ({
+          _id: u._id || u.id,
+          userName: u.userName || u.username || u.name || '',
+          email: u.email || '',
+          phoneNumber: u.phoneNumber || u.phone || '',
+        }));
       }
 
-      const usersData = usersRes.ok ? await usersRes.json() : [];
-      const apptSourcesData = apptSourcesRes.ok ? await apptSourcesRes.json() : [];
-      const inspStatusesData = inspStatusesRes.ok ? await inspStatusesRes.json() : [];
+      // Process dropdowns (contains both Appointment Source and Inspection Status)
+      let validSources: DropdownOption[] = [];
+      let validStatuses: DropdownOption[] = [];
+      if (dropdownsRes.ok) {
+        const dropdownsData = await dropdownsRes.json();
+        const allDropdowns = Array.isArray(dropdownsData) ? dropdownsData : (dropdownsData.data || []);
+        
+        validSources = allDropdowns
+          .filter((d: any) => d.type === 'Appointment Source' && d.isActive !== false)
+          .map((d: any) => ({
+            _id: d._id || d.id,
+            description: d.description || d.name || '',
+            type: d.type || 'Appointment Source',
+            icon: d.icon,
+            color: d.color,
+            isActive: d.isActive !== false,
+          }));
 
-      const validUsers = Array.isArray(usersData) ? usersData : [];
-      const validSources = Array.isArray(apptSourcesData) ? apptSourcesData.filter((d: DropdownOption) => d.isActive) : [];
-      const validStatuses = Array.isArray(inspStatusesData) ? inspStatusesData.filter((d: DropdownOption) => d.isActive) : [];
+        validStatuses = allDropdowns
+          .filter((d: any) => d.type === 'Inspection Status' && d.isActive !== false)
+          .map((d: any) => ({
+            _id: d._id || d.id,
+            description: d.description || d.name || '',
+            type: d.type || 'Inspection Status',
+            icon: d.icon,
+            color: d.color,
+            isActive: d.isActive !== false,
+          }));
+
+        const validCarVariances = allDropdowns
+          .filter((d: any) => d.make) // Assume items with 'make' are variances
+          .map((d: any) => ({
+             _id: d._id || d.id,
+             make: d.make,
+             model: d.model || d.carModel || '',
+             variant: d.variant || ''
+          }));
+        setAllCarVariances(validCarVariances);
+      }
+
+      // If no dropdowns from API, use static defaults
+      if (validSources.length === 0) {
+        validSources = [
+          { _id: '1', description: 'Website', type: 'Appointment Source', isActive: true },
+          { _id: '2', description: 'Phone Call', type: 'Appointment Source', isActive: true },
+          { _id: '3', description: 'Walk-in', type: 'Appointment Source', isActive: true },
+          { _id: '4', description: 'Referral', type: 'Appointment Source', isActive: true },
+        ];
+      }
+
+      if (validStatuses.length === 0) {
+        validStatuses = [
+          { _id: '1', description: 'Pending', type: 'Inspection Status', isActive: true, color: '#f59e0b' },
+          { _id: '2', description: 'Scheduled', type: 'Inspection Status', isActive: true, color: '#3b82f6' },
+          { _id: '3', description: 'Completed', type: 'Inspection Status', isActive: true, color: '#10b981' },
+          { _id: '4', description: 'Cancelled', type: 'Inspection Status', isActive: true, color: '#ef4444' },
+        ];
+      }
 
       setUsers(validUsers);
       setAppointmentSources(validSources);
@@ -960,13 +1101,29 @@ export default function TelecallingPage() {
 
     } catch (error) {
        console.error('Failed to fetch aux data', error);
+       
+       // Fallback to static defaults on error
+       setAppointmentSources([
+         { _id: '1', description: 'Website', type: 'Appointment Source', isActive: true },
+         { _id: '2', description: 'Phone Call', type: 'Appointment Source', isActive: true },
+         { _id: '3', description: 'Walk-in', type: 'Appointment Source', isActive: true },
+       ]);
+       setInspectionStatuses([
+         { _id: '1', description: 'Pending', type: 'Inspection Status', isActive: true, color: '#f59e0b' },
+         { _id: '2', description: 'Scheduled', type: 'Inspection Status', isActive: true, color: '#3b82f6' },
+         { _id: '3', description: 'Completed', type: 'Inspection Status', isActive: true, color: '#10b981' },
+         { _id: '4', description: 'Cancelled', type: 'Inspection Status', isActive: true, color: '#ef4444' },
+       ]);
     }
-  };
+  }, [getBaseUrl, AUTH_TOKEN]);
 
   useEffect(() => {
-    fetchTelecallingData();
+    fetchTelecallingData(currentPage, itemsPerPage, debouncedSearch, activeTab);
+  }, [currentPage, activeTab, debouncedSearch, fetchTelecallingData]);
+
+  useEffect(() => {
     fetchAuxData();
-  }, []);
+  }, [fetchAuxData]);
 
   // Close filter dropdown on click outside
   useEffect(() => {
@@ -985,10 +1142,14 @@ export default function TelecallingPage() {
   };
 
   // Optimistic Add - update UI immediately, save to backend after delay
-  const handleAddCall = async (newCall: Partial<TelecallingRecord>) => {
+  const handleAddCall = async (newCall: Partial<TelecallingRecord>, files?: File[]) => {
     // Generate temporary ID for optimistic update
     const tempId = `temp-${Date.now()}`;
-    const optimisticRecord = { ...newCall, _id: tempId } as TelecallingRecord;
+    const optimisticRecord = { 
+        ...newCall, 
+        _id: tempId,
+        carImages: files ? files.map(f => URL.createObjectURL(f)) : [] // temporary preview
+    } as TelecallingRecord;
 
     // Update UI immediately
     setAllLeadCalls((prev) => [optimisticRecord, ...prev]);
@@ -996,34 +1157,65 @@ export default function TelecallingPage() {
 
     // Save to backend immediately
     try {
-      const payload = { 
-        ...newCall,
-        inspectionStatus: newCall.inspectionStatus || 'Pending',
-        approvalStatus: newCall.approvalStatus || 'Pending',
-        priority: newCall.priority || 'Medium',
-        addedBy: newCall.addedBy || 'Telecaller',
-        carImages: newCall.carImages || [],
-        createdBy: currentUser?.id || '',
-      };
+      const formData = new FormData();
+
+      // Core fields
+      formData.append('carRegistrationNumber', newCall.carRegistrationNumber || '');
+      formData.append('ownerName', newCall.ownerName || '');
+      formData.append('yearOfRegistration', newCall.yearOfRegistration || '');
+      // Ensure ownershipSerialNumber is a number or string representation of it
+      formData.append('ownershipSerialNumber', (newCall.ownershipSerialNumber || 0).toString());
+      formData.append('make', newCall.make || '');
+      formData.append('model', newCall.model || '');
+      formData.append('variant', newCall.variant || '');
       
-      delete payload._id;
-      if (payload.appointmentId === 'Auto-generated') {
-          delete payload.appointmentId;
+      // Optional defaults
+      formData.append('inspectionStatus', newCall.inspectionStatus || 'Pending');
+      formData.append('approvalStatus', newCall.approvalStatus || 'Pending');
+      formData.append('priority', newCall.priority || 'Medium');
+      formData.append('addedBy', newCall.addedBy || 'Telecaller');
+      formData.append('createdBy', currentUser?.id || '');
+
+      // Other fields (append if present)
+      if (newCall.odometerReadingInKms) formData.append('odometerReadingInKms', newCall.odometerReadingInKms.toString());
+      if (newCall.additionalNotes) formData.append('additionalNotes', newCall.additionalNotes);
+      if (newCall.inspectionDateTime) formData.append('inspectionDateTime', newCall.inspectionDateTime);
+      if (newCall.inspectionAddress) formData.append('inspectionAddress', newCall.inspectionAddress);
+      if (newCall.customerContactNumber) formData.append('customerContactNumber', newCall.customerContactNumber);
+      if (newCall.city) formData.append('city', newCall.city);
+      if (newCall.emailAddress) formData.append('emailAddress', newCall.emailAddress);
+      if (newCall.appointmentSource) formData.append('appointmentSource', newCall.appointmentSource);
+      if (newCall.vehicleStatus) formData.append('vehicleStatus', newCall.vehicleStatus);
+      if (newCall.zipCode) formData.append('zipCode', newCall.zipCode);
+      if (newCall.yearOfManufacture) formData.append('yearOfManufacture', newCall.yearOfManufacture);
+      if (newCall.allocatedTo) formData.append('allocatedTo', newCall.allocatedTo);
+      if (newCall.ncdUcdName) formData.append('ncdUcdName', newCall.ncdUcdName);
+      if (newCall.repName) formData.append('repName', newCall.repName);
+      if (newCall.repContact) formData.append('repContact', newCall.repContact);
+      if (newCall.bankSource) formData.append('bankSource', newCall.bankSource);
+      if (newCall.referenceName) formData.append('referenceName', newCall.referenceName);
+      if (newCall.remarks) formData.append('remarks', newCall.remarks);
+      if (newCall.inspectionEngineerNumber) formData.append('inspectionEngineerNumber', newCall.inspectionEngineerNumber);
+      
+      // Handle Files
+      if (files && files.length > 0) {
+        files.forEach((file) => {
+          formData.append('carImages', file);
+        });
       }
 
       const res = await fetch(getAddUrl(), {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': AUTH_TOKEN
+            'Authorization': AUTH_TOKEN
+            // Content-Type is intentionally omitted so browser sets it with boundary
         },
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
       if (res.ok) {
         const savedRecord = await res.json();
         // Replace temp record with actual saved record
-        // Handle if response is wrapped
         const actualRecord = savedRecord.data || savedRecord;
         setAllLeadCalls((prev) => prev.map((r) => (r._id === tempId ? actualRecord : r)));
       } else {
@@ -1039,7 +1231,7 @@ export default function TelecallingPage() {
   };
 
   // Optimistic Edit
-  const handleEditCall = async (updatedData: Partial<TelecallingRecord>) => {
+  const handleEditCall = useCallback(async (updatedData: Partial<TelecallingRecord>) => {
      if (!editingRecord) return;
      const recordId = editingRecord._id;
      const oldRecord = { ...editingRecord };
@@ -1077,10 +1269,10 @@ export default function TelecallingPage() {
        setAllLeadCalls(prev => prev.map(r => r._id === recordId ? oldRecord : r));
        alert('Update error: ' + (error as Error).message);
      }
-  };
+  }, [editingRecord, currentUser, getUpdateUrl, AUTH_TOKEN]);
 
   // Optimistic Delete
-  const handleDeleteCall = async () => {
+  const handleDeleteCall = useCallback(async () => {
     if (!deletingRecord) return;
     const recordId = deletingRecord._id;
     const oldRecord = { ...deletingRecord };
@@ -1091,12 +1283,12 @@ export default function TelecallingPage() {
 
     try {
       const res = await fetch(getDeleteUrl(), {
-        method: 'POST',
+        method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': AUTH_TOKEN
+          'Authorization': AUTH_TOKEN,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ telecallingId: recordId }),
+        body: JSON.stringify({ telecallingId: recordId })
       });
 
       if (!res.ok) {
@@ -1108,7 +1300,7 @@ export default function TelecallingPage() {
       setAllLeadCalls(prev => [oldRecord, ...prev]);
       alert('Delete error: ' + (error as Error).message);
     }
-  };
+  }, [deletingRecord, getDeleteUrl, AUTH_TOKEN]);
 
   const handleOpenAddModal = () => {
     setEditingRecord(null);
@@ -1128,8 +1320,23 @@ export default function TelecallingPage() {
   // Tab Counts - Dynamic based on data
   const tabCounts = useMemo(() => {
     const counts: Record<string, number> = { All: allLeadCalls.length };
+    const preferredOrder = ['Scheduled', 'Pending', 'Completed', 'Cancelled'];
+    
     allLeadCalls.forEach((call) => {
-      const status = call.inspectionStatus || 'Pending';
+      let status = call.inspectionStatus || 'Pending';
+      
+      // Normalize status: check against preferred order first
+      const preferred = preferredOrder.find(
+        p => p.toLowerCase() === status.toLowerCase()
+      );
+      
+      if (preferred) {
+        status = preferred;
+      } else {
+        // Fallback: capitalize first letter, rest lowercase (e.g., RUNNING -> Running)
+        status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+      }
+      
       counts[status] = (counts[status] || 0) + 1;
     });
     return counts;
@@ -1183,14 +1390,7 @@ export default function TelecallingPage() {
       </div>
     );
     setActionsContent(
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => setIsImportModalOpen(true)}
-          className="flex items-center justify-center w-8 h-8 text-blue-500 hover:bg-blue-50 transition-colors border border-blue-200 rounded-lg"
-          title="Import Data"
-        >
-          <Download className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
 
         {/* Filter Dropdown */}
         <div className="relative" ref={filterRef}>
@@ -1293,15 +1493,18 @@ export default function TelecallingPage() {
         (call._id || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
         (call.make || '').toLowerCase().includes(debouncedSearch.toLowerCase());
 
-      const matchesTab = activeTab === 'All' || call.inspectionStatus === activeTab;
+      const matchesTab = activeTab === 'All' || 
+        (call.inspectionStatus || 'Pending').toLowerCase() === activeTab.toLowerCase();
 
       return matchesSearch && matchesTab;
     });
 
-    const total = filtered.length;
+    const isServerSide = totalCount > allLeadCalls.length;
+    const total = isServerSide ? totalCount : filtered.length;
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    const sliced = filtered.slice(start, end);
+    // If server side paginated, allLeadCalls is already sliced
+    const sliced = isServerSide ? filtered : filtered.slice(start, end);
 
     return {
       currentCalls: sliced,
@@ -1310,57 +1513,57 @@ export default function TelecallingPage() {
         totalItems: total,
         totalPages: Math.ceil(total / itemsPerPage),
         startIndex: start,
-        endIndex: Math.min(end, total),
+        endIndex: Math.min(start + sliced.length, total),
         onNext: () => setCurrentPage((p) => p + 1),
         onPrev: () => setCurrentPage((p) => p - 1),
         onSetPage: (p: number) => setCurrentPage(p),
-        canNext: start + itemsPerPage < total,
+        canNext: currentPage < Math.ceil(total / itemsPerPage),
         canPrev: currentPage > 1,
       },
     };
-  }, [allLeadCalls, debouncedSearch, activeTab, currentPage, itemsPerPage]);
+  }, [allLeadCalls, debouncedSearch, activeTab, currentPage, itemsPerPage, totalCount]);
 
-  // Table Columns
-  const columns = [
-    {
+  // Table Columns - Map of all available columns with IDs
+  const columnDefinitions: Record<string, any> = useMemo(() => ({
+    appointmentId: {
       header: 'Appt ID',
       accessor: 'appointmentId' as keyof TelecallingRecord,
-      className: 'font-mono text-xs text-slate-500 whitespace-nowrap',
+      className: 'font-mono text-xs whitespace-nowrap',
       width: 'auto',
     },
-    {
+    carRegistrationNumber: {
       header: 'Reg. No',
       accessor: 'carRegistrationNumber' as keyof TelecallingRecord,
-      className: 'font-bold text-slate-700 whitespace-nowrap',
+      className: 'font-bold whitespace-nowrap',
       width: 'auto',
     },
-    {
-       header: 'Owner',
-       accessor: 'ownerName' as keyof TelecallingRecord,
-       className: 'font-semibold text-slate-900 whitespace-nowrap',
-       width: 'auto',
+    ownerName: {
+      header: 'Owner',
+      accessor: 'ownerName' as keyof TelecallingRecord,
+      className: 'font-semibold whitespace-nowrap',
+      width: 'auto',
     },
-    {
+    city: {
       header: 'City',
       accessor: 'city' as keyof TelecallingRecord,
-      className: 'text-slate-600 whitespace-nowrap',
+      className: 'whitespace-nowrap',
       width: 'auto',
     },
-    {
+    allocatedTo: {
       header: 'Allocated To',
       render: (row: TelecallingRecord) => {
         const user = users.find(
           (u) => u.email === row.allocatedTo || u.userName === row.allocatedTo
         );
         return (
-          <span className="text-slate-600 whitespace-nowrap">
+          <span className="whitespace-nowrap">
             {user?.userName || row.allocatedTo || '-'}
           </span>
         );
       },
       width: 'auto',
     },
-    {
+    inspectionStatus: {
       header: 'Status',
       render: (row: TelecallingRecord) => (
         <StatusBadge
@@ -1370,46 +1573,46 @@ export default function TelecallingPage() {
       ),
       width: 'auto',
     },
-    {
+    inspectionDateTime: {
       header: 'Inspection Date',
       render: (row: TelecallingRecord) => row.inspectionDateTime ? new Date(row.inspectionDateTime).toLocaleDateString() : '-',
-      className: 'text-slate-600 whitespace-nowrap',
+      className: 'whitespace-nowrap',
       width: 'auto',
     },
-    {
+    priority: {
       header: 'Priority',
       render: (row: TelecallingRecord) => <PriorityBadge priority={row.priority || 'Medium'} />,
       width: 'auto',
     },
-    {
+    make: {
       header: 'Make',
       accessor: 'make' as keyof TelecallingRecord,
-      className: 'text-slate-700 whitespace-nowrap',
+      className: 'whitespace-nowrap',
       width: 'auto',
     },
-    {
+    model: {
       header: 'Model',
       accessor: 'model' as keyof TelecallingRecord,
-      className: 'text-slate-700 whitespace-nowrap',
+      className: 'whitespace-nowrap',
       width: 'auto',
     },
-    {
+    variant: {
       header: 'Variant',
       accessor: 'variant' as keyof TelecallingRecord,
-      className: 'text-slate-600 whitespace-nowrap',
+      className: 'whitespace-nowrap',
       width: 'auto',
     },
-    {
+    customerContactNumber: {
       header: 'Contact',
       accessor: 'customerContactNumber' as keyof TelecallingRecord,
-      className: 'text-slate-600 font-mono text-xs whitespace-nowrap',
+      className: 'font-mono text-xs whitespace-nowrap',
       width: 'auto',
     },
-    {
+    appointmentSource: {
       header: 'Source',
       render: (row: TelecallingRecord) => {
         const source = row.appointmentSource;
-        if (!source) return <span className="text-slate-400 text-xs">-</span>;
+        if (!source) return <span className="text-xs">-</span>;
 
         const matchedOption = appointmentSources.find(
           (d) => d.description.toLowerCase() === source.toLowerCase()
@@ -1439,17 +1642,17 @@ export default function TelecallingPage() {
           );
         }
 
-        return <span className="text-slate-600 text-xs whitespace-nowrap">{source}</span>;
+        return <span className="text-xs whitespace-nowrap">{source}</span>;
       },
       width: 'auto',
     },
-    {
+    remarks: {
       header: 'Remarks',
       accessor: 'remarks' as keyof TelecallingRecord,
-      className: 'text-slate-500 text-xs whitespace-normal min-w-[250px]',
+      className: 'text-xs whitespace-normal min-w-[250px]',
       width: 'auto',
     },
-    {
+    createdBy: {
       header: 'Created By',
       render: (row: TelecallingRecord) => {
         const user = users.find(
@@ -1459,21 +1662,118 @@ export default function TelecallingPage() {
             u.userName === row.createdBy
         );
         return (
-          <span className="text-slate-500 text-xs whitespace-nowrap">
+          <span className="text-xs whitespace-nowrap">
             {user?.userName || row.createdBy || '-'}
           </span>
         );
       },
       width: 'auto',
     },
-    {
+    createdAt: {
       header: 'Created At',
       render: (row: TelecallingRecord) =>
         row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '-',
-      className: 'text-slate-500 text-xs whitespace-nowrap',
+      className: 'text-xs whitespace-nowrap',
       width: 'auto',
     },
-    {
+    yearOfRegistration: {
+      header: 'Reg. Year',
+      accessor: 'yearOfRegistration' as keyof TelecallingRecord,
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    ownershipSerialNumber: {
+      header: 'Ownership Serial',
+      accessor: 'ownershipSerialNumber' as keyof TelecallingRecord,
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    yearOfManufacture: {
+      header: 'Mfg Year',
+      accessor: 'yearOfManufacture' as keyof TelecallingRecord,
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    odometerReadingInKms: {
+      header: 'Odometer',
+      render: (row: TelecallingRecord) => row.odometerReadingInKms ? `${row.odometerReadingInKms.toLocaleString()} km` : '-',
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    emailAddress: {
+      header: 'Telecaller',
+      accessor: 'emailAddress' as keyof TelecallingRecord,
+      className: 'text-xs whitespace-nowrap',
+      width: 'auto',
+    },
+    zipCode: {
+      header: 'Zip Code',
+      accessor: 'zipCode' as keyof TelecallingRecord,
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    inspectionAddress: {
+      header: 'Inspection Address',
+      accessor: 'inspectionAddress' as keyof TelecallingRecord,
+      className: 'text-xs whitespace-normal min-w-[200px]',
+      width: 'auto',
+    },
+    vehicleStatus: {
+      header: 'Vehicle Status',
+      accessor: 'vehicleStatus' as keyof TelecallingRecord,
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    ncdUcdName: {
+      header: 'NCD/UCD Name',
+      accessor: 'ncdUcdName' as keyof TelecallingRecord,
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    repName: {
+      header: 'Rep Name',
+      accessor: 'repName' as keyof TelecallingRecord,
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    repContact: {
+      header: 'Rep Contact',
+      accessor: 'repContact' as keyof TelecallingRecord,
+      className: 'font-mono text-xs whitespace-nowrap',
+      width: 'auto',
+    },
+    bankSource: {
+      header: 'Bank Source',
+      accessor: 'bankSource' as keyof TelecallingRecord,
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    referenceName: {
+      header: 'Reference Name',
+      accessor: 'referenceName' as keyof TelecallingRecord,
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    addedBy: {
+      header: 'Added By',
+      accessor: 'addedBy' as keyof TelecallingRecord,
+      className: 'whitespace-nowrap',
+      width: 'auto',
+    },
+    additionalNotes: {
+      header: 'Additional Notes',
+      accessor: 'additionalNotes' as keyof TelecallingRecord,
+      className: 'text-xs whitespace-normal min-w-[200px]',
+      width: 'auto',
+    },
+  }), [users, inspectionStatuses, appointmentSources]);
+
+
+
+  // Build columns array based on saved config or defaults
+  const columns = useMemo(() => {
+    // Actions column is always last
+    const actionsColumn = {
       header: 'Actions',
       align: 'right' as const,
       render: (row: TelecallingRecord) => (
@@ -1483,7 +1783,7 @@ export default function TelecallingPage() {
               e.stopPropagation();
               openEditModal(row);
             }}
-            className="text-slate-400 hover:text-blue-500 transition-colors p-1.5 hover:bg-blue-50 rounded"
+            className="text-slate-500 hover:text-blue-500 transition-colors p-1.5 hover:bg-blue-50 rounded"
             title="Edit"
           >
             <Edit2 className="w-3.5 h-3.5" />
@@ -1493,7 +1793,7 @@ export default function TelecallingPage() {
               e.stopPropagation();
               openDeleteModal(row);
             }}
-            className="text-slate-400 hover:text-red-500 transition-colors p-1.5 hover:bg-red-50 rounded"
+            className="text-slate-500 hover:text-red-500 transition-colors p-1.5 hover:bg-red-50 rounded"
             title="Delete"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -1501,8 +1801,36 @@ export default function TelecallingPage() {
         </div>
       ),
       width: '80px',
-    },
-  ];
+    };
+
+    // If config exists, use it to filter and order columns
+    if (columnConfig.length > 0) {
+      console.log('[Telecalling] Building columns from config. Visible items:', columnConfig.filter(c => c.visible).length);
+      const visibleCols = columnConfig
+        .filter(c => c.visible)
+        .map(c => {
+          const def = columnDefinitions[c.id];
+          if (!def) console.warn('[Telecalling] No definition found for column:', c.id);
+          return def;
+        })
+        .filter(Boolean);
+      return [...visibleCols, actionsColumn];
+    }
+
+    // Default column order if no config saved
+    const defaultColumnOrder = [
+      'appointmentId', 'carRegistrationNumber', 'ownerName', 'city', 'allocatedTo',
+      'inspectionStatus', 'inspectionDateTime', 'priority', 'make', 'model',
+      'variant', 'customerContactNumber', 'appointmentSource', 'remarks', 'createdBy', 'createdAt'
+    ];
+
+    console.log('[Telecalling] Building columns from defaults');
+    // Default: show all columns in order
+    const defaultCols = defaultColumnOrder
+      .map(id => columnDefinitions[id])
+      .filter(Boolean);
+    return [...defaultCols, actionsColumn];
+  }, [columnConfig, columnDefinitions]);
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden">
@@ -1531,6 +1859,7 @@ export default function TelecallingPage() {
           </div>
 
           <CallModal
+            key={editingRecord?._id || 'new'}
             isOpen={isModalOpen}
             onClose={() => {
               setIsModalOpen(false);
@@ -1539,9 +1868,10 @@ export default function TelecallingPage() {
             onSubmit={editingRecord ? handleEditCall : handleAddCall}
             editRecord={editingRecord}
             users={users}
-            appointmentSources={appointmentSources}
-            inspectionStatuses={inspectionStatuses}
-          />
+        appointmentSources={appointmentSources}
+        inspectionStatuses={inspectionStatuses}
+        carVariances={allCarVariances}
+      />
 
           <DeleteModal
             isOpen={isDeleteModalOpen}
@@ -1551,17 +1881,6 @@ export default function TelecallingPage() {
             }}
             onConfirm={handleDeleteCall}
             recordName={deletingRecord?.ownerName}
-          />
-
-          <GlobalImportModal
-            isOpen={isImportModalOpen}
-            onClose={() => setIsImportModalOpen(false)}
-            endpoint="/api/telecalling/import"
-            onSuccess={() => {
-              handleRefresh();
-              setTimeout(() => setIsImportModalOpen(false), 1500);
-            }}
-            title="Import Telecalling Data"
           />
         </>
       )}
